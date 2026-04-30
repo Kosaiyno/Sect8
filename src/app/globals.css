@@ -1,26 +1,210 @@
 @import "tailwindcss";
 
+@theme {
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui;
+  --font-outfit: var(--font-outfit), ui-sans-serif, system-ui;
+  
+  --color-primary: #0066ff;
+  --color-background: #fdfdfd;
+  --color-foreground: #171717;
+}
+
 :root {
-  --background: #ffffff;
+  --background: #fdfdfd;
   --foreground: #171717;
+  --primary: #0066ff;
+  --primary-foreground: #ffffff;
+  --secondary: #f0f0f0;
+  --secondary-foreground: #171717;
+  --accent: #ff3b30;
+  --muted: #8e8e93;
+  --border: #e5e5e5;
+  --card: #ffffff;
+  --card-foreground: #171717;
+  --radius: 12px;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+.dark {
+  --background: #000000;
+  --foreground: #ededed;
+  --primary: #3388ff;
+  --primary-foreground: #ffffff;
+  --secondary: #1a1a1a;
+  --secondary-foreground: #ededed;
+  --accent: #ff453a;
+  --muted: #8e8e93;
+  --border: #333333;
+  --card: #0a0a0a;
+  --card-foreground: #ededed;
 }
 
 body {
-  background: var(--background);
+  background-color: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans);
+  transition: background-color 0.3s, color 0.3s;
 }
+
+/* Custom Utilities */
+.premium-gradient {
+  background: linear-gradient(135deg, var(--primary) 0%, #7000ff 100%);
+}
+
+.text-gradient {
+  background: linear-gradient(to right, #3b82f6, #9333ea);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.glass-card {
+  background-color: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 1rem;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+.dark .glass-card {
+  background-color: rgba(0, 0, 0, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Market card hover + agent persona styles */
+.market-card {
+  transition: transform 0.22s cubic-bezier(.2,.9,.2,1), box-shadow 0.22s;
+}
+.market-card:hover {
+  transform: translateY(-6px) scale(1.01);
+  box-shadow: 0 30px 50px rgba(0,0,0,0.45);
+}
+
+.agent-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.agent-avatar {
+  width: 56px;
+  height: 56px;
+  border-radius: 12px;
+  background: linear-gradient(135deg,var(--primary),#7000ff);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-weight: 800;
+  font-family: var(--font-outfit);
+  box-shadow: 0 6px 18px rgba(0,0,0,0.4);
+}
+.agent-bubble {
+  background: linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02));
+  border: 1px solid rgba(255,255,255,0.04);
+  padding: 10px 14px;
+  border-radius: 12px;
+  max-width: 520px;
+  color: var(--foreground);
+  font-size: 13px;
+}
+.agent-bubble .muted {
+  color: rgba(255,255,255,0.65);
+  font-size: 12px;
+}
+.agent-typing {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  margin-left: 8px;
+  border-radius: 999px;
+  background: #fff;
+  box-shadow: 8px 0 0 #fff, 16px 0 0 #fff;
+  opacity: 0.85;
+  animation: blinkDots 1.2s infinite steps(2);
+}
+@keyframes blinkDots {
+  0% { opacity: 0.2 }
+  50% { opacity: 1 }
+  100% { opacity: 0.2 }
+}
+
+/* Modal card: opaque, solid background for readable details modal */
+.modal-card {
+  background-color: var(--card);
+  color: var(--card-foreground);
+  border-radius: 12px;
+  box-shadow: 0 20px 40px rgba(0,0,0,0.6);
+  border: 1px solid rgba(255,255,255,0.04);
+}
+
+.btn-primary {
+  color: white;
+  padding: 0.75rem 1.5rem;
+  border-radius: 9999px;
+  font-weight: 600;
+  transition: all 0.2s;
+  box-shadow: 0 10px 15px -3px rgba(0, 102, 255, 0.2);
+  background: linear-gradient(135deg, var(--primary) 0%, #7000ff 100%);
+}
+
+.btn-primary:hover {
+  transform: scale(1.05);
+}
+
+.btn-primary:active {
+  transform: scale(0.95);
+}
+
+.btn-secondary {
+  background-color: var(--secondary);
+  color: var(--foreground);
+  padding: 0.75rem 1.5rem;
+  border-radius: 9999px;
+  font-weight: 600;
+  border: 1px solid var(--border);
+  transition: all 0.2s;
+}
+
+.btn-secondary:hover {
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
+.dark .btn-secondary:hover {
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.5s ease-out forwards;
+}
+
+/* Prevent external libs from forcing a large footer spacer via --apkt-footer-height */
+:root {
+  --apkt-footer-height: 0px !important;
+}
+
+/* Ensure footer elements don't reserve large space */
+.footer, w3m-footer, .w3m-footer {
+  height: auto !important;
+  min-height: 0 !important;
+  padding: 0.5rem 0 !important;
+}
+
+/* If an external embedded footer element exists, keep it visually small */
+w3m-footer {
+  display: block !important;
+  max-height: 48px !important;
+  overflow: hidden !important;
+}
+
+/* Dev-time safety: prevent injected full-screen overlay containers from blocking clicks */
+#_rk_coolMode, .-base-acc-sdk-dialog-container, .-base-acc-sdk-css-reset, .-base-acc-sdk-dialog-backdrop {
+  display: none !important;
+  pointer-events: none !important;
+}
+
+/* If you rely on legit modals from these SDKs, remove these overrides or toggle them conditionally. */
