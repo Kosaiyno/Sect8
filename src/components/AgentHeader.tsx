@@ -85,10 +85,10 @@ export default function AgentHeader({
 
           <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
             {[
-              { label: 'Workflow', value: 'I scan purchasable homes first', icon: <Radar size={14} /> },
-              { label: 'Analysis', value: '0G compute', icon: <Brain size={14} /> },
-              { label: 'Memory', value: agent.memory?.memoryRoot ? 'I synced to 0G' : 'I am ready to sync', icon: <Database size={14} /> },
-              { label: 'Trust', value: 'I score against HUD support', icon: <ShieldCheck size={14} /> },
+              { label: 'Workflow', value: 'Scans purchasable homes first', icon: <Radar size={14} /> },
+              { label: 'Analysis', value: '0G Compute for property analysis', icon: <Brain size={14} /> },
+              { label: 'Memory', value: agent.memory?.memoryRoot ? '0G Storage for agent memory' : 'Ready to sync memory to 0G Storage', icon: <Database size={14} /> },
+              { label: 'Trust', value: 'Scores against HUD-backed rent support', icon: <ShieldCheck size={14} /> },
             ].map((item) => (
               <div key={item.label} className="dashboard-subpanel rounded-[22px] px-4 py-4">
                 <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.22em] text-white/42">

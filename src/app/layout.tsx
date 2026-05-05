@@ -40,6 +40,7 @@ export default function RootLayout({
               <Link href="/" prefetch className="rounded-full px-4 py-2 transition-colors hover:bg-white/5 hover:text-white">Home</Link>
               <Link href="/dashboard" prefetch className="rounded-full px-4 py-2 transition-colors hover:bg-white/5 hover:text-white">Dashboard</Link>
               <Link href="/market" prefetch className="rounded-full px-4 py-2 transition-colors hover:bg-white/5 hover:text-white">Market</Link>
+              <Link href="/watchlist" prefetch className="rounded-full px-4 py-2 transition-colors hover:bg-white/5 hover:text-white">Watchlist</Link>
             </nav>
             <div className="flex items-center gap-4">
               <ConnectButton />

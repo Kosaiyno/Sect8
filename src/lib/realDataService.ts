@@ -1,4 +1,6 @@
 import axios from "axios";
+import fs from "node:fs";
+import path from "node:path";
 
 type HudCountyEntry = {
   county_name?: string;
@@ -15,6 +17,11 @@ type HudStateResponse = {
     year?: string | number;
     counties?: HudCountyEntry[];
   };
+};
+
+type HudFmrCacheFile = {
+  generatedAt?: string;
+  states?: Record<string, HudStateResponse["data"] | undefined>;
 };
 
 type FairMarketRentResult = {
@@ -38,6 +45,9 @@ const zipMetadataCache = new Map<string, Promise<{ state: string; latitude: stri
 const countyFipsCache = new Map<string, Promise<{ fips: string; name: string | null } | null>>();
 const hudStateCache = new Map<string, Promise<HudStateResponse | null>>();
 const fairMarketRentCache = new Map<string, Promise<FairMarketRentResult>>();
+const hudCacheFile = path.resolve(process.cwd(), "data", "hud-fmr-cache.json");
+
+let bundledHudCache: HudFmrCacheFile | null | undefined;
 
 // RentCast API wrapper
 export const fetchRealProperties = async (zipCode: string, bedrooms: number) => {
@@ -169,8 +179,14 @@ export async function getCountyMetadata(zipCode: string): Promise<CountyMetadata
 }
 
 async function fetchHudStateData(stateCode: string) {
+  const bundled = readBundledHudStateData(stateCode);
+  if (bundled) {
+    return bundled;
+  }
+
   const token = process.env.HUD_USER_API_TOKEN?.trim();
-  if (!token) {
+  const allowLiveHudFetch = process.env.HUD_ENABLE_LIVE_FETCH === "1";
+  if (!token || !allowLiveHudFetch) {
     return null;
   }
 
@@ -207,6 +223,34 @@ async function fetchHudStateData(stateCode: string) {
   }
 
   return hudStateCache.get(stateCode) || Promise.resolve(null);
+}
+
+function readBundledHudCache() {
+  if (bundledHudCache !== undefined) {
+    return bundledHudCache;
+  }
+
+  try {
+    if (!fs.existsSync(hudCacheFile)) {
+      bundledHudCache = null;
+      return bundledHudCache;
+    }
+
+    const parsed = JSON.parse(fs.readFileSync(hudCacheFile, "utf8")) as HudFmrCacheFile;
+    bundledHudCache = parsed && parsed.states ? parsed : null;
+  } catch (error) {
+    console.error("Sect8: Error reading bundled HUD cache:", error);
+    bundledHudCache = null;
+  }
+
+  return bundledHudCache;
+}
+
+function readBundledHudStateData(stateCode: string): HudStateResponse | null {
+  const cache = readBundledHudCache();
+  const stateData = cache?.states?.[stateCode.toUpperCase()];
+
+  return stateData ? { data: stateData } : null;
 }
 
 function getBedroomKey(bedrooms: number) {
@@ -251,10 +295,6 @@ export async function getFairMarketRent(zipCode: string, bedrooms: number, addre
   if (!fairMarketRentCache.has(cacheKey)) {
     const request: Promise<FairMarketRentResult> = (async () => {
       const fallbackValue = getFMR(zipCode, bedrooms);
-      const token = process.env.HUD_USER_API_TOKEN?.trim();
-      if (!token) {
-        return { value: fallbackValue, source: "modeled" };
-      }
 
       const zipMetadata = await fetchZipMetadata(zipCode);
       const stateCode = getStateFromAddress(address) || zipMetadata?.state || null;

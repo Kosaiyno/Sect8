@@ -2,6 +2,7 @@
 import Link from 'next/link';
 import React from 'react';
 import { BadgeDollarSign, BedDouble, Building2, MapPin, ShieldCheck, Sparkles } from 'lucide-react';
+import WatchlistButton from '@/components/WatchlistButton';
 
 type RecommendationSummary = {
   id: string;
@@ -80,9 +81,28 @@ export default function HeroSection({ recommendations, isScanning = false, targe
             </div>
 
             <div>
-              <h3 className="max-w-3xl font-outfit text-2xl font-black tracking-[-0.05em] text-white md:text-[2.7rem] md:leading-[1.02]">
-                {topPick.address}
-              </h3>
+              <div className="flex flex-wrap items-start justify-between gap-4">
+                <h3 className="max-w-3xl font-outfit text-2xl font-black tracking-[-0.05em] text-white md:text-[2.7rem] md:leading-[1.02]">
+                  {topPick.address}
+                </h3>
+                <WatchlistButton
+                  item={{
+                    id: topPick.id,
+                    address: topPick.address,
+                    bedrooms: topPick.bedrooms,
+                    bathrooms: topPick.bathrooms,
+                    purchasePrice: topPick.purchasePrice,
+                    estRent: topPick.estRent,
+                    netOperating: topPick.netOperating,
+                    capRate: topPick.capRate,
+                    fmr: topPick.fmr,
+                    fmrSource: topPick.fmrSource,
+                    propertyType: topPick.propertyType,
+                    squareFootage: topPick.squareFootage,
+                  }}
+                  className="rounded-full border p-2.5 transition"
+                />
+              </div>
               <div className="mt-4 flex flex-wrap items-center gap-4 text-[14px] text-white/66">
                 <span className="inline-flex items-center gap-2">
                   <MapPin size={14} />

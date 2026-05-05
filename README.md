@@ -1,10 +1,10 @@
 # Sect8
 
-Sect8 is a Section 8 acquisition platform that helps investors find for-sale homes, run 0G-powered property analysis, and preserve the resulting research with 0G-backed memory. The product focuses on one core workflow: create a user agent on 0G chain, analyze properties with 0G compute, and persist analysis and memory state with 0G storage.
+Sect8 is the AI agent that finds Section 8 deals and analyzes them before you buy. The product focuses on one core workflow: create a user agent on 0G chain, analyze properties with 0G compute, and persist analysis and memory state with 0G storage.
 
 ## Project Overview
 
-Sect8 is built for investors who buy rental property and want faster first-pass underwriting for Section 8 opportunities.
+Sect8 is built for investors who buy rental property and want an AI agent to help them find, screen, and analyze Section 8 opportunities faster.
 
 The product workflow is:
 
@@ -14,7 +14,7 @@ The product workflow is:
 4. Store memory and analysis artifacts using 0G storage.
 5. Present a decision-ready property dossier with cash flow, cap rate, ROI, ownership context, hazard context, and housing-authority contacts.
 
-This repo intentionally positions Sect8 as a user-directed analysis product. The strongest part of the project is the use of 0G compute for property analysis, with 0G storage for persistent memory and 0G chain for agent creation.
+This repo positions Sect8 as an AI agent for Section 8 acquisitions. The strongest part of the project is the use of 0G compute for property analysis, with 0G storage for persistent memory and 0G chain for agent creation.
 
 ## System Architecture
 
@@ -90,6 +90,7 @@ Current scope note:
 
 ## How the 0G Modules Support the Product
 
+- Sect8 is the AI agent layer: it finds deals, ranks them, and opens a decision-ready property dossier before a user buys.
 - 0G compute is the product differentiator. It turns raw property inputs into a readable, structured investment analysis instead of just showing listings.
 - 0G storage preserves memory and analysis artifacts so the workflow can recover state and show proof of persistence.
 - 0G chain gives each user a chain-backed agent creation path, which makes the agent identity more durable than a client-only profile.
@@ -133,6 +134,16 @@ Additional product data providers used by this repo may require their own keys d
 ```bash
 npm install
 ```
+
+### Refresh bundled HUD FMR data
+
+Run this from a US-accessible environment before deploying when you want to refresh the committed HUD rent cache:
+
+```bash
+npm run import:hud
+```
+
+This writes `data/hud-fmr-cache.json`, which the app uses at runtime so deployed users are not blocked by HUD regional access restrictions.
 
 ### Run in Development
 
@@ -194,7 +205,7 @@ After deployment, record the deployed contract address in your environment or ap
 
 ## Submission Summary
 
-Sect8 is a 0G-powered Section 8 acquisition platform whose core advantage is property analysis on 0G compute. The project uses:
+Sect8 is the AI agent that finds Section 8 deals and analyzes them before you buy. Its core advantage is property analysis on 0G compute. The project uses:
 
 - 0G compute for analysis generation
 - 0G storage for memory and analysis persistence

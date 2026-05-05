@@ -12,10 +12,45 @@ import { ethers } from "ethers";
 export class ZgStorageService {
   private rpcUrl: string;
   private storageUrl: string;
+  private signerPromise: Promise<ethers.NonceManager> | null = null;
+  private uploadQueue: Promise<unknown> = Promise.resolve();
 
   constructor(rpcUrl: string) {
     this.rpcUrl = rpcUrl;
     this.storageUrl = process.env.OG_STORAGE_URL || process.env.NEXT_PUBLIC_0G_STORAGE_NODE_URL || rpcUrl;
+  }
+
+  private async getSigner(rpcArg: string) {
+    if (!this.signerPromise) {
+      this.signerPromise = (async () => {
+        const provider = new ethers.JsonRpcProvider(rpcArg);
+        const deployerKey = process.env.AGENT_DEPLOYER_PRIVATE_KEY || process.env.SERVER_OPERATOR_PRIVATE_KEY || process.env.PRIVATE_KEY;
+        if (!deployerKey) {
+          throw new Error('Missing private key for indexer upload. Set AGENT_DEPLOYER_PRIVATE_KEY (server-side) to a funded testnet key.');
+        }
+
+        const baseSigner = new ethers.Wallet(deployerKey, provider);
+        return new ethers.NonceManager(baseSigner);
+      })();
+    }
+
+    return this.signerPromise;
+  }
+
+  private async enqueueUpload<T>(task: () => Promise<T>) {
+    const previous = this.uploadQueue;
+    let release!: () => void;
+    this.uploadQueue = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+
+    await previous;
+
+    try {
+      return await task();
+    } finally {
+      release();
+    }
   }
 
   /**
@@ -36,39 +71,35 @@ export class ZgStorageService {
 
     const indexer = new Indexer(this.storageUrl);
     const mem = new MemData(content instanceof Buffer ? content : Buffer.from(content));
-    const provider = new ethers.JsonRpcProvider(rpcArg);
-    const deployerKey = process.env.AGENT_DEPLOYER_PRIVATE_KEY || process.env.SERVER_OPERATOR_PRIVATE_KEY || process.env.PRIVATE_KEY;
-    if (!deployerKey) {
-      throw new Error('Missing private key for indexer upload. Set AGENT_DEPLOYER_PRIVATE_KEY (server-side) to a funded testnet key.');
-    }
+    return this.enqueueUpload(async () => {
+      const signer = await this.getSigner(rpcArg);
+      console.log('ZgStorageService: calling indexer.upload', { rpcArg, indexerUrl: this.storageUrl, hasSigner: true });
 
-    const signer = new ethers.Wallet(deployerKey, provider);
-    console.log('ZgStorageService: calling indexer.upload', { rpcArg, indexerUrl: this.storageUrl, hasSigner: !!signer?.privateKey });
+      try {
+        const [uploadResult, err] = await indexer.upload(mem, rpcArg, signer as any);
+        if (err) {
+          const wrapped = new Error('Indexer.upload returned error: ' + String(err));
+          // @ts-ignore
+          wrapped.details = { rpcArg, indexerUrl: this.storageUrl, original: err };
+          throw wrapped;
+        }
 
-    try {
-      const [uploadResult, err] = await indexer.upload(mem, rpcArg, signer as any);
-      if (err) {
-        const wrapped = new Error('Indexer.upload returned error: ' + String(err));
+        const rootHash = typeof uploadResult === 'string'
+          ? uploadResult
+          : ('rootHash' in uploadResult ? uploadResult.rootHash : uploadResult.rootHashes?.[0]);
+        if (!rootHash) {
+          throw new Error('Indexer.upload succeeded but did not return a root hash');
+        }
+
+        return String(rootHash);
+      } catch (e: any) {
+        const msg = `ZgStorageService.uploadData failed calling indexer.upload. indexerUrl=${this.storageUrl} rpcArg=${rpcArg} error=${e?.message || e}`;
+        const wrapped = new Error(msg);
         // @ts-ignore
-        wrapped.details = { rpcArg, indexerUrl: this.storageUrl, original: err };
+        wrapped.original = e;
         throw wrapped;
       }
-
-      const rootHash = typeof uploadResult === 'string'
-        ? uploadResult
-        : ('rootHash' in uploadResult ? uploadResult.rootHash : uploadResult.rootHashes?.[0]);
-      if (!rootHash) {
-        throw new Error('Indexer.upload succeeded but did not return a root hash');
-      }
-
-      return String(rootHash);
-    } catch (e: any) {
-      const msg = `ZgStorageService.uploadData failed calling indexer.upload. indexerUrl=${this.storageUrl} rpcArg=${rpcArg} error=${e?.message || e}`;
-      const wrapped = new Error(msg);
-      // @ts-ignore
-      wrapped.original = e;
-      throw wrapped;
-    }
+    });
   }
 
   async downloadData(dataRoot: string): Promise<Buffer | string> {

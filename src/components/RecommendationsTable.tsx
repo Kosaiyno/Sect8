@@ -1,7 +1,8 @@
 "use client";
 import Link from 'next/link';
 import React, { useState } from 'react';
-import { Bath, BedDouble, Heart, MapPin } from 'lucide-react';
+import { Bath, BedDouble, MapPin } from 'lucide-react';
+import WatchlistButton from '@/components/WatchlistButton';
 
 type RecommendationCard = {
   id: string;
@@ -106,9 +107,25 @@ export default function RecommendationsTable({ recommendations }: Recommendation
                       <span>{[location.city, location.state, location.zip || recommendation.zip].filter(Boolean).join(', ')}</span>
                     </div>
                   </div>
-                  <button className="rounded-full border border-white/10 bg-white/5 p-2 text-white/80 transition hover:text-white">
-                    <Heart size={16} />
-                  </button>
+                  <WatchlistButton
+                    item={{
+                      id: recommendation.id,
+                      address: recommendation.address,
+                      zip: recommendation.zip,
+                      bedrooms: recommendation.bedrooms,
+                      bathrooms: recommendation.bathrooms,
+                      purchasePrice: recommendation.purchasePrice,
+                      estRent: recommendation.estRent,
+                      netOperating: recommendation.netOperating,
+                      capRate: recommendation.capRate,
+                      fmr: recommendation.fmr,
+                      fmrSource: recommendation.fmrSource,
+                      propertyType: recommendation.propertyType,
+                      squareFootage: recommendation.squareFootage,
+                      url: recommendation.url,
+                    }}
+                    className="rounded-full border p-2 transition"
+                  />
                 </div>
 
                 <div className="mt-4 flex flex-wrap items-center gap-2 text-white">

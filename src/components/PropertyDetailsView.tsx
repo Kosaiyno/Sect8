@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { ArrowLeft, BadgeDollarSign, Brain, FileBadge2, Home, Mail, MapPin, Phone, ShieldCheck, Waves, Wind } from 'lucide-react';
 import type { PropertyAnalysisBundle } from '@/lib/propertyAnalysis';
 import type { PropertyDetailBundle } from '@/lib/propertyDetails';
+import WatchlistButton from '@/components/WatchlistButton';
 
 function cleanPresentationText(value: string | null | undefined) {
   const text = String(value || '').trim();
@@ -96,6 +97,22 @@ export default function PropertyDetailsView({ bundle, analysisResult }: Property
   const strengths = cleanPresentationList(analysis.strengths);
   const risks = cleanPresentationList(analysis.risks);
   const nextSteps = cleanPresentationList(analysis.nextSteps);
+  const watchlistItem = {
+    id: String(listing.id),
+    address: String(listing.address || ''),
+    zip: listing.zip,
+    bedrooms: listing.bedrooms,
+    bathrooms: listing.bathrooms,
+    purchasePrice: listing.purchasePrice,
+    estRent: listing.estRent,
+    netOperating: listing.netOperating,
+    capRate: listing.capRate,
+    fmr: listing.fmr,
+    fmrSource: listing.fmrSource,
+    propertyType: listing.propertyType,
+    squareFootage: listing.squareFootage,
+    url: listing.url,
+  };
 
   return (
     <div className="mx-auto flex w-full max-w-[1320px] flex-col gap-6 px-4 py-8 text-white md:px-6 xl:px-8">
@@ -104,11 +121,19 @@ export default function PropertyDetailsView({ bundle, analysisResult }: Property
           <ArrowLeft size={16} />
           Back to dashboard
         </Link>
-        {listing.url ? (
-          <a href={listing.url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 rounded-full border border-cyan-300/20 bg-cyan-300/10 px-4 py-2 text-sm font-semibold text-cyan-100 transition hover:bg-cyan-300/15">
-            Open live listing
-          </a>
-        ) : null}
+        <div className="flex flex-wrap items-center gap-3">
+          <WatchlistButton
+            item={watchlistItem}
+            showLabel
+            label="Add to watchlist"
+            className="inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-semibold transition"
+          />
+          {listing.url ? (
+            <a href={listing.url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 rounded-full border border-cyan-300/20 bg-cyan-300/10 px-4 py-2 text-sm font-semibold text-cyan-100 transition hover:bg-cyan-300/15">
+              Open live listing
+            </a>
+          ) : null}
+        </div>
       </div>
 
       <section className="dashboard-panel rounded-[34px] p-6 md:p-8">

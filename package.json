@@ -8,6 +8,7 @@
     "build": "next build --webpack",
     "start": "next start",
     "prod": "npm run build ; npm run start",
+    "import:hud": "node ./scripts/importHudFmrCache.mjs",
     "import:pha": "node ./scripts/importPhaDirectory.mjs",
     "lint": "eslint"
   },
@@ -20,7 +21,7 @@
     "@walletconnect/ethereum-provider": "^2.23.9",
     "axios": "^1.15.2",
     "dotenv": "^17.4.2",
-    "ethers": "6.13.1",
+    "ethers": "^6.16.0",
     "framer-motion": "^12.38.0",
     "lucide-react": "^1.11.0",
     "next": "16.2.4",
