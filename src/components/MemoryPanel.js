@@ -1,9 +1,0 @@
-"use client";
-import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
-export default function MemoryPanel({ agent }) {
-    var _a, _b, _c;
-    const prefs = agent.preferences || {};
-    const learned = ((_a = agent.memory) === null || _a === void 0 ? void 0 : _a.learned) || ['High cashflow (> $300/mo)', 'Section 8 stable zones'];
-    const updates = ((_c = (_b = agent.memory) === null || _b === void 0 ? void 0 : _b.history) === null || _c === void 0 ? void 0 : _c.slice(-5).reverse()) || [];
-    return (_jsxs("div", { className: "glass-card p-6", children: [_jsx("h4", { className: "font-bold", children: "Agent Intelligence" }), _jsxs("div", { className: "mt-4 grid grid-cols-1 md:grid-cols-2 gap-4", children: [_jsxs("div", { children: [_jsx("div", { className: "text-sm text-muted", children: "Target ZIP" }), _jsx("div", { className: "font-bold", children: prefs.zipCode }), _jsx("div", { className: "mt-4 text-sm text-muted", children: "Strategy" }), _jsx("div", { className: "font-bold", children: prefs.strategy || 'Cashflow' }), _jsx("div", { className: "mt-4 text-sm text-muted", children: "Risk Tolerance" }), _jsx("div", { className: "font-bold", children: (prefs.minRoi || 0) > 0 ? 'Conservative' : 'Balanced' })] }), _jsxs("div", { children: [_jsx("div", { className: "text-sm text-muted", children: "Learned Preferences" }), _jsx("ul", { className: "mt-2 list-disc ml-5 text-sm", children: learned.map((l, i) => _jsx("li", { children: l }, i)) }), _jsx("div", { className: "mt-4 text-sm text-muted", children: "Recent Learning Updates" }), _jsx("div", { className: "mt-2 text-sm", children: updates.length ? updates.map((u, i) => (_jsx("div", { className: "py-1", children: u }, i))) : _jsx("div", { className: "text-muted", children: "No recent updates" }) })] })] })] }));
-}

@@ -12,7 +12,7 @@ const ogChain = {
   id: 16661,
   name: '0G Mainnet',
   network: '0g',
-  nativeCurrency: { name: 'Ether', symbol: 'ETH', decimals: 18 },
+  nativeCurrency: { name: '0G Token', symbol: '0G', decimals: 18 },
   rpcUrls: { default: { http: [process.env.NEXT_PUBLIC_0G_RPC_URL || 'https://evmrpc.0g.ai'] } },
   blockExplorers: { default: { name: '0G Explorer', url: 'https://explorer.0g.ai' } },
   testnet: false,

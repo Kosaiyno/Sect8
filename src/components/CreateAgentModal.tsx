@@ -3,14 +3,10 @@
 import { useState } from "react";
 import { UserPreferences } from "@/lib/ogAgent";
 import { X, Target, DollarSign, Home, Percent } from "lucide-react";
-import { ethers } from 'ethers';
-import { ensure0GChain } from '@/lib/wallet';
 
-// Minimal ABI for client mint
-const AGENT_NFT_ABI = [
-  'function mintAgent(string initialMemoryRoot, string encryptedURI) public returns (uint256)',
-  'event AgentInitialized(uint256 indexed tokenId, address indexed owner, string memoryRoot)'
-];
+type EthereumWithSelectedAddress = {
+  selectedAddress?: string;
+};
 
 export function CreateAgentModal({ 
   onClose, 
@@ -34,8 +30,8 @@ export function CreateAgentModal({
         </button>
 
         <div className="space-y-2">
-          <h2 className="text-2xl font-outfit font-black">Configure Your Autonomous Agent</h2>
-          <p className="text-muted text-sm">Define the parameters for your agent's scan on 0G.</p>
+          <h2 className="text-2xl font-outfit font-black">Configure My Acquisition Agent</h2>
+          <p className="text-muted text-sm">Set the first scan parameters I should use across 0G compute, storage, and agent state.</p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -91,82 +87,27 @@ export function CreateAgentModal({
 
         <button 
           onClick={async () => {
-            // Upload initial memory to server-side storage first
             try {
-              const initialMemory = {
-                agentId: 'pending',
-                preferences: prefs,
-                history: [`Agent requested via client`],
-                createdAt: Date.now()
-              };
+              const owner = ((window as unknown as { ethereum?: EthereumWithSelectedAddress }).ethereum?.selectedAddress || '').trim();
+              if (!owner) throw new Error('Connect your wallet first');
 
-              const uploadRes = await fetch('/api/agents/uploadMemory', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ memory: initialMemory }) });
-              const uploadJson = await uploadRes.json();
-              if (!uploadJson.success) throw new Error(uploadJson.error || 'upload failed');
-
-              const storageHash = uploadJson.hash;
-
-              // If wallet present, mint via wallet
-              if ((window as any).ethereum) {
-                // ensure wallet is on 0G
-                const switchRes = await ensure0GChain();
-                if (!switchRes.success) throw new Error('Wallet chain switch failed: ' + (switchRes.error || ''));
-
-                const provider = new ethers.BrowserProvider((window as any).ethereum as any);
-                await provider.send('eth_requestAccounts', []);
-                const signer = await provider.getSigner();
-                try {
-                  const signerAddr = await signer.getAddress();
-                  const network = await provider.getNetwork();
-                  const bal = await provider.getBalance(signerAddr);
-                  console.log('Client mint: provider network, signer, balance', { chainId: network?.chainId, signer: signerAddr, balance: ethers.formatEther(bal) });
-                } catch (logErr) {
-                  console.warn('Client mint: failed to read signer/network/balance', logErr);
-                }
-                const nftAddress = process.env.NEXT_PUBLIC_AGENT_NFT_ADDRESS;
-                if (!nftAddress) throw new Error('Agent NFT contract address not configured');
-                const contract = new ethers.Contract(nftAddress, AGENT_NFT_ABI as any, signer as any);
-                const tx = await contract.mintAgent(storageHash, "");
-                const receipt = await tx.wait();
-
-                // parse event to get tokenId
-                let tokenId: any = null;
-                for (const log of receipt.logs || []) {
-                  try {
-                    const parsed = contract.interface.parseLog(log);
-                    if (parsed && parsed.name === 'AgentInitialized') {
-                      tokenId = parsed.args[0]?.toString();
-                      break;
-                    }
-                  } catch (e) {}
-                }
-
-                // persist mapping server-side
-                await fetch('/api/agents/create', {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({ owner: await signer.getAddress(), preferences: prefs, tokenId, txHash: receipt.transactionHash })
-                });
-
-                onCreate(prefs);
-                return;
-              }
-
-              // fallback: call server create which will mint via server wallet
-              await fetch('/api/agents/create', {
+              const response = await fetch('/api/agents/create', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ owner: null, preferences: prefs })
+                body: JSON.stringify({ owner, preferences: prefs })
               });
 
+              const json = await response.json();
+              if (!json.success) throw new Error(json.error || 'activation failed');
+
               onCreate(prefs);
-            } catch (e:any) {
-              alert('Failed to initialize agent: ' + (e?.message || e));
+            } catch (error) {
+              alert('Failed to initialize agent: ' + String(error));
             }
           }}
           className="btn-primary w-full py-4 text-lg"
         >
-          Initialize Agent on 0G (Mint with Wallet)
+          Activate Agent on 0G
         </button>
       </div>
     </div>

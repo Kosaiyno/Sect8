@@ -1,162 +1,203 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { fetchRealProperties, getFMR } from "@/lib/realDataService";
 import { Property } from "@/types";
-import { Bed, Bath, MapPin, DollarSign, BarChart3, Search, Activity } from "lucide-react";
+import { Bed, Bath, MapPin, Activity, ChevronDown, Building2, DollarSign } from "lucide-react";
+
+async function fetchMarketListings(zipCode: string) {
+  const response = await fetch(`/api/market/listings?zipCode=${encodeURIComponent(zipCode)}&bedrooms=3`);
+  return response.json();
+}
+
+async function fetchZipOptions() {
+  const response = await fetch('/api/agents/search');
+  return response.json();
+}
+
+function formatCurrency(value: number | null | undefined, suffix = '') {
+  if (value === null || value === undefined) {
+    return 'Unavailable';
+  }
+
+  return `$${Math.round(value).toLocaleString()}${suffix}`;
+}
+
+function getLocation(address: string) {
+  const parts = address.split(',').map((part) => part.trim()).filter(Boolean);
+  return parts.slice(1).join(', ') || address;
+}
 
 export default function MarketPage() {
-  const [searchTerm, setSearchTerm] = useState("48201"); // Default to Detroit
+  const [zipOptions, setZipOptions] = useState<Array<{ zipCode: string; city: string; state: string; label: string }>>([]);
+  const [selectedZip, setSelectedZip] = useState('');
   const [properties, setProperties] = useState<Property[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [dataSource, setDataSource] = useState<'rentcast-live' | 'rentcast-cache' | 'mock-enriched' | 'none'>('none');
 
   const loadProperties = async () => {
-    setIsLoading(true);
-    // Fetch real data for the search term
-    const data = await fetchRealProperties(searchTerm, 3);
-    console.log('RentCast raw count:', data?.length);
-    console.log('RentCast sample item:', data?.[0]);
-    
-    if (data && data.length > 0) {
-      setProperties(data.map((p: any) => {
-        const bedrooms = p.bedrooms || p.bedroomCount || p.beds || 3;
-        const bathrooms = p.bathrooms || p.bathroomCount || p.baths || 1;
-        const image = (p.media && p.media.length && p.media[0].url)
-          || (p.photos && p.photos.length && p.photos[0].url)
-          || (p.images && p.images.length && p.images[0].url)
-          || p.image
-          || "https://images.unsplash.com/photo-1568605114967-8130f3a36994?q=80&w=800&auto=format&fit=crop";
-
-        const address = p.formattedAddress || [p.addressLine, p.city, p.state, p.zip].filter(Boolean).join(', ') || p.address || p.title || 'Unknown Address';
-        const estimatedRent = p.rentEstimate || p.estimatedRent || p.rent || 1400;
-        const price = p.price || p.listPrice || p.priceEstimate || 120000;
-
-        return {
-          id: p.id || p.listingId || `${Date.now()}-${Math.random()}`,
-          address,
-          price,
-          bedrooms,
-          bathrooms,
-          image,
-          estimatedRent,
-          section8Cap: getFMR(searchTerm, bedrooms),
-          locationScore: 75 + Math.random() * 20,
-        };
-      }));
-    } else {
-      // No real data available — clear properties and surface a message in UI
+    if (!selectedZip) {
       setProperties([]);
+      setDataSource('none');
+      setIsLoading(false);
+      return;
     }
+
+    setIsLoading(true);
+    try {
+      const json = await fetchMarketListings(selectedZip);
+
+      if (json.success && Array.isArray(json.listings)) {
+        setProperties(json.listings);
+        setDataSource(json.source || 'none');
+      } else {
+        setProperties([]);
+        setDataSource('none');
+      }
+    } catch {
+      setProperties([]);
+      setDataSource('none');
+    }
+
     setIsLoading(false);
   };
 
   useEffect(() => {
-    loadProperties();
+    void (async () => {
+      try {
+        const json = await fetchZipOptions();
+        if (json.success && Array.isArray(json.zipOptions)) {
+          setZipOptions(json.zipOptions);
+          const nextZip = json.zipOptions[0]?.zipCode || '';
+          setSelectedZip(nextZip);
+
+          if (nextZip) {
+            const listingsJson = await fetchMarketListings(nextZip);
+            if (listingsJson.success && Array.isArray(listingsJson.listings)) {
+              setProperties(listingsJson.listings);
+              setDataSource(listingsJson.source || 'none');
+            } else {
+              setProperties([]);
+              setDataSource('none');
+            }
+          }
+        }
+      } catch {
+        setZipOptions([]);
+        setProperties([]);
+        setDataSource('none');
+      }
+
+      setIsLoading(false);
+    })();
   }, []);
 
   return (
-    <div className="flex flex-col gap-12 animate-fade-in">
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
-        <div className="space-y-2">
-          <h1 className="text-4xl font-outfit font-black tracking-tight">Live Real Estate Market</h1>
-          <p className="text-muted">Analyzing real-time listings on 0G Network. Searching ZIP: <span className="text-primary font-bold">{searchTerm}</span></p>
-        </div>
-        
-        <div className="flex gap-4 w-full md:w-auto">
-          <div className="relative flex-1 md:w-64">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-muted" size={18} />
-            <input 
-              type="text" 
-              placeholder="Enter ZIP Code..." 
-              className="w-full bg-secondary border border-border rounded-xl py-3 pl-12 pr-4 focus:ring-2 focus:ring-primary outline-hidden transition-all"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && loadProperties()}
-            />
+    <div className="flex flex-col gap-8 animate-fade-in">
+      <section className="surface-panel rounded-[32px] p-6 md:p-8">
+        <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+          <div className="max-w-3xl space-y-3">
+            <div className="inline-flex items-center gap-2 rounded-full border border-cyan-300/20 bg-cyan-300/10 px-3 py-1 text-[10px] font-black uppercase tracking-[0.22em] text-cyan-100">
+              Agent market feed
+            </div>
+            <h1 className="section-title text-4xl md:text-5xl">I keep this market feed fast so I can decide which houses deserve a full dossier.</h1>
+            <p className="section-copy max-w-2xl text-base md:text-lg">
+              This is my lighter review surface. I show active purchasable homes by ZIP, surface price and rent context, and let you decide which addresses I should escalate into deeper Section 8 analysis on the dashboard.
+            </p>
+          {dataSource === 'rentcast-cache' && (
+              <p className="text-sm text-cyan-200">I restored this ZIP from my stored RentCast inventory snapshot.</p>
+          )}
           </div>
-          <button 
-            onClick={loadProperties}
-            disabled={isLoading}
-            className="btn-primary px-8 flex items-center gap-2"
-          >
-            {isLoading ? <Activity className="animate-spin" size={20} /> : "Search Market"}
-          </button>
+
+          <div className="dashboard-panel w-full max-w-md rounded-[30px] p-4 backdrop-blur lg:min-w-[340px]">
+            <label className="mb-2 block text-[10px] font-black uppercase tracking-[0.22em] text-white/42">ZIP markets I can scan</label>
+            <div className="relative">
+              <select value={selectedZip} onChange={(event) => setSelectedZip(event.target.value)} className="dashboard-field w-full appearance-none rounded-2xl px-4 py-3 pr-12 text-sm text-white outline-hidden color-scheme-dark">
+                <option value="">Select ZIP market</option>
+                {zipOptions.map((option) => (
+                  <option key={option.zipCode} value={option.zipCode} className="bg-[#111820] text-white">{option.label}</option>
+                ))}
+              </select>
+              <ChevronDown size={18} className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-white/55" />
+            </div>
+            <button onClick={loadProperties} disabled={isLoading || !selectedZip} className="btn-primary mt-4 flex w-full items-center justify-center gap-2 text-sm disabled:cursor-not-allowed disabled:opacity-60">
+              {isLoading ? <Activity className="animate-spin" size={18} /> : 'Load My Market Feed'}
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <div className="dashboard-panel rounded-[32px] p-5 md:p-6">
+        <div className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
+          <div>
+            <div className="text-[10px] font-black uppercase tracking-[0.24em] text-white/45">Market queue</div>
+            <div className="mt-1 font-outfit text-2xl font-black text-white">I found {properties.length} homes in {selectedZip || 'the selected ZIP'}</div>
+          </div>
+          <div className="text-sm text-white/55">Use this feed to shortlist addresses. When a home looks promising, move to the dashboard for my full underwriting and property dossier.</div>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
         {properties.map((property) => (
-          <div key={property.id} className="glass-card overflow-hidden group hover:border-primary/50 transition-all duration-500 hover:translate-y-[-8px]">
-            <div className="relative h-64 w-full overflow-hidden">
-                <img
-                  src={property.image}
-                  alt={property.address}
-                  className="object-cover group-hover:scale-110 transition-transform duration-700 w-full h-full"
-                />
-              <div className="absolute top-4 right-4 bg-black/70 backdrop-blur-md text-white text-[10px] font-black px-4 py-2 rounded-full border border-white/20 shadow-xl">
-                0G SCORE: {property.locationScore.toFixed(0)}/100
-              </div>
-              <div className="absolute bottom-4 left-4 flex gap-2">
-                 <div className="bg-primary text-white text-[10px] font-black px-3 py-1.5 rounded-full shadow-lg border border-white/20">
-                  LIVE LISTING
+          <div key={property.id} className="dashboard-panel market-card relative rounded-[30px] p-5">
+            <div className="market-card-accent absolute inset-x-6 top-0 h-px bg-gradient-to-r from-cyan-300/0 via-cyan-300/70 to-cyan-300/0" />
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <div className="line-clamp-1 text-xl font-black text-white">{property.address}</div>
+                <div className="mt-2 flex items-center gap-2 text-sm text-white/60">
+                  <MapPin size={14} className="text-cyan-200" />
+                  {getLocation(property.address)}
                 </div>
+              </div>
+              <div className="rounded-full border border-cyan-300/20 bg-cyan-300/10 px-3 py-1 text-[10px] font-black uppercase tracking-[0.2em] text-cyan-100">
+                Candidate
               </div>
             </div>
-            
-            <div className="p-8 flex flex-col gap-6">
-              <div className="space-y-1">
-                <h3 className="font-outfit font-bold text-xl leading-tight line-clamp-1">{property.address}</h3>
-                <p className="text-muted text-sm flex items-center gap-1 font-medium">
-                  <MapPin size={14} className="text-primary" />
-                  {searchTerm}, United States
-                </p>
-              </div>
 
-              <div className="grid grid-cols-2 gap-6 py-6 border-y border-border/30">
-                <div className="flex flex-col gap-1">
-                  <span className="text-[10px] uppercase tracking-widest text-muted font-black">List Price</span>
-                  <span className="font-outfit font-black text-2xl text-foreground">${property.price.toLocaleString()}</span>
+            <div className="mt-5 grid grid-cols-2 gap-3">
+              <div className="rounded-[22px] border border-white/8 bg-white/[0.04] p-4">
+                <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.22em] text-white/40">
+                  <DollarSign size={13} />
+                  Purchase Price
                 </div>
-                <div className="flex flex-col gap-1 text-right">
-                  <span className="text-[10px] uppercase tracking-widest text-muted font-black">Est. Rent</span>
-                  <span className="font-outfit font-black text-2xl text-primary">${property.estimatedRent.toLocaleString()}</span>
-                </div>
+                <div className="mt-2 font-outfit text-2xl font-black text-white">{formatCurrency(property.price)}</div>
               </div>
-
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-5 text-sm font-bold text-muted">
-                  <span className="flex items-center gap-1.5"><Bed size={18} className="text-primary" /> {property.bedrooms}</span>
-                  <span className="flex items-center gap-1.5"><Bath size={18} className="text-primary" /> {property.bathrooms}</span>
+              <div className="rounded-[22px] border border-white/8 bg-white/[0.04] p-4">
+                <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.22em] text-white/40">
+                  <Building2 size={13} />
+                  Rent
                 </div>
-                <div className="flex items-center gap-2 text-green-400 font-black text-[10px] bg-green-400/10 px-3 py-1.5 rounded-full border border-green-400/20 shadow-sm">
-                  <BarChart3 size={14} />
-                  SEC 8 CAP: ${property.section8Cap}
-                </div>
+                <div className="mt-2 font-outfit text-2xl font-black text-cyan-100">{formatCurrency(property.estimatedRent, '/mo')}</div>
               </div>
+            </div>
 
-              <button onClick={() => handleView(property)} className="w-full py-4 rounded-2xl bg-white/5 border border-white/10 hover:bg-white/10 transition-all font-black text-xs tracking-widest uppercase text-foreground">
-                View Full Analysis
-              </button>
+            <div className="mt-4 grid grid-cols-3 gap-3 text-sm">
+              <div className="rounded-2xl border border-white/8 bg-white/[0.03] p-3 text-white">
+                <div className="text-[10px] font-black uppercase tracking-[0.22em] text-white/40">Beds</div>
+                <div className="mt-2 flex items-center gap-2 font-semibold"><Bed size={14} className="text-cyan-200" /> {property.bedrooms || 'N/A'}</div>
+              </div>
+              <div className="rounded-2xl border border-white/8 bg-white/[0.03] p-3 text-white">
+                <div className="text-[10px] font-black uppercase tracking-[0.22em] text-white/40">Baths</div>
+                <div className="mt-2 flex items-center gap-2 font-semibold"><Bath size={14} className="text-cyan-200" /> {property.bathrooms ?? 'N/A'}</div>
+              </div>
+              <div className="rounded-2xl border border-white/8 bg-white/[0.03] p-3 text-white">
+                <div className="text-[10px] font-black uppercase tracking-[0.22em] text-white/40">Voucher Cap</div>
+                <div className="mt-2 font-semibold text-emerald-300">{formatCurrency(property.section8Cap, '/mo')}</div>
+              </div>
+            </div>
+
+            <div className="mt-4 rounded-[22px] border border-cyan-300/10 bg-cyan-300/[0.06] p-4 text-sm leading-6 text-white/78">
+              I have not opened the full dossier here yet. Move this address into the dashboard if you want me to rank it, explain the Section 8 fit, and attach the deeper underwriting context.
             </div>
           </div>
         ))}
       </div>
+
+      {!isLoading && properties.length === 0 && (
+        <div className="dashboard-panel rounded-[32px] p-10 text-center">
+          <div className="font-outfit text-3xl font-black text-white">I do not have a market snapshot for this ZIP yet</div>
+          <p className="mt-3 text-white/60">Choose another market or open the dashboard so I can seed the acquisition workflow and store a new listing snapshot.</p>
+        </div>
+      )}
     </div>
   );
-}
-
-async function handleView(property: Property) {
-  try {
-    const res = await fetch('/api/analyze', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ property })
-    });
-    const json = await res.json();
-    console.log('analysis result', json);
-    alert(`Analysis result: found ${json.recommendations?.length || 0} recommendations (see console).`);
-  } catch (e) {
-    console.error('analysis error', e);
-    alert('Failed to get analysis — see console.');
-  }
 }
