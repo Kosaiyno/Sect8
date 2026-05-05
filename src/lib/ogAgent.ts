@@ -1,6 +1,6 @@
 import { Property, Recommendation, AgentMemory } from "@/types";
 import { fetchRealProperties, getFMR } from "./realDataService";
-import { uploadToStorage, registerAgentIdentity } from "@/app/actions/og";
+import { uploadToStorage } from "@/app/actions/og";
 import { zgCompute } from "@/og-integration/compute";
 
 export interface UserPreferences {
@@ -32,86 +32,85 @@ export class OGAgent {
     };
   }
 
-  /**
-   * Complete 0G Onboarding Flow:
-   * 1. Store initial memory on 0G Storage
-   * 2. Register Agentic ID on 0G Chain with the Storage hash
-   */
-  public async registerOnChain() {
+  public async activate() {
     this.status = 'scanning';
-    console.log("Sect8: Starting 0G Onboarding via Server Actions...");
+    console.log("Sect8: Activating 0G agent...");
 
-    // 1. 0G Storage (Server Side)
     const storageResult = await uploadToStorage(JSON.stringify(this.memory));
     if (!storageResult.success) throw new Error(storageResult.error);
     this.memory.history.push(`Initial state persisted on 0G Storage: ${storageResult.hash}`);
 
-    // 2. 0G Chain (Server Side)
-    const identityResult = await registerAgentIdentity(this.owner, storageResult.hash!);
-    if (!identityResult.success) throw new Error(identityResult.error);
-    
-    this.id = identityResult.tokenId!;
-    this.memory.agentId = identityResult.tokenId!;
-    this.memory.history.push(`Agentic ID (ERC-7857) Minted: ${this.id}`);
+    this.id = `agent-${this.owner.toLowerCase()}`;
+    this.memory.agentId = this.id;
+    this.memory.history.push(`Agent activated for wallet ${this.owner}`);
 
     this.status = 'idle';
     return true;
   }
 
   /**
-   * Autonomous Scan Loop using 0G Compute & Storage
+   * Runs a property scan and 0G-backed analysis pass for the current agent.
    */
-  public async runAutonomousScan(): Promise<Recommendation[]> {
+  public async runScan(): Promise<Recommendation[]> {
     this.status = 'scanning';
-    this.memory.history.push(`Autonomous scan triggered for ZIP ${this.preferences.zipCode}`);
+    this.memory.history.push(`Scan triggered for ZIP ${this.preferences.zipCode}`);
 
     // 1. Data Ingestion (Real market data)
     const rawData = await fetchRealProperties(this.preferences.zipCode, this.preferences.minBedrooms);
-    const properties: Property[] = rawData ? rawData.map((p: any) => ({
-      id: p.id,
-      address: p.formattedAddress,
-      price: p.price || 150000,
-      bedrooms: p.bedrooms,
-      bathrooms: p.bathrooms,
-      image: p.image || "https://images.unsplash.com/photo-1568605114967-8130f3a36994?q=80&w=800&auto=format&fit=crop",
-      estimatedRent: p.rentEstimate || 1500,
-      section8Cap: getFMR(this.preferences.zipCode, p.bedrooms),
+    const properties: Property[] = rawData ? rawData.map((p: Record<string, unknown>) => {
+      const bedrooms = Number(p.bedrooms || 0) || this.preferences.minBedrooms;
+      return ({
+      id: String(p.id || `${Date.now()}-${Math.random()}`),
+      address: String(p.formattedAddress || p.address || 'Unknown Address'),
+      price: Number(p.price || 150000),
+      bedrooms,
+      bathrooms: p.bathrooms === null || p.bathrooms === undefined ? null : Number(p.bathrooms),
+      image: typeof p.image === 'string' && p.image ? p.image : "https://images.unsplash.com/photo-1568605114967-8130f3a36994?q=80&w=800&auto=format&fit=crop",
+      estimatedRent: Number(p.rentEstimate || 1500),
+      section8Cap: getFMR(this.preferences.zipCode, bedrooms),
       locationScore: 85,
-    })) : this.generateRealisticData();
+    });
+    }) : this.generateRealisticData();
 
     // 2. Compute Logic (Use 0G Compute service)
     let recommendations: Recommendation[] = [];
     try {
-      const payload = { agent: this.memory, preferences: this.preferences, properties };
-      const computeResp = await zgCompute.runAnalysis(payload, { timeoutMs: 120000 });
+      const prompt = `You are a Section 8 investment analyst. Score and rank these properties for this agent. Return JSON array only.\n\nAgent: ${JSON.stringify(this.memory)}\nPreferences: ${JSON.stringify(this.preferences)}\nProperties: ${JSON.stringify(properties)}`;
+      const computeResp = await zgCompute.runAnalysis({
+        model: process.env.OG_COMPUTE_MODEL,
+        messages: [
+          { role: 'system' as const, content: 'You rank Section 8 investment properties and return structured JSON only.' },
+          { role: 'user' as const, content: prompt },
+        ],
+      });
       const result = computeResp?.result || computeResp;
 
       // Expect result to contain scored properties and optionally proofs
       const scored = result?.output || result?.scored || result?.body || null;
       if (Array.isArray(scored)) {
-        recommendations = scored.map((r: any) => ({
-          id: r.id,
-          address: r.address,
-          price: r.price,
-          bedrooms: r.bedrooms,
-          bathrooms: r.bathrooms,
-          image: r.image,
-          estimatedRent: r.estimatedRent,
-          section8Cap: r.section8Cap || getFMR(this.preferences.zipCode, r.bedrooms),
-          locationScore: r.locationScore || 75,
-          effectiveRent: r.effectiveRent,
-          cashflow: r.cashflow,
-          roi: r.roi,
-          reasoning: r.reasoning || r.explanation || 'See compute proof',
+        recommendations = scored.map((r: Record<string, unknown>) => ({
+          id: String(r.id || `${Date.now()}-${Math.random()}`),
+          address: String(r.address || 'Unknown Address'),
+          price: Number(r.price || 0),
+          bedrooms: Number(r.bedrooms || 0),
+          bathrooms: r.bathrooms === null || r.bathrooms === undefined ? null : Number(r.bathrooms),
+          image: typeof r.image === 'string' ? r.image : null,
+          estimatedRent: Number(r.estimatedRent || 0),
+          section8Cap: Number(r.section8Cap || getFMR(this.preferences.zipCode, Number(r.bedrooms || this.preferences.minBedrooms))),
+          locationScore: Number(r.locationScore || 75),
+          effectiveRent: Number(r.effectiveRent || 0),
+          cashflow: Number(r.cashflow || 0),
+          roi: Number(r.roi || 0),
+          reasoning: String(r.reasoning || r.explanation || 'See compute proof'),
           timestamp: Date.now(),
           verifiableProof: r.proof || computeResp?.jobId || null,
         } as Recommendation));
       } else {
         // Fallback to simple scoring if compute returns unexpected shape
         recommendations = properties.map((prop) => {
-          const effectiveRent = Math.min(prop.estimatedRent, prop.section8Cap);
+          const effectiveRent = Math.min(Number(prop.estimatedRent ?? 0), Number(prop.section8Cap ?? 0));
           const cashflow = effectiveRent * 0.6;
-          const roi = (cashflow * 12) / prop.price;
+          const roi = (cashflow * 12) / Number(prop.price ?? 1);
           return {
             ...prop,
             effectiveRent,
@@ -121,17 +120,17 @@ export class OGAgent {
             timestamp: Date.now(),
             verifiableProof: computeResp?.jobId || undefined,
           } as Recommendation;
-        }).filter(r => r.price <= this.preferences.maxPrice && r.roi >= this.preferences.minRoi);
+        }).filter(r => Number(r.price ?? 0) <= this.preferences.maxPrice && Number(r.roi ?? 0) >= this.preferences.minRoi);
       }
     } catch (err) {
       console.error('OGAgent compute error', err);
       // fallback to local compute if compute fails
       recommendations = [];
       for (const prop of properties) {
-        if (prop.price <= this.preferences.maxPrice) {
-          const effectiveRent = Math.min(prop.estimatedRent, prop.section8Cap);
+        if (Number(prop.price ?? 0) <= this.preferences.maxPrice) {
+          const effectiveRent = Math.min(Number(prop.estimatedRent ?? 0), Number(prop.section8Cap ?? 0));
           const cashflow = effectiveRent * 0.6;
-          const roi = (cashflow * 12) / prop.price;
+          const roi = (cashflow * 12) / Number(prop.price ?? 1);
           if (roi >= this.preferences.minRoi) {
             recommendations.push({
               ...prop,
@@ -157,7 +156,7 @@ export class OGAgent {
     }
     
     this.status = 'idle';
-    return recommendations.sort((a, b) => b.roi - a.roi);
+    return recommendations.sort((a, b) => Number(b.roi ?? 0) - Number(a.roi ?? 0));
   }
 
   public async postPurchaseManager() {

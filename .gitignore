@@ -65,6 +65,7 @@ typechain-types/
 # Local runtime data
 data/agents.json
 data/logs.json
+data/property-analyses.json
 data/property-detail-sessions.json
 data/uploads/
 

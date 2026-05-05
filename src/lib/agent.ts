@@ -2,45 +2,33 @@
 import { Property, Recommendation, AgentMemory } from "@/types";
 import { fetchRealProperties, getFMR } from "./realDataService";
 import { uploadAgentMemory } from "@/og-integration/storage";
-import { getOrMintINFT } from "./mintINFT";
+
 
 export class Section8Agent {
   private agentId: string;
   private memory: AgentMemory;
 
 
-  constructor(agentId: string, userAddress?: string, agentMetadataURI?: string) {
-    if (userAddress && agentMetadataURI) {
-      // Mint iNFT and use tokenId as agentId
-      getOrMintINFT(userAddress, agentMetadataURI).then((tokenId) => {
-        this.agentId = tokenId;
-        this.memory = {
-          agentId: tokenId,
-          lastScanTimestamp: 0,
-          preferences: {
-            minRoi: 0.1, // 10%
-            preferredLocations: ["Detroit", "Cleveland", "Baltimore"],
-          },
-          history: [],
-        };
-      });
-    } else {
-      this.agentId = agentId;
-      this.memory = {
-        agentId,
-        lastScanTimestamp: 0,
-        preferences: {
-          minRoi: 0.1, // 10%
-          preferredLocations: ["Detroit", "Cleveland", "Baltimore"],
-        },
-        history: [],
-      };
-    }
+  constructor(agentId: string) {
+    this.agentId = agentId;
+    this.memory = {
+      agentId,
+      lastScanTimestamp: 0,
+      preferences: {
+        minRoi: 0.1, // 10%
+        preferredLocations: ["Detroit", "Cleveland", "Baltimore"],
+      },
+      history: [],
+    };
   }
 
   // Simulate 0G Compute: Analyzing a property
   public analyzeProperty(property: Property): Recommendation {
-    const effectiveRent = Math.min(property.estimatedRent, property.section8Cap);
+    const estimatedRent = Number(property.estimatedRent ?? 0);
+    const section8Cap = Number(property.section8Cap ?? estimatedRent);
+    const locationScore = Number(property.locationScore ?? 0);
+    const purchasePrice = Number(property.price ?? property.purchasePrice ?? 1);
+    const effectiveRent = Math.min(estimatedRent, section8Cap);
     
     // Simple expense calculation (mortgage, insurance, taxes, maintenance ~ 40% of rent)
     const monthlyExpenses = effectiveRent * 0.4;
@@ -48,14 +36,14 @@ export class Section8Agent {
     const annualCashflow = monthlyCashflow * 12;
     
     // ROI = Annual Cashflow / Purchase Price
-    const roi = annualCashflow / property.price;
+    const roi = annualCashflow / purchasePrice;
     
     let reasoning = "";
     if (roi > 0.15) {
       reasoning = "High yield opportunity with strong cashflow potential.";
-    } else if (property.section8Cap > property.estimatedRent) {
+    } else if (section8Cap > estimatedRent) {
       reasoning = "Section 8 cap exceeds market rent, providing a stable income buffer.";
-    } else if (property.locationScore > 80) {
+    } else if (locationScore > 80) {
       reasoning = "Excellent location with high demand and appreciation potential.";
     } else {
       reasoning = "Solid investment with stable returns.";
@@ -72,7 +60,7 @@ export class Section8Agent {
     };
   }
 
-  // Simulate the autonomous loop
+  // Run a market scan and persist the resulting memory state.
   public async runScan(): Promise<Recommendation[]> {
     console.log(`Agent ${this.agentId} starting scan...`);
     // Data fetching via RentCast (0G ingestion)
@@ -114,8 +102,8 @@ export class Section8Agent {
 
     const recommendations = properties
       .map((p) => this.analyzeProperty(p))
-      .filter((r) => r.roi >= this.memory.preferences.minRoi)
-      .sort((a, b) => b.roi - a.roi);
+      .filter((r) => Number(r.roi ?? 0) >= this.memory.preferences.minRoi)
+      .sort((a, b) => Number(b.roi ?? 0) - Number(a.roi ?? 0));
 
     // Update memory (Simulate 0G Storage)
     this.memory.lastScanTimestamp = Date.now();

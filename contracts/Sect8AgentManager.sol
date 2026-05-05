@@ -1,18 +1,11 @@
-// SPDX-License-Identifier: MIT
-pragma solidity ^0.8.19;
 
+
+import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol";
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
-/**
- * @title Sect8AgentManager
- * @dev Implements Agentic ID logic for the 0G APAC Hackathon.
- * Links a persistent agent identity to a metadata root stored on 0G Storage.
- */
-contract Sect8AgentManager is ERC721URIStorage, Ownable {
+contract Sect8AgentManager is ERC721Enumerable, ERC721URIStorage, Ownable {
     uint256 private _tokenIds;
-
-    // Mapping from TokenID to the latest 0G Storage DataRoot
     mapping(uint256 => string) public agentMemoryRoot;
 
     event AgentInitialized(uint256 indexed tokenId, address indexed owner, string memoryRoot);
@@ -21,23 +14,15 @@ contract Sect8AgentManager is ERC721URIStorage, Ownable {
 
     constructor() ERC721("Sect8 AI Agent", "S8A") Ownable(msg.sender) {}
 
-    /**
-     * @dev Mints a new Agentic ID and links it to an initial state on 0G Storage.
-     */
     function initializeAgent(address owner, string memory initialMemoryRoot) public returns (uint256) {
         _tokenIds++;
         uint256 newItemId = _tokenIds;
-
         _mint(owner, newItemId);
         agentMemoryRoot[newItemId] = initialMemoryRoot;
-
         emit AgentInitialized(newItemId, owner, initialMemoryRoot);
         return newItemId;
     }
 
-    /**
-     * @dev Updates the agent's memory root (Verifiable Memory Layer).
-     */
     function updateAgentState(uint256 tokenId, string memory newDataRoot) public {
         address owner = ownerOf(tokenId);
         require(_isAuthorized(owner, msg.sender, tokenId), "Not authorized to update agent state");
@@ -45,19 +30,41 @@ contract Sect8AgentManager is ERC721URIStorage, Ownable {
         emit AgentStateUpdated(tokenId, newDataRoot);
     }
 
-    /**
-     * @dev Log an agent decision on-chain. Callable by owner or approved operator.
-     */
     function logDecision(uint256 tokenId, string calldata propertyId, uint256 score, string calldata dataRoot) external {
         address owner = ownerOf(tokenId);
         require(_isAuthorized(owner, msg.sender, tokenId), "Not authorized to log decision");
         emit DecisionLogged(tokenId, propertyId, score, block.timestamp, dataRoot);
     }
 
-    /**
-     * @dev Verifies if a memory root matches the on-chain record.
-     */
     function verifyAgentState(uint256 tokenId, string memory rootToVerify) public view returns (bool) {
         return keccak256(abi.encodePacked(agentMemoryRoot[tokenId])) == keccak256(abi.encodePacked(rootToVerify));
+    }
+
+    // --- REQUIRED OVERRIDES FOR OPENZEPPELIN v5+ ---
+
+
+    function _update(address to, uint256 tokenId, address auth)
+        internal
+        override(ERC721, ERC721Enumerable)
+        returns (address)
+    {
+        return super._update(to, tokenId, auth);
+    }
+
+    function _increaseBalance(address account, uint128 amount)
+        internal
+        override(ERC721, ERC721Enumerable)
+    {
+        super._increaseBalance(account, amount);
+    }
+
+    // _burn function removed as it is not virtual in OpenZeppelin v5+
+
+    function tokenURI(uint256 tokenId) public view override(ERC721, ERC721URIStorage) returns (string memory) {
+        return super.tokenURI(tokenId);
+    }
+
+    function supportsInterface(bytes4 interfaceId) public view override(ERC721Enumerable, ERC721URIStorage) returns (bool) {
+        return super.supportsInterface(interfaceId);
     }
 }

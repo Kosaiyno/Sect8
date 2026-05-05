@@ -1,14 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { getOrMintINFT } from '@/lib/mintINFT';
-
-export async function POST(req: NextRequest) {
-  const { userAddress, agentMetadataURI } = await req.json();
-  if (!userAddress) return NextResponse.json({ error: 'Missing userAddress' }, { status: 400 });
-
-  try {
-    const tokenId = await getOrMintINFT(userAddress, agentMetadataURI || '');
-    return NextResponse.json({ tokenId, agentMetadataURI });
-  } catch (e: any) {
-    return NextResponse.json({ error: e.message }, { status: 500 });
-  }
+// This API route is deprecated. Minting is now handled on the frontend via the user's wallet.
+export async function POST() {
+  return new Response('Minting must be done from the frontend using your wallet.', { status: 410 });
 }

@@ -12,7 +12,7 @@ export async function POST(request: Request) {
     const maxPrice = property.price || 200000;
 
     const agent = new OGAgent('server', { zipCode, minBedrooms, maxPrice, minRoi: 0.05 });
-    const recommendations = await agent.runAutonomousScan();
+    const recommendations = await agent.runScan();
 
     return new Response(JSON.stringify({ success: true, recommendations }), { headers: { 'Content-Type': 'application/json' } });
   } catch (error: any) {

@@ -26,5 +26,10 @@ module.exports = {
       accounts: process.env.AGENT_DEPLOYER_PRIVATE_KEY ? [process.env.AGENT_DEPLOYER_PRIVATE_KEY] : [],
       chainId: 16661,
     },
+    mainnet: {
+      url: process.env.NEXT_PUBLIC_0G_RPC_URL || 'https://evmrpc.0g.ai',
+      accounts: process.env.AGENT_DEPLOYER_PRIVATE_KEY ? [process.env.AGENT_DEPLOYER_PRIVATE_KEY] : [],
+      chainId: 16661,
+    },
   },
 };

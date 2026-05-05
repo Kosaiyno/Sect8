@@ -1,17 +1,73 @@
 import { NextResponse } from 'next/server';
 import fs from 'fs';
 import path from 'path';
-import { fetchRealProperties, getFMR } from '@/lib/realDataService';
+import { fetchRealProperties, getFairMarketRent, getValidatedPurchasePrice, isExcludedPropertyType, normalizePropertyType } from '@/lib/realDataService';
 import { uploadToStorage } from '@/app/actions/og';
+import { upsertAgentRecord } from '@/lib/agentStore';
+import { getOrCreatePropertyAnalysis } from '@/lib/propertyAnalysis';
+import { getPropertyDetailBundle } from '@/lib/propertyDetails';
+import { getRentcastCacheKey, loadCachedRentcastListings, upsertRentcastCacheEntry } from '@/lib/rentcastCache';
+import { calculateUnderwriting } from '@/lib/underwriting';
 
-type ScanRequest = {
-  zipCode: string;
-  minBedrooms?: number;
-  maxPrice?: number;
-  owner?: string;
-};
+function getImageUrl(listing: Record<string, unknown>) {
+  const photoCandidate = listing.photo;
+  const firstPhoto = Array.isArray(listing.photos) ? listing.photos[0] : null;
+  const firstMedia = Array.isArray(listing.media) ? listing.media[0] : null;
 
-function persistFile(relPath: string, data: any) {
+  const rawValue =
+    (typeof listing.image === 'string' && listing.image) ||
+    (typeof photoCandidate === 'string' && photoCandidate) ||
+    (photoCandidate && typeof photoCandidate === 'object' && typeof (photoCandidate as { url?: unknown }).url === 'string' ? String((photoCandidate as { url?: unknown }).url) : null) ||
+    (firstPhoto && typeof firstPhoto === 'object' && typeof (firstPhoto as { url?: unknown }).url === 'string' ? String((firstPhoto as { url?: unknown }).url) : null) ||
+    (typeof firstPhoto === 'string' ? firstPhoto : null) ||
+    (firstMedia && typeof firstMedia === 'object' && typeof (firstMedia as { url?: unknown }).url === 'string' ? String((firstMedia as { url?: unknown }).url) : null) ||
+    null;
+
+  if (!rawValue) {
+    return null;
+  }
+
+  if (rawValue.includes('via.placeholder') || rawValue.includes('placehold.co')) {
+    return null;
+  }
+
+  return rawValue;
+}
+
+function getPurchasePriceCandidate(listing: Record<string, unknown>) {
+  const estimate = listing.estimate && typeof listing.estimate === 'object'
+    ? listing.estimate as { purchasePrice?: unknown }
+    : null;
+
+  const candidate = Number(
+    listing.price ||
+    listing.listPrice ||
+    listing.salePrice ||
+    listing.priceEstimate ||
+    listing.estimatedValue ||
+    listing.assessedValue ||
+    listing.marketValue ||
+    estimate?.purchasePrice ||
+    0
+  );
+
+  return candidate >= 10000 ? candidate : null;
+}
+
+function buildReasoning(listing: {
+  purchasePrice: number | null;
+  estRent: number;
+  fmr: number;
+  monthlyCashflow: number;
+  capRate: number | null;
+  roi: number | null;
+  bedrooms: number;
+  zip: string;
+}) {
+  return `I surfaced this house because it is actively listed for sale, the area rent benchmark for a ${listing.bedrooms}-bedroom unit is about $${listing.fmr}/mo, projected monthly cash flow is about $${listing.monthlyCashflow}/mo, and my current underwriting points to a cap rate near ${listing.capRate?.toFixed(1)}% with an all-cash ROI near ${listing.roi?.toFixed(1)}%.`;
+}
+
+function persistFile(relPath: string, data: unknown) {
   const file = path.resolve(process.cwd(), relPath);
   const dir = path.dirname(file);
   if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
@@ -21,92 +77,228 @@ function persistFile(relPath: string, data: any) {
 function readPersist(relPath: string) {
   const file = path.resolve(process.cwd(), relPath);
   if (!fs.existsSync(file)) return null;
-  try { return JSON.parse(fs.readFileSync(file, 'utf8')); } catch(e) { return null; }
+  try { return JSON.parse(fs.readFileSync(file, 'utf8')); } catch { return null; }
+}
+
+async function precomputePropertyAnalyses(listingIds: string[]) {
+  const results = [];
+
+  for (const listingId of listingIds) {
+    try {
+      const bundle = await getPropertyDetailBundle(listingId);
+      if (!bundle) {
+        results.push({ listingId, status: 'missing-bundle' as const });
+        continue;
+      }
+
+      const analysis = await getOrCreatePropertyAnalysis(bundle);
+      results.push({
+        listingId,
+        status: analysis.fromCache ? 'cache-hit' as const : 'generated' as const,
+        provider: analysis.record.provider,
+        storageRoot: analysis.record.storageRoot,
+      });
+    } catch (error) {
+      results.push({
+        listingId,
+        status: 'error' as const,
+        error: String(error),
+      });
+    }
+  }
+
+  return results;
+}
+
+function scoreWarmupCandidate(listing: Record<string, unknown>) {
+  if (String(listing.fmrSource || '') !== 'hud') {
+    return -1;
+  }
+
+  const monthlyNoi = Math.round(Number(listing.netOperating || 0) / 12);
+  return Number(listing.capRate || 0) * 100 + monthlyNoi;
+}
+
+function selectWarmupListingIds(results: Array<Record<string, unknown>>) {
+  if (!results.length) {
+    return [] as string[];
+  }
+
+  const sorted = [...results].sort((left, right) => scoreWarmupCandidate(right) - scoreWarmupCandidate(left));
+  const topPickId = sorted[0]?.id ? String(sorted[0].id) : null;
+  const newestIds = results.slice(0, 11).map((result) => String(result.id));
+
+  return [...new Set([topPickId, ...newestIds].filter(Boolean) as string[])];
+}
+
+function normalizeListings(items: Array<Record<string, unknown>>, zip: string, minBedrooms: number, sourceOverride?: string) {
+  return items.map((it: Record<string, unknown>) => {
+    const estimate = it.estimate && typeof it.estimate === 'object'
+      ? it.estimate as { rent?: unknown }
+      : null;
+
+    return ({
+    id: it.id || it.listingId || String(Math.random()).slice(2),
+    address: it.formattedAddress || it.address || [it.street || it.addressLine || it.addressLine1 || it.title, it.city, it.state, it.zipCode || it.zip].filter(Boolean).join(', ') || `Unknown ${zip}`,
+    zip,
+    bedrooms: it.bedrooms || minBedrooms,
+    bathrooms: it.bathrooms || it.bathroomCount || it.baths || null,
+    propertyType: normalizePropertyType(it.propertyType),
+    squareFootage: it.squareFootage || null,
+    purchasePrice: getPurchasePriceCandidate(it),
+    askingRent: null,
+    estRent: it.rentEstimate || it.estimatedRent || it.rent || it.monthlyRent || estimate?.rent || it.estRent || null,
+    source: sourceOverride || it.source || 'rentcast',
+    listingType: getPurchasePriceCandidate(it) ? 'sale-or-valued' : 'unknown',
+    image: getImageUrl(it),
+    locationScore: it.locationScore || null,
+    demandSignal: it.demandSignal || null,
+    url: it.url || null,
+    contactEmail: it.contactEmail || null,
+    contactPhone: it.contactPhone || null,
+  });
+  }).filter((listing) => !isExcludedPropertyType(listing.propertyType) && Number(listing.purchasePrice || 0) >= 10000 && Number(listing.bedrooms || 0) >= Number(minBedrooms || 0));
 }
 
 export async function POST(req: Request) {
   try {
-    const body = (await req.json()) as any;
-    // Support two shapes: { zipCode, minBedrooms, owner } or { tokenId, owner, preferences }
+    const body = await req.json();
     const zip = body.zipCode || (body.preferences && body.preferences.zipCode) || null;
     const minBedrooms = body.minBedrooms || (body.preferences && body.preferences.minBedrooms) || 1;
-    const owner = body.owner || (body.preferences && body.preferences.owner) || null;
+    const owner = typeof (body.owner || (body.preferences && body.preferences.owner) || '') === 'string'
+      ? String(body.owner || (body.preferences && body.preferences.owner) || '').trim().toLowerCase()
+      : '';
+    const preferences = body.preferences || { zipCode: zip, minBedrooms };
 
     if (!zip) return NextResponse.json({ success: false, error: 'zipCode required' }, { status: 400 });
 
-    // Try RentCast
+    const cacheKey = getRentcastCacheKey(zip, Number(minBedrooms));
     const rc = await fetchRealProperties(zip, minBedrooms);
-    let listings: any[] = [];
+    let listings: Array<Record<string, unknown>> = [];
+    let cacheOrigin: 'live' | 'cache' | 'mock' = 'mock';
+    let rawRoot: string | null = null;
+    let normalizedRoot: string | null = null;
+    let fetchedAt = Date.now();
 
     if (rc && Array.isArray(rc?.data || rc)) {
-      // adapt RentCast / mock response shape, preserve original address/source when available
       const items = Array.isArray(rc.data) ? rc.data : rc;
-      listings = items.map((it: any) => ({
-        id: it.id || it.listingId || String(Math.random()).slice(2),
-        address: it.address || [it.street || it.addressLine || it.addressLine1 || it.title, it.city, it.state, it.zip].filter(Boolean).join(', ') || `Unknown ${zip}`,
-        zip: zip,
-        bedrooms: it.bedrooms || minBedrooms,
-        purchasePrice: it.price || it.listPrice || (it.estimate && it.estimate.purchasePrice) || 100000,
-        estRent: it.rent || it.monthlyRent || it.estimate?.rent || 1200,
-        source: it.source || 'rentcast',
-        image: it.image || it.photo || it.photos?.[0] || `https://via.placeholder.com/560x420?text=${encodeURIComponent((it.address||it.title||'Listing').slice(0,24))}`
-      }));
+      const isMockResponse = items.some((it: Record<string, unknown>) => String(it.source || '').startsWith('mock'));
+
+      if (isMockResponse) {
+        listings = [];
+        cacheOrigin = 'mock';
+      } else {
+        listings = normalizeListings(items, zip, Number(minBedrooms), 'rentcast-live');
+        cacheOrigin = 'live';
+
+        const rawSnapshot = {
+          zipCode: zip,
+          bedrooms: Number(minBedrooms),
+          fetchedAt,
+          source: 'rentcast-live',
+          payload: items,
+        };
+        const normalizedSnapshot = {
+          zipCode: zip,
+          bedrooms: Number(minBedrooms),
+          fetchedAt,
+          source: 'rentcast-live',
+          listings,
+        };
+
+        const rawUpload = await uploadToStorage(JSON.stringify(rawSnapshot));
+        const normalizedUpload = await uploadToStorage(JSON.stringify(normalizedSnapshot));
+
+        rawRoot = rawUpload.success ? rawUpload.hash || null : null;
+        normalizedRoot = normalizedUpload.success ? normalizedUpload.hash || null : null;
+
+        upsertRentcastCacheEntry({
+          key: cacheKey,
+          zipCode: zip,
+          bedrooms: Number(minBedrooms),
+          fetchedAt,
+          rawCount: items.length,
+          normalizedCount: listings.length,
+          rawRoot,
+          normalizedRoot,
+          listings,
+        });
+      }
     } else {
-      // generate a mock listing for demo
-      listings = [{
-        id: 'mock-' + Date.now(),
-        address: `675 W Willis St, Detroit, MI ${zip}`,
-        zip,
-        bedrooms: minBedrooms,
-        purchasePrice: 90000,
-        estRent: 900,
-        source: 'mock-enriched',
-        image: `https://via.placeholder.com/560x420?text=${encodeURIComponent('675 W Willis St')}`
-      }];
+      const cached = await loadCachedRentcastListings(zip, Number(minBedrooms));
+
+      if (cached?.listings?.length) {
+        listings = normalizeListings(cached.listings, zip, Number(minBedrooms), 'rentcast-cache');
+        cacheOrigin = 'cache';
+        fetchedAt = cached.entry.fetchedAt;
+        rawRoot = cached.entry.rawRoot || null;
+        normalizedRoot = cached.entry.normalizedRoot || null;
+      } else {
+        listings = [];
+      }
     }
 
-    const results: any[] = [];
+    const results: Array<Record<string, unknown>> = [];
     const logs = readPersist('data/logs.json') || [];
     const savedListings = readPersist('data/listings.json') || [];
 
     for (const p of listings) {
-      const fmr = getFMR(zip, p.bedrooms || 1);
-      // compute metrics
-      const annualRent = (p.estRent || fmr) * 12;
-      const purchase = p.purchasePrice || 100000;
-      const rentPct = (fmr) / purchase; // monthly FMR compared to purchase
-      // Flag banger: monthly FMR > 1.5% of purchase price
-      const isBanger = fmr > (0.015 * purchase);
+      const fairMarketRent = await getFairMarketRent(String(p.zip), Number(p.bedrooms || 1), String(p.address || ''));
+      const fmr = fairMarketRent.value;
+      const estRent = Number(p.estRent || fmr);
+      const rawPurchase = p.purchasePrice ? Number(p.purchasePrice) : null;
+      const purchase = rawPurchase === null ? null : getValidatedPurchasePrice(rawPurchase, estRent);
 
-      const grossYield = (annualRent / purchase) * 100; // percent
-      const estExpenses = Math.round(annualRent * 0.35);
-      const netOperating = Math.round(annualRent - estExpenses);
-      const capRate = (netOperating / purchase) * 100;
+      if (purchase === null) {
+        continue;
+      }
 
-      const explanation = isBanger
-        ? `Banger Deal: HUD FMR $${fmr}/mo is > 1.5% of purchase price ($${purchase}). Estimated annual rent $${annualRent}, net operating income $${netOperating}.` 
-        : `Match: HUD FMR $${fmr}/mo. Estimated annual rent $${annualRent}.`;
+      const isBanger = purchase ? fmr > (0.015 * purchase) : false;
+      const underwriting = calculateUnderwriting({ purchasePrice: purchase, estRent });
+
+      const explanation = buildReasoning({
+        purchasePrice: purchase,
+        estRent,
+        fmr,
+        monthlyCashflow: underwriting.monthlyCashflow,
+        capRate: underwriting.capRate,
+        roi: underwriting.roi,
+        bedrooms: Number(p.bedrooms || 1),
+        zip: String(p.zip),
+      });
 
       const rec = {
-        id: p.id,
-        address: p.address,
-        zip: p.zip,
-        bedrooms: p.bedrooms,
+        id: String(p.id),
+        address: String(p.address),
+        zip: String(p.zip),
+        bedrooms: Number(p.bedrooms),
+        bathrooms: p.bathrooms ? Number(p.bathrooms) : null,
+        propertyType: p.propertyType || null,
+        squareFootage: p.squareFootage ? Number(p.squareFootage) : null,
         purchasePrice: purchase,
-        estRent: p.estRent || fmr,
+        askingRent: null,
+        estRent,
         image: p.image || null,
         locationScore: p.locationScore || null,
         demandSignal: p.demandSignal || null,
         fmr,
-        annualRent,
-        grossYield: Number(grossYield.toFixed(2)),
-        estExpenses,
-        netOperating,
-        capRate: Number(capRate.toFixed(2)),
+        fmrSource: fairMarketRent.source,
+        annualRent: underwriting.annualRent,
+        annualCashflow: underwriting.annualCashflow,
+        grossYield: underwriting.grossYield,
+        estExpenses: underwriting.estExpenses,
+        netOperating: underwriting.netOperating,
+        cashflow: underwriting.monthlyCashflow,
+        capRate: underwriting.capRate,
+        roi: underwriting.roi,
         isBanger,
         explanation,
         timestamp: Date.now(),
-        source: p.source || 'unknown'
+        source: p.source || 'unknown',
+        listingType: 'sale-or-valued',
+        url: p.url || null,
+        contactEmail: p.contactEmail || null,
+        contactPhone: p.contactPhone || null,
       };
 
       // persist to listings
@@ -117,7 +309,7 @@ export async function POST(req: Request) {
       logs.push({ time: Date.now(), type: isBanger ? 'banger' : 'match', message: explanation, listingId: rec.id });
 
       // Build agent memory and save to storage (local fallback via uploadToStorage)
-      const memory = { agentId: owner || 'autonomous', listing: rec, explanation, createdAt: Date.now() };
+      const memory = { agentId: owner || 'scan-session', owner: owner || null, listing: rec, explanation, createdAt: Date.now() };
       try {
         const upload = await uploadToStorage(JSON.stringify(memory));
         if (upload?.success) {
@@ -125,17 +317,75 @@ export async function POST(req: Request) {
         } else {
           logs.push({ time: Date.now(), type: 'storage_error', message: String(upload?.error || 'unknown') });
         }
-      } catch (e: any) {
-        logs.push({ time: Date.now(), type: 'storage_error', message: String(e?.message || e) });
+      } catch (error) {
+        logs.push({ time: Date.now(), type: 'storage_error', message: String(error) });
       }
     }
+
+    const agentMemory = {
+      agentId: owner ? `agent-${owner}` : 'scan-session',
+      owner: owner || null,
+      preferences,
+      history: [`I completed a scan for ZIP ${zip} and found ${results.length} recommendations (${cacheOrigin})`],
+      lastScanTimestamp: Date.now(),
+      recommendations: results.slice(0, 10),
+    };
+
+    let memoryRoot: string | null = null;
+
+    try {
+      const upload = await uploadToStorage(JSON.stringify(agentMemory));
+      if (upload.success && upload.hash) {
+        memoryRoot = upload.hash;
+        if (owner) {
+          upsertAgentRecord(owner, {
+            owner,
+            agentId: `agent-${owner}`,
+            preferences,
+            memoryRoot: upload.hash,
+            latestListingsRoot: normalizedRoot,
+            latestRawRentcastRoot: rawRoot,
+            latestListingsZip: zip,
+            latestListingsBedrooms: Number(minBedrooms),
+            latestListingsFetchedAt: fetchedAt,
+          });
+        }
+      }
+    } catch (error) {
+      logs.push({ time: Date.now(), type: 'agent_memory_error', message: String(error) });
+    }
+
+    if (owner && !memoryRoot) {
+      upsertAgentRecord(owner, {
+        owner,
+        agentId: `agent-${owner}`,
+        preferences,
+        latestListingsRoot: normalizedRoot,
+        latestRawRentcastRoot: rawRoot,
+        latestListingsZip: zip,
+        latestListingsBedrooms: Number(minBedrooms),
+        latestListingsFetchedAt: fetchedAt,
+      });
+    }
+
+    const warmupListingIds = selectWarmupListingIds(results);
+    const analysisPrecompute = await precomputePropertyAnalyses(warmupListingIds);
+    const analysisGenerated = analysisPrecompute.filter((entry) => entry.status === 'generated').length;
+    const analysisCached = analysisPrecompute.filter((entry) => entry.status === 'cache-hit').length;
+    const analysisErrors = analysisPrecompute.filter((entry) => entry.status === 'error').length;
+
+    logs.push({
+      time: Date.now(),
+      type: 'analysis_precompute',
+      message: `Precomputed ${analysisGenerated} analyses, reused ${analysisCached}, errors ${analysisErrors}, warmed ${warmupListingIds.length} likely first-click listings`,
+    });
 
     // persist files
     persistFile('data/listings.json', savedListings);
     persistFile('data/logs.json', logs);
 
-    return NextResponse.json({ success: true, recommendations: results });
-  } catch (error: any) {
+    return NextResponse.json({ success: true, recommendations: results, memory: agentMemory, memoryRoot, cacheOrigin, listingsRoot: normalizedRoot, rawRoot, analysisPrecompute });
+  } catch (error) {
     console.error('scan route error', error);
     return NextResponse.json({ success: false, error: String(error) }, { status: 500 });
   }

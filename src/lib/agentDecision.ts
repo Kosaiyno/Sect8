@@ -54,8 +54,8 @@ export async function decideForListing(listing: any, agentPrefs: any): Promise<D
     if (use0g) {
       const prompt = `You are an investing assistant. Given this property data, provide a concise reasoning (1-3 sentences) why this is a good investment and one suggested next action.\n\nProperty: ${JSON.stringify(listing)}\nAgentPrefs: ${JSON.stringify(agentPrefs)}`;
       const messages = [
-        { role: 'system', content: 'You are an investing assistant.' },
-        { role: 'user', content: prompt }
+        { role: 'system' as const, content: 'You are an investing assistant.' },
+        { role: 'user' as const, content: prompt }
       ];
 
       try {
