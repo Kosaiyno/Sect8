@@ -1,10 +1,8 @@
 import 'server-only';
 
 import crypto from 'node:crypto';
-import fs from 'node:fs';
-import path from 'node:path';
+import { downloadAgentMemory, uploadAgentMemory } from '@/og-integration/storage';
 import { zgCompute } from '@/og-integration/compute';
-import { uploadAgentMemory } from '@/og-integration/storage';
 import type { PropertyDetailBundle } from '@/lib/propertyDetails';
 
 const ANALYSIS_PROMPT_VERSION = 4;
@@ -37,32 +35,6 @@ export type PropertyAnalysisBundle = {
   record: AnalysisRecord;
   fromCache: boolean;
 };
-
-const dataDir = path.resolve(process.cwd(), 'data');
-const analysisFile = path.join(dataDir, 'property-analyses.json');
-
-function ensureDataDir() {
-  if (!fs.existsSync(dataDir)) {
-    fs.mkdirSync(dataDir, { recursive: true });
-  }
-}
-
-function readAnalysisCache(): Record<string, AnalysisRecord> {
-  if (!fs.existsSync(analysisFile)) {
-    return {};
-  }
-
-  try {
-    return JSON.parse(fs.readFileSync(analysisFile, 'utf8')) || {};
-  } catch {
-    return {};
-  }
-}
-
-function writeAnalysisCache(cache: Record<string, AnalysisRecord>) {
-  ensureDataDir();
-  fs.writeFileSync(analysisFile, JSON.stringify(cache, null, 2));
-}
 
 function hashPayload(payload: unknown) {
   return crypto.createHash('sha256').update(JSON.stringify(payload)).digest('hex');
@@ -601,38 +573,67 @@ async function uploadAnalysisRecord(
   });
 }
 
-export async function getOrCreatePropertyAnalysis(bundle: PropertyDetailBundle): Promise<PropertyAnalysisBundle> {
-  const cache = readAnalysisCache();
+async function readAnalysisRecordFromStorage(
+  storageRoot: string | null | undefined,
+  listingId: string,
+  sourceFingerprint: string,
+  fallback: PropertyInvestmentAnalysis,
+  bundle: PropertyDetailBundle,
+) {
+  if (!storageRoot) {
+    return null;
+  }
+
+  try {
+    const snapshot = await downloadAgentMemory(storageRoot) as {
+      type?: string;
+      listingId?: string;
+      generatedAt?: number;
+      sourceFingerprint?: string;
+      provider?: AnalysisRecord['provider'];
+      payload?: {
+        analysis?: PropertyInvestmentAnalysis;
+      };
+    };
+
+    if (
+      snapshot?.type !== 'property-analysis'
+      || String(snapshot.listingId || '') !== listingId
+      || String(snapshot.sourceFingerprint || '') !== sourceFingerprint
+      || !snapshot.payload?.analysis
+    ) {
+      return null;
+    }
+
+    return {
+      listingId,
+      sourceFingerprint,
+      generatedAt: Number(snapshot.generatedAt || Date.now()),
+      provider: snapshot.provider || 'fallback',
+      storageRoot,
+      analysis: postProcessAnalysis(snapshot.payload.analysis, fallback, bundle),
+    } satisfies AnalysisRecord;
+  } catch {
+    return null;
+  }
+}
+
+export async function getOrCreatePropertyAnalysis(
+  bundle: PropertyDetailBundle,
+  existingStorageRoot?: string | null,
+): Promise<PropertyAnalysisBundle> {
   const fingerprint = hashPayload(getFingerprintPayload(bundle));
   const listingId = String(bundle.listing.id);
-  const cached = cache[listingId];
   const fallback = buildFallbackAnalysis(bundle);
+  const cached = await readAnalysisRecordFromStorage(
+    existingStorageRoot || String(bundle.listing.analysisRoot || ''),
+    listingId,
+    fingerprint,
+    fallback,
+    bundle,
+  );
 
-  if (cached && cached.sourceFingerprint === fingerprint) {
-    const normalizedCachedAnalysis = postProcessAnalysis(cached.analysis, fallback, bundle);
-    if (JSON.stringify(normalizedCachedAnalysis) !== JSON.stringify(cached.analysis)) {
-      cached.analysis = normalizedCachedAnalysis;
-      cache[listingId] = cached;
-      writeAnalysisCache(cache);
-    }
-
-    if (!cached.storageRoot) {
-      try {
-        cached.storageRoot = await uploadAnalysisRecord(
-          bundle,
-          listingId,
-          fingerprint,
-          cached.generatedAt,
-          cached.provider,
-          cached.analysis,
-        );
-        cache[listingId] = cached;
-        writeAnalysisCache(cache);
-      } catch (error) {
-        console.error('Property analysis storage backfill error', error);
-      }
-    }
-
+  if (cached) {
     return { record: cached, fromCache: true };
   }
 
@@ -660,7 +661,5 @@ export async function getOrCreatePropertyAnalysis(bundle: PropertyDetailBundle):
     console.error('Property analysis storage error', error);
   }
 
-  cache[listingId] = record;
-  writeAnalysisCache(cache);
   return { record, fromCache: false };
 }

@@ -11,6 +11,7 @@ type UserPreferences = {
 type ActivatedAgent = {
   id: string;
   owner: string;
+  recordRoot?: string | null;
   preferences: Record<string, unknown>;
   memory: {
     agentId: string;
@@ -60,6 +61,7 @@ export default function AgentDashboard({
       const activatedAgent = {
         id: persistJson.agentId || `agent-${owner}`,
         owner,
+        recordRoot: persistJson.recordRoot || null,
         preferences: DEFAULT_PREFERENCES,
         memory: {
           agentId: persistJson.agentId || `agent-${owner}`,

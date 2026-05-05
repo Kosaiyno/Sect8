@@ -1,8 +1,7 @@
 import { NextResponse } from 'next/server';
-import fs from 'fs';
-import path from 'path';
 import { fetchRealProperties, getFairMarketRent, getValidatedPurchasePrice, isExcludedPropertyType, normalizePropertyType } from '@/lib/realDataService';
 import { uploadToStorage } from '@/app/actions/og';
+import { getAgentRecordCookieName, readCookieValue, write0gJson, type AgentLogEntry, type ListingsSnapshot } from '@/lib/0gPersistence';
 import { upsertAgentRecord } from '@/lib/agentStore';
 import { getOrCreatePropertyAnalysis } from '@/lib/propertyAnalysis';
 import { getPropertyDetailBundle } from '@/lib/propertyDetails';
@@ -67,31 +66,18 @@ function buildReasoning(listing: {
   return `I surfaced this house because it is actively listed for sale, the area rent benchmark for a ${listing.bedrooms}-bedroom unit is about $${listing.fmr}/mo, projected monthly cash flow is about $${listing.monthlyCashflow}/mo, and my current underwriting points to a cap rate near ${listing.capRate?.toFixed(1)}% with an all-cash ROI near ${listing.roi?.toFixed(1)}%.`;
 }
 
-function persistFile(relPath: string, data: unknown) {
-  const file = path.resolve(process.cwd(), relPath);
-  const dir = path.dirname(file);
-  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-  fs.writeFileSync(file, JSON.stringify(data, null, 2));
-}
-
-function readPersist(relPath: string) {
-  const file = path.resolve(process.cwd(), relPath);
-  if (!fs.existsSync(file)) return null;
-  try { return JSON.parse(fs.readFileSync(file, 'utf8')); } catch { return null; }
-}
-
-async function precomputePropertyAnalyses(listingIds: string[]) {
+async function precomputePropertyAnalyses(listingIds: string[], listingsRoot: string | null) {
   const results = [];
 
   for (const listingId of listingIds) {
     try {
-      const bundle = await getPropertyDetailBundle(listingId);
+      const bundle = await getPropertyDetailBundle(listingId, listingsRoot);
       if (!bundle) {
         results.push({ listingId, status: 'missing-bundle' as const });
         continue;
       }
 
-      const analysis = await getOrCreatePropertyAnalysis(bundle);
+      const analysis = await getOrCreatePropertyAnalysis(bundle, String(bundle.listing.analysisRoot || ''));
       results.push({
         listingId,
         status: analysis.fromCache ? 'cache-hit' as const : 'generated' as const,
@@ -169,6 +155,12 @@ export async function POST(req: Request) {
       ? String(body.owner || (body.preferences && body.preferences.owner) || '').trim().toLowerCase()
       : '';
     const preferences = body.preferences || { zipCode: zip, minBedrooms };
+    const cookieName = owner ? getAgentRecordCookieName(owner) : null;
+    const currentRecordRoot = owner
+      ? (typeof body.recordRoot === 'string' && body.recordRoot.trim()
+        ? body.recordRoot.trim()
+        : readCookieValue(req.headers.get('cookie'), cookieName || ''))
+      : null;
 
     if (!zip) return NextResponse.json({ success: false, error: 'zipCode required' }, { status: 400 });
 
@@ -198,31 +190,9 @@ export async function POST(req: Request) {
           source: 'rentcast-live',
           payload: items,
         };
-        const normalizedSnapshot = {
-          zipCode: zip,
-          bedrooms: Number(minBedrooms),
-          fetchedAt,
-          source: 'rentcast-live',
-          listings,
-        };
-
         const rawUpload = await uploadToStorage(JSON.stringify(rawSnapshot));
-        const normalizedUpload = await uploadToStorage(JSON.stringify(normalizedSnapshot));
 
         rawRoot = rawUpload.success ? rawUpload.hash || null : null;
-        normalizedRoot = normalizedUpload.success ? normalizedUpload.hash || null : null;
-
-        upsertRentcastCacheEntry({
-          key: cacheKey,
-          zipCode: zip,
-          bedrooms: Number(minBedrooms),
-          fetchedAt,
-          rawCount: items.length,
-          normalizedCount: listings.length,
-          rawRoot,
-          normalizedRoot,
-          listings,
-        });
       }
     } else {
       const cached = await loadCachedRentcastListings(zip, Number(minBedrooms));
@@ -239,8 +209,7 @@ export async function POST(req: Request) {
     }
 
     const results: Array<Record<string, unknown>> = [];
-    const logs = readPersist('data/logs.json') || [];
-    const savedListings = readPersist('data/listings.json') || [];
+    const logs: AgentLogEntry[] = [];
 
     for (const p of listings) {
       const fairMarketRent = await getFairMarketRent(String(p.zip), Number(p.bedrooms || 1), String(p.address || ''));
@@ -301,8 +270,6 @@ export async function POST(req: Request) {
         contactPhone: p.contactPhone || null,
       };
 
-      // persist to listings
-      savedListings.push(rec);
       results.push(rec);
 
       // append log entry
@@ -322,6 +289,16 @@ export async function POST(req: Request) {
       }
     }
 
+    const provisionalListingsRoot = await write0gJson({
+      type: 'listings-snapshot',
+      owner: owner || null,
+      zipCode: zip,
+      bedrooms: Number(minBedrooms),
+      fetchedAt,
+      rawRoot,
+      listings: results,
+    } satisfies ListingsSnapshot);
+
     const agentMemory = {
       agentId: owner ? `agent-${owner}` : 'scan-session',
       owner: owner || null,
@@ -332,44 +309,19 @@ export async function POST(req: Request) {
     };
 
     let memoryRoot: string | null = null;
+    let logsRoot: string | null = null;
 
     try {
       const upload = await uploadToStorage(JSON.stringify(agentMemory));
       if (upload.success && upload.hash) {
         memoryRoot = upload.hash;
-        if (owner) {
-          upsertAgentRecord(owner, {
-            owner,
-            agentId: `agent-${owner}`,
-            preferences,
-            memoryRoot: upload.hash,
-            latestListingsRoot: normalizedRoot,
-            latestRawRentcastRoot: rawRoot,
-            latestListingsZip: zip,
-            latestListingsBedrooms: Number(minBedrooms),
-            latestListingsFetchedAt: fetchedAt,
-          });
-        }
       }
     } catch (error) {
       logs.push({ time: Date.now(), type: 'agent_memory_error', message: String(error) });
     }
 
-    if (owner && !memoryRoot) {
-      upsertAgentRecord(owner, {
-        owner,
-        agentId: `agent-${owner}`,
-        preferences,
-        latestListingsRoot: normalizedRoot,
-        latestRawRentcastRoot: rawRoot,
-        latestListingsZip: zip,
-        latestListingsBedrooms: Number(minBedrooms),
-        latestListingsFetchedAt: fetchedAt,
-      });
-    }
-
     const warmupListingIds = selectWarmupListingIds(results);
-    const analysisPrecompute = await precomputePropertyAnalyses(warmupListingIds);
+    const analysisPrecompute = await precomputePropertyAnalyses(warmupListingIds, provisionalListingsRoot);
     const analysisGenerated = analysisPrecompute.filter((entry) => entry.status === 'generated').length;
     const analysisCached = analysisPrecompute.filter((entry) => entry.status === 'cache-hit').length;
     const analysisErrors = analysisPrecompute.filter((entry) => entry.status === 'error').length;
@@ -380,11 +332,93 @@ export async function POST(req: Request) {
       message: `Precomputed ${analysisGenerated} analyses, reused ${analysisCached}, errors ${analysisErrors}, warmed ${warmupListingIds.length} likely first-click listings`,
     });
 
-    // persist files
-    persistFile('data/listings.json', savedListings);
-    persistFile('data/logs.json', logs);
+    const analysisRootById = new Map(
+      analysisPrecompute
+        .filter((entry) => entry.status !== 'error' && entry.storageRoot)
+        .map((entry) => [String(entry.listingId), entry.storageRoot as string])
+    );
 
-    return NextResponse.json({ success: true, recommendations: results, memory: agentMemory, memoryRoot, cacheOrigin, listingsRoot: normalizedRoot, rawRoot, analysisPrecompute });
+    const enrichedResults = results.map((result) => ({
+      ...result,
+      listingsRoot: null,
+      analysisRoot: analysisRootById.get(String(result.id)) || null,
+    }));
+
+    logsRoot = await write0gJson({
+      type: 'scan-logs',
+      owner: owner || null,
+      zipCode: zip,
+      createdAt: Date.now(),
+      entries: logs,
+    });
+
+    normalizedRoot = await write0gJson({
+      type: 'listings-snapshot',
+      owner: owner || null,
+      zipCode: zip,
+      bedrooms: Number(minBedrooms),
+      fetchedAt,
+      rawRoot,
+      logsRoot,
+      listings: enrichedResults,
+    } satisfies ListingsSnapshot);
+
+    const finalResults = enrichedResults.map((result) => ({
+      ...result,
+      listingsRoot: normalizedRoot,
+    }));
+
+    normalizedRoot = await write0gJson({
+      type: 'listings-snapshot',
+      owner: owner || null,
+      zipCode: zip,
+      bedrooms: Number(minBedrooms),
+      fetchedAt,
+      rawRoot,
+      logsRoot,
+      listings: finalResults,
+    } satisfies ListingsSnapshot);
+
+    upsertRentcastCacheEntry({
+      key: cacheKey,
+      zipCode: zip,
+      bedrooms: Number(minBedrooms),
+      fetchedAt,
+      rawCount: listings.length,
+      normalizedCount: finalResults.length,
+      rawRoot,
+      normalizedRoot,
+      listings: finalResults,
+    });
+
+    let recordRoot: string | null = null;
+    if (owner) {
+      const updated = await upsertAgentRecord(owner, {
+        owner,
+        agentId: `agent-${owner}`,
+        preferences,
+        memoryRoot,
+        latestListingsRoot: normalizedRoot,
+        latestRawRentcastRoot: rawRoot,
+        latestListingsZip: zip,
+        latestListingsBedrooms: Number(minBedrooms),
+        latestListingsFetchedAt: fetchedAt,
+        logsRoot,
+      }, currentRecordRoot);
+      recordRoot = updated.root;
+    }
+
+    const response = NextResponse.json({ success: true, recommendations: finalResults, memory: agentMemory, memoryRoot, recordRoot, cacheOrigin, listingsRoot: normalizedRoot, rawRoot, logsRoot, analysisPrecompute });
+    if (cookieName && recordRoot) {
+      response.cookies.set(cookieName, recordRoot, {
+        httpOnly: true,
+        sameSite: 'lax',
+        secure: process.env.NODE_ENV === 'production',
+        path: '/',
+      });
+    }
+
+    return response;
   } catch (error) {
     console.error('scan route error', error);
     return NextResponse.json({ success: false, error: String(error) }, { status: 500 });

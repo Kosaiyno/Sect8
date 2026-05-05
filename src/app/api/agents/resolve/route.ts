@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { getAgentRecordCookieName, read0gJson, readCookieValue, type ListingsSnapshot } from '@/lib/0gPersistence';
 import { getAgentRecord } from '@/lib/agentStore';
 import { loadCachedRentcastListings } from '@/lib/rentcastCache';
 import { getFairMarketRent, getValidatedPurchasePrice, isExcludedPropertyType } from '@/lib/realDataService';
@@ -85,23 +86,34 @@ export async function POST(req: Request) {
       return NextResponse.json({ success: false, error: 'owner required' }, { status: 400 });
     }
 
-    const stored = getAgentRecord(owner);
+    const cookieName = getAgentRecordCookieName(owner);
+    const currentRoot = typeof body.recordRoot === 'string' && body.recordRoot.trim()
+      ? body.recordRoot.trim()
+      : readCookieValue(req.headers.get('cookie'), cookieName);
+    const stored = await getAgentRecord(owner, currentRoot);
     if (!stored) {
       return NextResponse.json({ success: true, agent: null, memoryRoot: null, record: null });
     }
 
     const preferences = stored?.preferences || DEFAULT_PREFERENCES;
-    const cached = stored.latestListingsZip && stored.latestListingsBedrooms
+    const activeZip = stored.latestListingsZip || String((preferences as { zipCode?: string })?.zipCode || DEFAULT_PREFERENCES.zipCode);
+    const snapshot = await read0gJson<ListingsSnapshot>(stored.latestListingsRoot);
+    const snapshotListings = Array.isArray(snapshot?.listings) ? snapshot.listings : null;
+    const cached = !snapshotListings && stored.latestListingsZip && stored.latestListingsBedrooms
       ? await loadCachedRentcastListings(stored.latestListingsZip, stored.latestListingsBedrooms)
       : null;
-    const activeZip = stored.latestListingsZip || String((preferences as { zipCode?: string })?.zipCode || DEFAULT_PREFERENCES.zipCode);
-    const recommendations = Array.isArray(cached?.listings) ? await toRecommendations(cached.listings, activeZip) : [];
+    const recommendations = snapshotListings
+      ? snapshotListings.map((listing) => ({ ...listing, listingsRoot: stored.latestListingsRoot || null }))
+      : Array.isArray(cached?.listings)
+        ? await toRecommendations(cached.listings, activeZip)
+        : [];
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       success: true,
       agent: {
         id: stored.agentId,
         owner: owner || stored?.owner || null,
+        recordRoot: stored.recordRoot || currentRoot || null,
         preferences,
         memory: {
           agentId: stored.agentId,
@@ -119,8 +131,18 @@ export async function POST(req: Request) {
       },
       recommendations,
       record: stored,
+      recordRoot: stored.recordRoot || currentRoot || null,
       memoryRoot: stored?.memoryRoot || null,
     });
+    if (stored.recordRoot) {
+      response.cookies.set(cookieName, stored.recordRoot, {
+        httpOnly: true,
+        sameSite: 'lax',
+        secure: process.env.NODE_ENV === 'production',
+        path: '/',
+      });
+    }
+    return response;
   } catch (error) {
     console.error('agents/resolve error', error);
     return NextResponse.json({ success: false, error: String(error) }, { status: 500 });

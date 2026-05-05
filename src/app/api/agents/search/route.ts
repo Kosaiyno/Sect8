@@ -1,4 +1,6 @@
 import { NextResponse } from 'next/server';
+import { getAgentRecordCookieName, read0gJson, readCookieValue, type ListingsSnapshot } from '@/lib/0gPersistence';
+import { getAgentRecord } from '@/lib/agentStore';
 import { getFairMarketRent, getValidatedPurchasePrice, isExcludedPropertyType, normalizePropertyType } from '@/lib/realDataService';
 import { readRentcastCache } from '@/lib/rentcastCache';
 
@@ -83,9 +85,46 @@ async function getCachedRecommendations() {
   return Array.from(deduped.values()).filter(Boolean);
 }
 
-export async function GET() {
-  const cache = readRentcastCache();
-  const options = Object.values(cache)
+async function getLatestSnapshotRecommendations(request: Request, owner: string, recordRoot?: string | null) {
+  if (!owner) {
+    return { listingsRoot: null, recommendations: [] as ListingRecord[] };
+  }
+
+  const cookieName = getAgentRecordCookieName(owner);
+  const currentRoot = recordRoot || readCookieValue(request.headers.get('cookie'), cookieName);
+  const stored = await getAgentRecord(owner, currentRoot);
+  if (!stored?.latestListingsRoot) {
+    return { listingsRoot: null, recommendations: [] as ListingRecord[] };
+  }
+
+  const snapshot = await read0gJson<ListingsSnapshot>(stored.latestListingsRoot);
+  const recommendations: ListingRecord[] = Array.isArray(snapshot?.listings)
+    ? snapshot.listings.map((listing) => ({ ...listing, listingsRoot: stored.latestListingsRoot || null }))
+    : [];
+
+  return { listingsRoot: stored.latestListingsRoot || null, recommendations };
+}
+
+export async function GET(request: Request) {
+  const { searchParams } = new URL(request.url);
+  const owner = typeof searchParams.get('owner') === 'string' ? String(searchParams.get('owner') || '').trim().toLowerCase() : '';
+  const recordRoot = typeof searchParams.get('recordRoot') === 'string' ? String(searchParams.get('recordRoot') || '').trim() : '';
+  const rooted = await getLatestSnapshotRecommendations(request, owner, recordRoot || null);
+  const rootedListings = rooted.recommendations;
+
+  const options = (rootedListings.length
+    ? rootedListings.map((listing) => {
+        const address = String(listing.address || listing.formattedAddress || '');
+        const location = getLocationParts(address);
+
+        return {
+          zipCode: String(listing.zip || ''),
+          city: location.city || 'Unknown City',
+          state: location.state || 'Unknown State',
+          label: `${String(listing.zip || '')} - ${location.city || 'Unknown City'}, ${location.state || 'Unknown State'}`,
+        };
+      })
+    : Object.values(readRentcastCache())
     .map((entry) => {
       const firstListing = entry.listings?.find((listing) => typeof listing.address === 'string' || typeof listing.formattedAddress === 'string');
       const address = String(firstListing?.address || firstListing?.formattedAddress || '');
@@ -97,7 +136,7 @@ export async function GET() {
         state: location.state || 'Unknown State',
         label: `${entry.zipCode} - ${location.city || 'Unknown City'}, ${location.state || 'Unknown State'}`,
       };
-    })
+    }))
     .filter((option, index, array) => array.findIndex((candidate) => candidate.zipCode === option.zipCode) === index)
     .sort((left, right) => left.zipCode.localeCompare(right.zipCode));
 
@@ -107,8 +146,12 @@ export async function GET() {
 export async function POST(req: Request) {
   const body = await req.json();
   const requestedZip = typeof body.zipCode === 'string' ? body.zipCode.trim() : '';
+  const owner = typeof body.owner === 'string' ? body.owner.trim().toLowerCase() : '';
+  const recordRoot = typeof body.recordRoot === 'string' ? body.recordRoot.trim() : '';
   const filters = body.filters || {};
-  const recommendations = (await getCachedRecommendations()).filter((recommendation) => {
+  const rooted = await getLatestSnapshotRecommendations(req, owner, recordRoot || null);
+  const baseRecommendations = rooted.recommendations.length ? rooted.recommendations : await getCachedRecommendations();
+  const recommendations = baseRecommendations.filter((recommendation) => {
     const matchesZip = !requestedZip || String(recommendation?.zip || '') === requestedZip;
     const address = String(recommendation?.address || '');
     const location = getLocationParts(address);

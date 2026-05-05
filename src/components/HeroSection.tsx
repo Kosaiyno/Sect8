@@ -7,6 +7,8 @@ import WatchlistButton from '@/components/WatchlistButton';
 type RecommendationSummary = {
   id: string;
   address: string;
+  listingsRoot?: string | null;
+  analysisRoot?: string | null;
   purchasePrice?: number | null;
   estRent?: number;
   netOperating?: number;
@@ -49,6 +51,13 @@ export default function HeroSection({ recommendations, isScanning = false, targe
   const verifiedRecommendations = saleRecommendations.filter((recommendation) => recommendation.fmrSource === 'hud');
   const topPick = [...verifiedRecommendations].sort((left, right) => scoreRecommendation(right) - scoreRecommendation(left))[0] || null;
   const monthlyNoi = topPick ? Math.round(Number(topPick.netOperating || 0) / 12) : 0;
+  const detailHref = topPick ? {
+    pathname: `/dashboard/properties/${encodeURIComponent(topPick.id)}`,
+    query: {
+      ...(topPick.listingsRoot ? { listingsRoot: topPick.listingsRoot } : {}),
+      ...(topPick.analysisRoot ? { analysisRoot: topPick.analysisRoot } : {}),
+    },
+  } : null;
 
   if (!topPick) {
     return (
@@ -136,7 +145,7 @@ export default function HeroSection({ recommendations, isScanning = false, targe
 
             <div className="flex flex-wrap gap-3">
               <Link
-                href={`/dashboard/properties/${encodeURIComponent(topPick.id)}`}
+                href={detailHref || `/dashboard/properties/${encodeURIComponent(topPick.id)}`}
                 prefetch
                 className="btn-primary min-w-[180px] text-center text-sm"
               >

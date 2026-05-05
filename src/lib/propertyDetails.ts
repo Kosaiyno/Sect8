@@ -1,7 +1,6 @@
 import 'server-only';
 
-import fs from 'node:fs';
-import path from 'node:path';
+import { read0gJson, type ListingsSnapshot } from '@/lib/0gPersistence';
 import { getFairMarketRent } from '@/lib/realDataService';
 import { resolveHousingAuthorityContact, type HousingAuthorityMatch } from '@/lib/phaDirectory';
 import { readRentcastCache } from '@/lib/rentcastCache';
@@ -109,19 +108,9 @@ export type PropertyDetailBundle = {
   };
 };
 
-const listingsFile = path.resolve(process.cwd(), 'data', 'listings.json');
-
-function readSavedListings() {
-  if (!fs.existsSync(listingsFile)) {
-    return [] as ListingRecord[];
-  }
-
-  try {
-    const parsed = JSON.parse(fs.readFileSync(listingsFile, 'utf8'));
-    return Array.isArray(parsed) ? parsed : [];
-  } catch {
-    return [] as ListingRecord[];
-  }
+async function readSavedListings(listingsRoot?: string | null) {
+  const snapshot = await read0gJson<ListingsSnapshot>(listingsRoot);
+  return Array.isArray(snapshot?.listings) ? snapshot.listings as ListingRecord[] : [];
 }
 
 function normalizeCachedListing(listing: Record<string, unknown>, zipCode: string) {
@@ -155,9 +144,9 @@ function normalizeCachedListing(listing: Record<string, unknown>, zipCode: strin
   } as ListingRecord;
 }
 
-export function getPropertyListingPreview(id: string) {
+export async function getPropertyListingPreview(id: string, listingsRoot?: string | null) {
   const normalizedId = decodeURIComponent(id);
-  const savedMatch = readSavedListings().find((listing) => String(listing.id) === normalizedId);
+  const savedMatch = (await readSavedListings(listingsRoot)).find((listing) => String(listing.id) === normalizedId);
   if (savedMatch) {
     return savedMatch as ListingRecord;
   }
@@ -218,8 +207,8 @@ function toRiskSeries(source: Record<string, unknown> | null | undefined, keys: 
   }));
 }
 
-export async function getPropertyDetailBundle(id: string): Promise<PropertyDetailBundle | null> {
-  const baseListing = getPropertyListingPreview(id);
+export async function getPropertyDetailBundle(id: string, listingsRoot?: string | null): Promise<PropertyDetailBundle | null> {
+  const baseListing = await getPropertyListingPreview(id, listingsRoot);
   if (!baseListing) {
     return null;
   }

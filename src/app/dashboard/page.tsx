@@ -13,6 +13,7 @@ import AgentDashboardWrapper from '@/components/AgentDashboardWrapper';
 type DashboardAgent = {
   id: string;
   owner: string;
+  recordRoot?: string | null;
   preferences: Record<string, unknown>;
   memory: {
     agentId: string;
@@ -151,7 +152,8 @@ export default function Dashboard() {
   useEffect(() => {
     async function loadZipOptions() {
       try {
-        const response = await fetch('/api/agents/search');
+        const ownerQuery = address ? `?owner=${encodeURIComponent(address)}` : '';
+        const response = await fetch(`/api/agents/search${ownerQuery}`);
         const json = await response.json();
         if (json.success && Array.isArray(json.zipOptions)) {
           setZipOptions(json.zipOptions);
@@ -178,7 +180,17 @@ export default function Dashboard() {
         const restoreRes = await fetch('/api/agents/resolve', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ owner: address }),
+          body: JSON.stringify({
+            owner: address,
+            recordRoot: (() => {
+              try {
+                const persisted = localStorage.getItem(getAgentStorageKey(address));
+                return persisted ? JSON.parse(persisted).recordRoot || null : null;
+              } catch {
+                return null;
+              }
+            })(),
+          }),
         });
         const restoreJson = await restoreRes.json();
         if (restoreJson.success && restoreJson.agent) {
@@ -294,7 +306,7 @@ export default function Dashboard() {
       const res = await fetch('/api/agents/search', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ zipCode: normalizedZip })
+        body: JSON.stringify({ zipCode: normalizedZip, owner: address, recordRoot: agent.recordRoot || null })
       });
       const json = await res.json();
       if (!json.success) throw new Error(json.error || 'Scan failed');
@@ -329,7 +341,7 @@ export default function Dashboard() {
       const res = await fetch('/api/agents/search', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ filters: filterSearch }),
+        body: JSON.stringify({ filters: filterSearch, owner: address, recordRoot: agent.recordRoot || null }),
       });
       const json = await res.json();
       if (!json.success) {

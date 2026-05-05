@@ -1,6 +1,8 @@
 export interface Property {
   id: string;
   address: string;
+  listingsRoot?: string | null;
+  analysisRoot?: string | null;
   price?: number;
   purchasePrice?: number | null;
   bedrooms: number;

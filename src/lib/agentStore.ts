@@ -1,62 +1,68 @@
 import 'server-only';
 
-import fs from 'node:fs';
-import path from 'node:path';
+import { normalizeOwner, read0gJson, write0gJson } from '@/lib/0gPersistence';
 
 export type StoredAgentRecord = {
   owner: string;
   agentId: string;
   preferences: Record<string, unknown>;
+  recordRoot?: string | null;
   memoryRoot?: string | null;
   latestListingsRoot?: string | null;
   latestRawRentcastRoot?: string | null;
   latestListingsZip?: string | null;
   latestListingsBedrooms?: number | null;
   latestListingsFetchedAt?: number | null;
+  logsRoot?: string | null;
   createdAt?: number;
   updatedAt?: number;
 };
 
-const dataDir = path.resolve(process.cwd(), 'data');
-const storeFile = path.join(dataDir, 'agents.json');
+type StoredAgentSnapshot = StoredAgentRecord & {
+  type: 'agent-record';
+  version: 1;
+};
 
-export function readAgentStore(): Record<string, StoredAgentRecord> {
-  if (!fs.existsSync(storeFile)) {
-    return {};
+export async function getAgentRecord(owner: string, recordRoot?: string | null) {
+  const normalized = normalizeOwner(owner);
+  const snapshot = await read0gJson<StoredAgentSnapshot>(recordRoot);
+
+  if (!snapshot || normalizeOwner(snapshot.owner) !== normalized) {
+    return null;
   }
 
-  try {
-    return JSON.parse(fs.readFileSync(storeFile, 'utf8')) || {};
-  } catch {
-    return {};
-  }
+  return {
+    ...snapshot,
+    owner: normalized,
+    recordRoot: recordRoot || snapshot.recordRoot || null,
+  } as StoredAgentRecord;
 }
 
-function normalizeOwner(owner: string) {
-  return owner.trim().toLowerCase();
-}
-
-export function getAgentRecord(owner: string) {
-  const store = readAgentStore();
-  return store[normalizeOwner(owner)] ?? null;
-}
-
-export function upsertAgentRecord(owner: string, record: Partial<StoredAgentRecord>) {
-  const store = readAgentStore();
-  const normalizedOwner = normalizeOwner(owner);
-
-  if (!fs.existsSync(dataDir)) {
-    fs.mkdirSync(dataDir, { recursive: true });
-  }
-
-  store[normalizedOwner] = {
-    ...(store[normalizedOwner] ?? {}),
+export async function upsertAgentRecord(owner: string, record: Partial<StoredAgentRecord>, currentRoot?: string | null) {
+  const normalized = normalizeOwner(owner);
+  const existing = await getAgentRecord(normalized, currentRoot);
+  const nextRecord: StoredAgentRecord = {
+    ...(existing ?? {}),
     ...record,
-    owner: normalizedOwner,
-    agentId: record.agentId || store[normalizedOwner]?.agentId || `agent-${normalizedOwner}`,
+    owner: normalized,
+    agentId: record.agentId || existing?.agentId || `agent-${normalized}`,
+    createdAt: record.createdAt || existing?.createdAt || Date.now(),
     updatedAt: Date.now(),
   } as StoredAgentRecord;
 
-  fs.writeFileSync(storeFile, JSON.stringify(store, null, 2));
-  return store[normalizedOwner];
+  const snapshot: StoredAgentSnapshot = {
+    ...nextRecord,
+    type: 'agent-record',
+    version: 1,
+    recordRoot: undefined,
+  };
+
+  const root = await write0gJson(snapshot);
+  return {
+    record: {
+      ...nextRecord,
+      recordRoot: root,
+    } as StoredAgentRecord,
+    root,
+  };
 }

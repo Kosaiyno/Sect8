@@ -7,6 +7,8 @@ import WatchlistButton from '@/components/WatchlistButton';
 type RecommendationCard = {
   id: string;
   address: string;
+  listingsRoot?: string | null;
+  analysisRoot?: string | null;
   zip?: string | number;
   bedrooms?: number;
   bathrooms?: number | null;
@@ -95,6 +97,13 @@ export default function RecommendationsTable({ recommendations }: Recommendation
             const monthlyNoi = Math.round(Number(recommendation.netOperating || 0) / 12);
             const propertyType = getPropertyType(recommendation);
             const hasVerifiedHud = recommendation.fmrSource === 'hud';
+            const detailHref = {
+              pathname: `/dashboard/properties/${encodeURIComponent(recommendation.id)}`,
+              query: {
+                ...(recommendation.listingsRoot ? { listingsRoot: recommendation.listingsRoot } : {}),
+                ...(recommendation.analysisRoot ? { analysisRoot: recommendation.analysisRoot } : {}),
+              },
+            };
 
             return (
               <div key={recommendation.id} className="dashboard-panel market-card relative rounded-[28px] p-5">
@@ -175,7 +184,7 @@ export default function RecommendationsTable({ recommendations }: Recommendation
                 )}
 
                 <div className="mt-4 flex gap-2">
-                  <Link href={`/dashboard/properties/${encodeURIComponent(recommendation.id)}`} prefetch className="btn-primary flex-1 text-center text-sm">
+                  <Link href={detailHref} prefetch className="btn-primary flex-1 text-center text-sm">
                     Agent Analysis
                   </Link>
                 </div>

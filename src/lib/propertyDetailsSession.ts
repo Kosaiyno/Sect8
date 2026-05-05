@@ -1,8 +1,7 @@
 import 'server-only';
 
 import crypto from 'node:crypto';
-import fs from 'node:fs';
-import path from 'node:path';
+import { read0gJson, write0gJson } from '@/lib/0gPersistence';
 import { getOrCreatePropertyAnalysis, type PropertyAnalysisBundle } from '@/lib/propertyAnalysis';
 import { getPropertyDetailBundle, getPropertyListingPreview, type PropertyDetailBundle } from '@/lib/propertyDetails';
 import type { PropertyLoadingStep } from '@/components/PropertyDetailsLoadingState';
@@ -13,6 +12,7 @@ type SessionPhase = 'load-bundle' | 'run-analysis' | 'finalize' | 'completed';
 type PropertyDetailsSession = {
   id: string;
   listingId: string;
+  listingsRoot?: string | null;
   address: string | null;
   status: SessionStatus;
   phase: SessionPhase;
@@ -27,15 +27,12 @@ type PropertyDetailsSession = {
 };
 
 export type PropertyDetailsSessionPublic = Omit<PropertyDetailsSession, 'bundle' | 'analysisResult'> & {
+  sessionRoot?: string | null;
   result: null | {
     bundle: PropertyDetailBundle;
     analysisResult: PropertyAnalysisBundle;
   };
 };
-
-const sessionDir = path.resolve(process.cwd(), 'data');
-const sessionFile = path.join(sessionDir, 'property-detail-sessions.json');
-const sessionTtlMs = 1000 * 60 * 30;
 
 function normalizeListingId(listingId: string) {
   let normalized = listingId;
@@ -53,33 +50,6 @@ function normalizeListingId(listingId: string) {
   }
 
   return normalized;
-}
-
-function ensureSessionDir() {
-  if (!fs.existsSync(sessionDir)) {
-    fs.mkdirSync(sessionDir, { recursive: true });
-  }
-}
-
-function readSessions(): Record<string, PropertyDetailsSession> {
-  if (!fs.existsSync(sessionFile)) {
-    return {};
-  }
-
-  try {
-    return JSON.parse(fs.readFileSync(sessionFile, 'utf8')) || {};
-  } catch {
-    return {};
-  }
-}
-
-function writeSessions(sessions: Record<string, PropertyDetailsSession>) {
-  ensureSessionDir();
-  const cutoff = Date.now() - sessionTtlMs;
-  const filtered = Object.fromEntries(
-    Object.entries(sessions).filter(([, session]) => session.updatedAt >= cutoff)
-  );
-  fs.writeFileSync(sessionFile, JSON.stringify(filtered, null, 2));
 }
 
 function appendTerminalLine(lines: string[], message: string) {
@@ -130,18 +100,38 @@ function updateStepStatuses(steps: PropertyLoadingStep[], activeKey: SessionPhas
   });
 }
 
-function toPublicSession(session: PropertyDetailsSession): PropertyDetailsSessionPublic {
+function toPublicSession(session: PropertyDetailsSession, sessionRoot?: string | null): PropertyDetailsSessionPublic {
   return {
     ...session,
+    sessionRoot: sessionRoot || null,
     result: session.status === 'completed' && session.bundle && session.analysisResult
       ? { bundle: session.bundle, analysisResult: session.analysisResult }
       : null,
   };
 }
 
-export function createPropertyDetailsSession(listingId: string) {
+async function persistSession(session: PropertyDetailsSession) {
+  const sessionRoot = await write0gJson({
+    type: 'property-detail-session',
+    version: 1,
+    ...session,
+  });
+
+  return toPublicSession(session, sessionRoot);
+}
+
+async function readSession(sessionRoot?: string | null) {
+  const snapshot = await read0gJson<PropertyDetailsSession & { type?: string }>(sessionRoot);
+  if (!snapshot || snapshot.type !== 'property-detail-session') {
+    return null;
+  }
+
+  return snapshot;
+}
+
+export async function createPropertyDetailsSession(listingId: string, listingsRoot?: string | null) {
   const normalizedListingId = normalizeListingId(listingId);
-  const preview = getPropertyListingPreview(normalizedListingId);
+  const preview = await getPropertyListingPreview(normalizedListingId, listingsRoot);
   if (!preview) {
     return null;
   }
@@ -149,6 +139,7 @@ export function createPropertyDetailsSession(listingId: string) {
   const session: PropertyDetailsSession = {
     id: crypto.randomUUID(),
     listingId: normalizedListingId,
+    listingsRoot: listingsRoot || null,
     address: String(preview.address || ''),
     status: 'running',
     phase: 'load-bundle',
@@ -165,47 +156,46 @@ export function createPropertyDetailsSession(listingId: string) {
     analysisResult: null,
   };
 
-  const sessions = readSessions();
-  sessions[session.id] = session;
-  writeSessions(sessions);
-  return toPublicSession(session);
+  return persistSession(session);
 }
 
-export function getPropertyDetailsSession(sessionId: string) {
-  const session = readSessions()[sessionId];
-  return session ? toPublicSession(session) : null;
+export async function getPropertyDetailsSession(sessionId: string, sessionRoot?: string | null) {
+  const session = await readSession(sessionRoot);
+  if (!session || session.id !== sessionId) {
+    return null;
+  }
+
+  return toPublicSession(session, sessionRoot);
 }
 
-export async function runPropertyDetailsSessionToCompletion(sessionId: string) {
-  let current = await advancePropertyDetailsSession(sessionId);
+export async function runPropertyDetailsSessionToCompletion(sessionId: string, sessionRoot?: string | null) {
+  let current = await advancePropertyDetailsSession(sessionId, sessionRoot);
 
   while (current && current.status === 'running') {
-    current = await advancePropertyDetailsSession(sessionId);
+    current = await advancePropertyDetailsSession(sessionId, current.sessionRoot);
   }
 
   return current;
 }
 
-export async function advancePropertyDetailsSession(sessionId: string) {
-  const sessions = readSessions();
-  const session = sessions[sessionId];
+export async function advancePropertyDetailsSession(sessionId: string, sessionRoot?: string | null) {
+  const session = await readSession(sessionRoot);
 
-  if (!session) {
+  if (!session || session.id !== sessionId) {
     return null;
   }
 
   try {
     if (session.status !== 'running') {
-      return toPublicSession(session);
+      return toPublicSession(session, sessionRoot);
     }
 
     if (session.phase === 'load-bundle') {
       session.terminalLines = appendTerminalLine(session.terminalLines, 'Loading listing snapshot and supporting property records...');
       session.updatedAt = Date.now();
-      sessions[session.id] = session;
-      writeSessions(sessions);
+      const pending = await persistSession(session);
 
-      const bundle = await getPropertyDetailBundle(normalizeListingId(session.listingId));
+      const bundle = await getPropertyDetailBundle(normalizeListingId(session.listingId), session.listingsRoot);
       if (!bundle) {
         throw new Error('Property details bundle could not be built.');
       }
@@ -217,9 +207,8 @@ export async function advancePropertyDetailsSession(sessionId: string) {
       session.steps = updateStepStatuses(session.steps, 'run-analysis');
       session.terminalLines = appendTerminalLine(session.terminalLines, `Loaded property bundle for ${bundle.listing.address}.`);
       session.updatedAt = Date.now();
-      sessions[session.id] = session;
-      writeSessions(sessions);
-      return toPublicSession(session);
+      void pending;
+      return persistSession(session);
     }
 
     if (session.phase === 'run-analysis') {
@@ -229,10 +218,12 @@ export async function advancePropertyDetailsSession(sessionId: string) {
 
       session.terminalLines = appendTerminalLine(session.terminalLines, 'Running the agent analysis on the 0G-backed pipeline...');
       session.updatedAt = Date.now();
-      sessions[session.id] = session;
-      writeSessions(sessions);
+      await persistSession(session);
 
-      const analysisResult = await getOrCreatePropertyAnalysis(session.bundle);
+      const analysisResult = await getOrCreatePropertyAnalysis(
+        session.bundle,
+        String(session.bundle.listing.analysisRoot || ''),
+      );
       session.analysisResult = analysisResult;
       session.phase = 'finalize';
       session.progress = 84;
@@ -244,9 +235,7 @@ export async function advancePropertyDetailsSession(sessionId: string) {
           : `Generated new ${analysisResult.record.provider === '0g-compute' ? '0G' : 'fallback'} property analysis.`
       );
       session.updatedAt = Date.now();
-      sessions[session.id] = session;
-      writeSessions(sessions);
-      return toPublicSession(session);
+      return persistSession(session);
     }
 
     if (session.phase === 'finalize') {
@@ -256,20 +245,16 @@ export async function advancePropertyDetailsSession(sessionId: string) {
       session.steps = updateStepStatuses(session.steps, 'completed');
       session.terminalLines = appendTerminalLine(session.terminalLines, 'Property analysis is ready to render.');
       session.updatedAt = Date.now();
-      sessions[session.id] = session;
-      writeSessions(sessions);
-      return toPublicSession(session);
+      return persistSession(session);
     }
 
-    return toPublicSession(session);
+    return toPublicSession(session, sessionRoot);
   } catch (error) {
     session.status = 'failed';
     session.error = String(error);
     session.steps = updateStepStatuses(session.steps, session.phase, true);
     session.terminalLines = appendTerminalLine(session.terminalLines, `Session failed: ${String(error)}`);
     session.updatedAt = Date.now();
-    sessions[session.id] = session;
-    writeSessions(sessions);
-    return toPublicSession(session);
+    return persistSession(session);
   }
 }
