@@ -12,6 +12,20 @@ type ActivatedAgent = {
     owner: string;
     preferences: Record<string, unknown>;
     history: string[];
+    recentAnalyses?: Array<{
+      id: string;
+      address: string;
+      generatedAt: number;
+      score: number;
+      provider: '0g-compute';
+      purchasePrice: number | null;
+      cashflow: number | null;
+      capRate: number | null;
+      headline: string;
+      summary: string;
+      verdict: string;
+      analysisRoot: string;
+    }>;
     memoryRoot?: string | null;
     createdAt?: number | null;
   };

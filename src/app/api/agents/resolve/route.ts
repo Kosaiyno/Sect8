@@ -4,6 +4,41 @@ import { getAgentRecord } from '@/lib/agentStore';
 import { loadCachedRentcastListings } from '@/lib/rentcastCache';
 import { getFairMarketRent, getValidatedPurchasePrice, isExcludedPropertyType } from '@/lib/realDataService';
 
+type VerifiedRecentAnalysis = {
+  id: string;
+  address: string;
+  generatedAt: number;
+  score: number;
+  provider: '0g-compute';
+  purchasePrice: number | null;
+  cashflow: number | null;
+  capRate: number | null;
+  headline: string;
+  summary: string;
+  verdict: string;
+  analysisRoot: string;
+};
+
+type StoredAnalysisSnapshot = {
+  type?: string;
+  generatedAt?: number;
+  provider?: '0g-compute' | 'fallback';
+  payload?: {
+    listing?: {
+      address?: string;
+      purchasePrice?: number | null;
+      cashflow?: number | null;
+      capRate?: number | null;
+    };
+    analysis?: {
+      score?: number;
+      headline?: string;
+      summary?: string;
+      verdict?: string;
+    };
+  };
+};
+
 const DEFAULT_PREFERENCES = {
   zipCode: '48201',
   minBedrooms: 3,
@@ -77,6 +112,47 @@ async function toRecommendations(listings: Array<Record<string, unknown>>, zipCo
   return mapped.filter((listing) => listing && listing.purchasePrice !== null);
 }
 
+async function loadVerifiedRecentAnalyses(listings: Array<Record<string, unknown>>) {
+  const analyses = await Promise.all(
+    listings.map(async (listing) => {
+      const analysisRoot = typeof listing.analysisRoot === 'string' ? listing.analysisRoot.trim() : '';
+      if (!analysisRoot) {
+        return null;
+      }
+
+      const snapshot = await read0gJson<StoredAnalysisSnapshot>(analysisRoot);
+      if (
+        !snapshot
+        || snapshot.type !== 'property-analysis'
+        || snapshot.provider !== '0g-compute'
+        || !snapshot.payload?.analysis
+      ) {
+        return null;
+      }
+
+      return {
+        id: String(listing.id || ''),
+        address: String(snapshot.payload.listing?.address || listing.address || 'Unknown property'),
+        generatedAt: Number(snapshot.generatedAt || 0),
+        score: Number(snapshot.payload.analysis.score || 0),
+        provider: '0g-compute' as const,
+        purchasePrice: snapshot.payload.listing?.purchasePrice ?? (listing.purchasePrice ? Number(listing.purchasePrice) : null),
+        cashflow: snapshot.payload.listing?.cashflow ?? (listing.cashflow ? Number(listing.cashflow) : null),
+        capRate: snapshot.payload.listing?.capRate ?? (listing.capRate ? Number(listing.capRate) : null),
+        headline: String(snapshot.payload.analysis.headline || ''),
+        summary: String(snapshot.payload.analysis.summary || ''),
+        verdict: String(snapshot.payload.analysis.verdict || ''),
+        analysisRoot,
+      } satisfies VerifiedRecentAnalysis;
+    })
+  );
+
+  return analyses
+    .filter((analysis): analysis is VerifiedRecentAnalysis => Boolean(analysis))
+    .sort((left, right) => right.generatedAt - left.generatedAt)
+    .slice(0, 4);
+}
+
 export async function POST(req: Request) {
   try {
     const body = await req.json();
@@ -107,6 +183,7 @@ export async function POST(req: Request) {
       : Array.isArray(cached?.listings)
         ? await toRecommendations(cached.listings, activeZip)
         : [];
+    const recentAnalyses = snapshotListings ? await loadVerifiedRecentAnalyses(snapshotListings) : [];
 
     const response = NextResponse.json({
       success: true,
@@ -124,6 +201,7 @@ export async function POST(req: Request) {
             stored?.memoryRoot ? `I am synced to 0G at ${stored.memoryRoot}` : 'I do not have a 0G memory root synced yet',
             stored?.latestListingsZip ? `I have cached listings ready for ZIP ${stored.latestListingsZip}` : 'I do not have cached listings yet',
           ],
+          recentAnalyses,
           memoryRoot: stored?.memoryRoot || null,
           createdAt: stored?.createdAt || null,
         },

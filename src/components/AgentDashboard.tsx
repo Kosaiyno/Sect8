@@ -18,6 +18,20 @@ type ActivatedAgent = {
     owner: string;
     preferences: Record<string, unknown>;
     history: string[];
+    recentAnalyses?: Array<{
+      id: string;
+      address: string;
+      generatedAt: number;
+      score: number;
+      provider: '0g-compute';
+      purchasePrice: number | null;
+      cashflow: number | null;
+      capRate: number | null;
+      headline: string;
+      summary: string;
+      verdict: string;
+      analysisRoot: string;
+    }>;
     memoryRoot?: string | null;
     createdAt?: number | null;
   };
@@ -71,6 +85,7 @@ export default function AgentDashboard({
             `I am active for ${owner}`,
             persistJson.memoryRoot ? `I am synced to 0G at ${persistJson.memoryRoot}` : 'I do not have a 0G memory root synced yet',
           ],
+          recentAnalyses: [],
           memoryRoot: persistJson.memoryRoot || null,
           createdAt: persistJson.agent?.createdAt || Date.now(),
         },

@@ -1,7 +1,21 @@
 "use client";
 import React from 'react';
-import { BookOpenText, BrainCircuit, Compass, ShieldCheck, Sparkles, FileSearch } from 'lucide-react';
-import type { Recommendation } from '@/types';
+import { BrainCircuit, Compass, ShieldCheck, Sparkles, FileSearch } from 'lucide-react';
+
+type RecentAnalysis = {
+  id: string;
+  address: string;
+  generatedAt: number;
+  score: number;
+  provider: '0g-compute';
+  purchasePrice: number | null;
+  cashflow: number | null;
+  capRate: number | null;
+  headline: string;
+  summary: string;
+  verdict: string;
+  analysisRoot: string;
+};
 
 type MemoryAgent = {
   preferences?: {
@@ -12,13 +26,13 @@ type MemoryAgent = {
   memory?: {
     learned?: string[];
     history?: string[];
+    recentAnalyses?: RecentAnalysis[];
     memoryRoot?: string | null;
   };
 };
 
 type MemoryPanelProps = {
   agent: MemoryAgent;
-  recommendations: Recommendation[];
 };
 
 function formatCurrency(value: number | null | undefined, suffix = '') {
@@ -37,36 +51,26 @@ function formatPercent(value: number | null | undefined) {
   return `${Number(value).toFixed(1)}%`;
 }
 
-function buildAgentMemory(recommendations: Recommendation[]) {
-  const recentRecommendations = [...recommendations]
-    .sort((left, right) => Number(right.timestamp || 0) - Number(left.timestamp || 0))
-    .slice(0, 4);
+function formatDateTime(value: number) {
+  if (!value) {
+    return 'Unknown time';
+  }
 
-  return recentRecommendations.map((recommendation) => {
-    const address = recommendation.address || 'Unknown property';
-    const score = recommendation.locationScore !== null && recommendation.locationScore !== undefined
-      ? `${Math.round(Number(recommendation.locationScore))}/100`
-      : 'Unscored';
-    const cashflow = recommendation.cashflow !== null && recommendation.cashflow !== undefined
-      ? formatCurrency(recommendation.cashflow, '/mo')
-      : 'Unavailable';
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) {
+    return 'Unknown time';
+  }
 
-    return {
-      id: recommendation.id,
-      title: `I analyzed ${address}`,
-      summary: `I gave it a working score of ${score}, read the purchase price at ${formatCurrency(recommendation.purchasePrice)}, projected cash flow at ${cashflow}, and cap rate at ${formatPercent(recommendation.capRate)}.`,
-      detail: recommendation.explanation || recommendation.reasoning || 'I stored the latest underwriting context for this property in memory.',
-    };
-  });
+  return parsed.toLocaleString();
 }
 
-export default function MemoryPanel({ agent, recommendations }: MemoryPanelProps) {
+export default function MemoryPanel({ agent }: MemoryPanelProps) {
   const prefs = agent.preferences || {};
   const learned = agent.memory?.learned || ['High cashflow (> $300/mo)', 'Section 8 stable zones'];
   const updates = agent.memory?.history?.slice(-5).reverse() || [];
   const memoryRoot = agent.memory?.memoryRoot || 'No memory root yet';
   const riskProfile = Number(prefs.minRoi || 0) > 0 ? 'Conservative' : 'Balanced';
-  const recentActions = buildAgentMemory(recommendations);
+  const recentActions = agent.memory?.recentAnalyses || [];
 
   return (
     <div className="dashboard-panel rounded-[30px] p-6">
@@ -75,7 +79,7 @@ export default function MemoryPanel({ agent, recommendations }: MemoryPanelProps
           <div className="platform-eyebrow">Agent Memory</div>
           <h4 className="mt-2 font-outfit text-2xl font-black text-white">What I just did</h4>
           <p className="mt-2 max-w-2xl text-sm leading-6 text-white/62">
-            This is my working desk log. I write down what I analyzed, how I scored it, and which underwriting context I kept attached to the deal.
+            This is my verified analysis log. I only show properties where this wallet's agent actually ran 0G Compute and stored the result.
           </p>
         </div>
         <div className="platform-chip border-cyan-300/15 bg-cyan-300/10 text-cyan-100">
@@ -114,13 +118,15 @@ export default function MemoryPanel({ agent, recommendations }: MemoryPanelProps
           <div className="mt-4 space-y-3">
             {recentActions.length ? recentActions.map((item) => (
               <div key={item.id} className="rounded-[22px] border border-white/8 bg-[#0e1217] px-4 py-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.03)]">
-                <div className="text-sm font-bold text-white">{item.title}</div>
-                <div className="mt-2 text-sm leading-6 text-white/78">{item.summary}</div>
-                <div className="mt-2 text-sm leading-6 text-cyan-100/78">{item.detail}</div>
+                <div className="text-sm font-bold text-white">{`I ran 0G Compute on ${item.address}`}</div>
+                <div className="mt-2 text-sm leading-6 text-white/78">
+                  {`Generated ${formatDateTime(item.generatedAt)}. I scored it ${Math.round(Number(item.score || 0))}/100, read the purchase price at ${formatCurrency(item.purchasePrice)}, projected cash flow at ${formatCurrency(item.cashflow, '/mo')}, and cap rate at ${formatPercent(item.capRate)}.`}
+                </div>
+                <div className="mt-2 text-sm leading-6 text-cyan-100/78">{item.headline || item.verdict || item.summary}</div>
               </div>
             )) : (
               <div className="rounded-[22px] border border-white/8 bg-[#0e1217] px-4 py-4 text-sm text-white/60">
-                Run a scan and I will start recording my analyzed homes here.
+                I have not stored any verified 0G Compute analyses for this wallet yet.
               </div>
             )}
           </div>
