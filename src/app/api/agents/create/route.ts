@@ -8,6 +8,10 @@ export async function POST(req: Request) {
     const body = await req.json();
     const owner = typeof body.owner === 'string' ? body.owner.trim().toLowerCase() : '';
     const preferences = body.preferences || {};
+    const prepareOnly = body.prepareOnly === true;
+    const onChainTokenId = typeof body.onChainTokenId === 'string' && body.onChainTokenId.trim() ? body.onChainTokenId.trim() : null;
+    const activationTxHash = typeof body.activationTxHash === 'string' && body.activationTxHash.trim() ? body.activationTxHash.trim() : null;
+    const contractAddress = typeof body.contractAddress === 'string' && body.contractAddress.trim() ? body.contractAddress.trim() : null;
 
     if (!owner) return NextResponse.json({ success: false, error: 'owner required' }, { status: 400 });
 
@@ -34,11 +38,26 @@ export async function POST(req: Request) {
       memoryRoot = storageRes.hash || null;
     }
 
+    if (prepareOnly) {
+      return NextResponse.json({
+        success: true,
+        prepared: true,
+        agentId: existing?.agentId || `agent-${owner}`,
+        owner,
+        memoryRoot,
+        recordRoot: currentRoot || existing?.recordRoot || null,
+        agent: existing,
+      });
+    }
+
     const { record, root } = await upsertAgentRecord(owner, {
       owner,
       agentId: existing?.agentId || `agent-${owner}`,
       preferences,
       memoryRoot,
+      onChainTokenId,
+      activationTxHash,
+      contractAddress,
       createdAt: existing?.createdAt || Date.now(),
     }, currentRoot);
 

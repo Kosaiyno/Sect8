@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+
+import { initializeAgentOnChain } from "@/lib/agentActivation";
 import { UserPreferences } from "@/lib/ogAgent";
 import { X, Target, DollarSign, Home, Percent } from "lucide-react";
 
@@ -91,10 +93,29 @@ export function CreateAgentModal({
               const owner = ((window as unknown as { ethereum?: EthereumWithSelectedAddress }).ethereum?.selectedAddress || '').trim();
               if (!owner) throw new Error('Connect your wallet first');
 
+              const prepareResponse = await fetch('/api/agents/create', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ owner, preferences: prefs, prepareOnly: true })
+              });
+
+              const prepared = await prepareResponse.json();
+              if (!prepared.success || !prepared.memoryRoot) throw new Error(prepared.error || 'failed to prepare activation');
+
+              const onChain = await initializeAgentOnChain(owner, prepared.memoryRoot);
+
               const response = await fetch('/api/agents/create', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ owner, preferences: prefs })
+                body: JSON.stringify({
+                  owner,
+                  preferences: prefs,
+                  memoryRoot: prepared.memoryRoot,
+                  recordRoot: prepared.recordRoot || null,
+                  onChainTokenId: onChain.tokenId,
+                  activationTxHash: onChain.txHash,
+                  contractAddress: onChain.contractAddress,
+                })
               });
 
               const json = await response.json();

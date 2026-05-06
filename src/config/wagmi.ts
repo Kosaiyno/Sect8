@@ -8,7 +8,7 @@ import {
   sepolia
 } from 'wagmi/chains';
 
-const ogChain = {
+export const ogChain = {
   id: 16661,
   name: '0G Mainnet',
   network: '0g',

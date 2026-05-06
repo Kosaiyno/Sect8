@@ -46,6 +46,10 @@ const DEFAULT_PREFERENCES = {
   minRoi: 0.1,
 };
 
+function hasOnChainActivation(record: Awaited<ReturnType<typeof getAgentRecord>>) {
+  return Boolean(record?.onChainTokenId && record?.contractAddress && record?.activationTxHash);
+}
+
 function buildReasoning(listing: {
   purchasePrice: number | null;
   estRent: number;
@@ -167,7 +171,7 @@ export async function POST(req: Request) {
       ? body.recordRoot.trim()
       : readCookieValue(req.headers.get('cookie'), cookieName);
     const stored = await getAgentRecord(owner, currentRoot);
-    if (!stored) {
+    if (!stored || !hasOnChainActivation(stored)) {
       return NextResponse.json({ success: true, agent: null, memoryRoot: null, record: null });
     }
 
@@ -191,6 +195,9 @@ export async function POST(req: Request) {
         id: stored.agentId,
         owner: owner || stored?.owner || null,
         recordRoot: stored.recordRoot || currentRoot || null,
+        onChainTokenId: stored.onChainTokenId || null,
+        contractAddress: stored.contractAddress || null,
+        activationTxHash: stored.activationTxHash || null,
         preferences,
         memory: {
           agentId: stored.agentId,
@@ -198,6 +205,12 @@ export async function POST(req: Request) {
           preferences,
           history: [
             `I am active for ${owner}`,
+            stored?.onChainTokenId && stored?.contractAddress
+              ? `My on-chain agent token is #${stored.onChainTokenId} at ${stored.contractAddress}`
+              : 'My on-chain activation record has not been restored yet',
+            stored?.activationTxHash
+              ? `My activation transaction is ${stored.activationTxHash}`
+              : 'My activation transaction hash is not saved yet',
             stored?.memoryRoot ? `I am synced to 0G at ${stored.memoryRoot}` : 'I do not have a 0G memory root synced yet',
             stored?.latestListingsZip ? `I have cached listings ready for ZIP ${stored.latestListingsZip}` : 'I do not have cached listings yet',
           ],

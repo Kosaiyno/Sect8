@@ -8,6 +8,9 @@ export type StoredAgentRecord = {
   preferences: Record<string, unknown>;
   recordRoot?: string | null;
   memoryRoot?: string | null;
+  contractAddress?: string | null;
+  onChainTokenId?: string | null;
+  activationTxHash?: string | null;
   latestListingsRoot?: string | null;
   latestRawRentcastRoot?: string | null;
   latestListingsZip?: string | null;

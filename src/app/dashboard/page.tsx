@@ -14,6 +14,9 @@ type DashboardAgent = {
   id: string;
   owner: string;
   recordRoot?: string | null;
+  onChainTokenId?: string | null;
+  contractAddress?: string | null;
+  activationTxHash?: string | null;
   preferences: Record<string, unknown>;
   memory: {
     agentId: string;
@@ -62,6 +65,10 @@ function getAgentStorageKey(address: string) {
 
 function getDashboardStateKey(address: string) {
   return `dashboard-state-${address.toLowerCase()}`;
+}
+
+function hasOnChainActivation(agent: DashboardAgent | null | undefined) {
+  return Boolean(agent?.onChainTokenId && agent?.contractAddress && agent?.activationTxHash);
 }
 
 export default function Dashboard() {
@@ -114,8 +121,12 @@ export default function Dashboard() {
     if (persistedAgent) {
       try {
         const parsed = JSON.parse(persistedAgent) as DashboardAgent;
-        setAgent({ ...parsed, status: parsed.status === 'scanning' ? 'active' : (parsed.status || 'active') });
-        setChecked(true);
+        if (hasOnChainActivation(parsed)) {
+          setAgent({ ...parsed, status: parsed.status === 'scanning' ? 'active' : (parsed.status || 'active') });
+          setChecked(true);
+        } else {
+          localStorage.removeItem(getAgentStorageKey(address));
+        }
       } catch {
         localStorage.removeItem(getAgentStorageKey(address));
       }

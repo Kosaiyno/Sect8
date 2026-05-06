@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { useAccount } from 'wagmi';
 
+import { initializeAgentOnChain } from '@/lib/agentActivation';
+
 type UserPreferences = {
   zipCode: string;
   minBedrooms: number;
@@ -12,6 +14,9 @@ type ActivatedAgent = {
   id: string;
   owner: string;
   recordRoot?: string | null;
+  onChainTokenId?: string | null;
+  contractAddress?: string | null;
+  activationTxHash?: string | null;
   preferences: Record<string, unknown>;
   memory: {
     agentId: string;
@@ -62,20 +67,43 @@ export default function AgentDashboard({
     setError(null);
     try {
       if (!owner) throw new Error('Connect your wallet first');
+      const prepareRes = await fetch('/api/agents/create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ owner, preferences: DEFAULT_PREFERENCES, prepareOnly: true }),
+      });
+      const prepareJson = await prepareRes.json();
+      if (!prepareJson.success || !prepareJson.memoryRoot) {
+        throw new Error(prepareJson.error || 'Failed to prepare the initial 0G memory root');
+      }
+
+      const onChain = await initializeAgentOnChain(owner, prepareJson.memoryRoot);
+
       const persistRes = await fetch('/api/agents/create', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ owner, preferences: DEFAULT_PREFERENCES }),
+        body: JSON.stringify({
+          owner,
+          preferences: DEFAULT_PREFERENCES,
+          memoryRoot: prepareJson.memoryRoot,
+          recordRoot: prepareJson.recordRoot || null,
+          onChainTokenId: onChain.tokenId,
+          activationTxHash: onChain.txHash,
+          contractAddress: onChain.contractAddress,
+        }),
       });
       const persistJson = await persistRes.json();
       if (!persistJson.success) {
-        throw new Error(persistJson.error || 'Activation failed');
+        throw new Error(persistJson.error || 'Activation finalization failed');
       }
 
       const activatedAgent = {
         id: persistJson.agentId || `agent-${owner}`,
         owner,
         recordRoot: persistJson.recordRoot || null,
+        onChainTokenId: onChain.tokenId,
+        contractAddress: onChain.contractAddress,
+        activationTxHash: onChain.txHash,
         preferences: DEFAULT_PREFERENCES,
         memory: {
           agentId: persistJson.agentId || `agent-${owner}`,
@@ -83,6 +111,8 @@ export default function AgentDashboard({
           preferences: DEFAULT_PREFERENCES,
           history: [
             `I am active for ${owner}`,
+            `My on-chain agent token is #${onChain.tokenId} at ${onChain.contractAddress}`,
+            `My activation transaction is ${onChain.txHash}`,
             persistJson.memoryRoot ? `I am synced to 0G at ${persistJson.memoryRoot}` : 'I do not have a 0G memory root synced yet',
           ],
           recentAnalyses: [],
