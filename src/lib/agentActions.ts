@@ -1,5 +1,6 @@
 import { uploadToStorage } from '@/app/actions/og';
 import { ethers } from 'ethers';
+import { normalizeServerPrivateKey } from '@/lib/serverKey';
 
 export interface ExecutedActionResult {
   success: boolean;
@@ -42,7 +43,7 @@ export async function submitOnChainTx(encodedTx: any): Promise<{ success: boolea
 
   try {
     const provider = new ethers.JsonRpcProvider(rpc);
-    const wallet = new ethers.Wallet(pk, provider);
+    const wallet = new ethers.Wallet(normalizeServerPrivateKey(pk, 'SERVER_OPERATOR_PRIVATE_KEY'), provider);
     // encodedTx should contain to/value/data
     const tx = await wallet.sendTransaction(encodedTx);
     return { success: true, txHash: tx.hash };

@@ -2,6 +2,7 @@ import "server-only";
 
 import { Indexer, MemData } from "@0gfoundation/0g-ts-sdk";
 import { ethers } from "ethers";
+import { normalizeServerPrivateKey } from "@/lib/serverKey";
 
 /**
  * 0G Storage Service
@@ -25,11 +26,16 @@ export class ZgStorageService {
       this.signerPromise = (async () => {
         const provider = new ethers.JsonRpcProvider(rpcArg);
         const deployerKey = process.env.AGENT_DEPLOYER_PRIVATE_KEY || process.env.SERVER_OPERATOR_PRIVATE_KEY || process.env.PRIVATE_KEY;
+        const sourceEnv = process.env.AGENT_DEPLOYER_PRIVATE_KEY
+          ? 'AGENT_DEPLOYER_PRIVATE_KEY'
+          : process.env.SERVER_OPERATOR_PRIVATE_KEY
+            ? 'SERVER_OPERATOR_PRIVATE_KEY'
+            : 'PRIVATE_KEY';
         if (!deployerKey) {
           throw new Error('Missing private key for indexer upload. Set AGENT_DEPLOYER_PRIVATE_KEY (server-side) to a funded testnet key.');
         }
 
-        const baseSigner = new ethers.Wallet(deployerKey, provider);
+        const baseSigner = new ethers.Wallet(normalizeServerPrivateKey(deployerKey, sourceEnv), provider);
         return new ethers.NonceManager(baseSigner);
       })();
     }
