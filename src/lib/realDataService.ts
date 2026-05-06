@@ -46,8 +46,31 @@ const countyFipsCache = new Map<string, Promise<{ fips: string; name: string | n
 const hudStateCache = new Map<string, Promise<HudStateResponse | null>>();
 const fairMarketRentCache = new Map<string, Promise<FairMarketRentResult>>();
 const hudCacheFile = path.resolve(process.cwd(), "data", "hud-fmr-cache.json");
+const EXTERNAL_DATA_FETCH_TIMEOUT_MS = 8000;
 
 let bundledHudCache: HudFmrCacheFile | null | undefined;
+
+async function fetchJsonWithTimeout<T>(url: string, init?: RequestInit) {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), EXTERNAL_DATA_FETCH_TIMEOUT_MS);
+
+  try {
+    const response = await fetch(url, {
+      ...init,
+      signal: controller.signal,
+    });
+
+    if (!response.ok) {
+      return null;
+    }
+
+    return await response.json() as T;
+  } catch {
+    return null;
+  } finally {
+    clearTimeout(timeout);
+  }
+}
 
 // RentCast API wrapper
 export const fetchRealProperties = async (zipCode: string, bedrooms: number) => {
@@ -101,18 +124,16 @@ async function fetchZipMetadata(zipCode: string) {
   if (!zipMetadataCache.has(zipCode)) {
     zipMetadataCache.set(zipCode, (async () => {
       try {
-        const response = await fetch(`https://api.zippopotam.us/us/${zipCode}`);
-        if (!response.ok) {
-          return null;
-        }
-
-        const data = await response.json() as {
+        const data = await fetchJsonWithTimeout<{
           places?: Array<{
             latitude?: string;
             longitude?: string;
             ["state abbreviation"]?: string;
           }>;
-        };
+        }>(`https://api.zippopotam.us/us/${zipCode}`);
+        if (!data) {
+          return null;
+        }
 
         const place = Array.isArray(data.places) ? data.places[0] : null;
         if (!place?.latitude || !place?.longitude || !place["state abbreviation"]) {
@@ -147,14 +168,12 @@ async function fetchCountyFips(zipCode: string) {
       }
 
       try {
-        const response = await fetch(`https://geo.fcc.gov/api/census/block/find?latitude=${metadata.latitude}&longitude=${metadata.longitude}&format=json`);
-        if (!response.ok) {
+        const data = await fetchJsonWithTimeout<{
+          County?: { FIPS?: string; name?: string };
+        }>(`https://geo.fcc.gov/api/census/block/find?latitude=${metadata.latitude}&longitude=${metadata.longitude}&format=json`);
+        if (!data) {
           return null;
         }
-
-        const data = await response.json() as {
-          County?: { FIPS?: string; name?: string };
-        };
 
         if (!data.County?.FIPS) {
           return null;
@@ -193,7 +212,7 @@ async function fetchHudStateData(stateCode: string) {
   if (!hudStateCache.has(stateCode)) {
     const request: Promise<HudStateResponse | null> = (async () => {
       try {
-        const response = await fetch(`https://www.huduser.gov/hudapi/public/fmr/statedata/${stateCode}`, {
+        const result = await fetchJsonWithTimeout<HudStateResponse>(`https://www.huduser.gov/hudapi/public/fmr/statedata/${stateCode}`, {
           headers: {
             Authorization: `Bearer ${token}`,
             Accept: "application/json",
@@ -201,12 +220,12 @@ async function fetchHudStateData(stateCode: string) {
           cache: "no-store",
         });
 
-        if (!response.ok) {
-          console.warn(`Sect8: HUD FMR request failed for ${stateCode} with status ${response.status}.`);
+        if (!result) {
+          console.warn(`Sect8: HUD FMR request failed or timed out for ${stateCode}.`);
           return null;
         }
 
-        return await response.json() as HudStateResponse;
+        return result;
       } catch (error) {
         console.error("Sect8: Error fetching HUD FMR data:", error);
         return null;

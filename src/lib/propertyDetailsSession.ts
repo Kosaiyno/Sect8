@@ -1,7 +1,7 @@
 import 'server-only';
 
 import crypto from 'node:crypto';
-import { read0gJson, write0gJson } from '@/lib/0gPersistence';
+import { read0gJson, write0gJson, type ListingsSnapshot } from '@/lib/0gPersistence';
 import { getOrCreatePropertyAnalysis, type PropertyAnalysisBundle } from '@/lib/propertyAnalysis';
 import { getPropertyDetailBundle, getPropertyListingPreview, type PropertyDetailBundle } from '@/lib/propertyDetails';
 import type { PropertyLoadingStep } from '@/components/PropertyDetailsLoadingState';
@@ -60,20 +60,20 @@ function buildInitialSteps(): PropertyLoadingStep[] {
   return [
     {
       key: 'load-bundle',
-      title: 'Loading property data',
-      detail: 'Pulling the saved listing and supporting property records for this address.',
+      title: 'Collecting property context',
+      detail: 'Reading the saved listing, ownership records, and local market context for this address.',
       status: 'active',
     },
     {
       key: 'run-analysis',
-      title: 'Running agent analysis',
-      detail: 'Generating the property analysis on the 0G-backed pipeline.',
+      title: 'Scoring the investment',
+      detail: 'Running the Sect8 analysis pipeline and scoring the property against voucher-driven returns.',
       status: 'pending',
     },
     {
       key: 'finalize',
-      title: 'Rendering the analysis',
-      detail: 'Finishing the property page so the full analysis can open.',
+      title: 'Publishing the memo',
+      detail: 'Saving the analysis and opening the final investment memo.',
       status: 'pending',
     },
   ];
@@ -108,6 +108,47 @@ function toPublicSession(session: PropertyDetailsSession, sessionRoot?: string |
       ? { bundle: session.bundle, analysisResult: session.analysisResult }
       : null,
   };
+}
+
+async function updateListingsSnapshotAnalysisRoot(
+  listingsRoot: string | null | undefined,
+  listingId: string,
+  analysisRoot: string | null | undefined,
+) {
+  if (!listingsRoot || !analysisRoot) {
+    return listingsRoot || null;
+  }
+
+  const snapshot = await read0gJson<ListingsSnapshot>(listingsRoot);
+  if (!snapshot || snapshot.type !== 'listings-snapshot' || !Array.isArray(snapshot.listings)) {
+    return listingsRoot;
+  }
+
+  let changed = false;
+  const listings = snapshot.listings.map((listing) => {
+    if (String(listing.id || '') !== listingId) {
+      return listing;
+    }
+
+    if (String(listing.analysisRoot || '') === analysisRoot) {
+      return listing;
+    }
+
+    changed = true;
+    return {
+      ...listing,
+      analysisRoot,
+    };
+  });
+
+  if (!changed) {
+    return listingsRoot;
+  }
+
+  return write0gJson({
+    ...snapshot,
+    listings,
+  } satisfies ListingsSnapshot);
 }
 
 async function persistSession(session: PropertyDetailsSession) {
@@ -148,8 +189,8 @@ export async function createPropertyDetailsSession(listingId: string, listingsRo
     updatedAt: Date.now(),
     steps: buildInitialSteps(),
     terminalLines: [
-      'Opening property analysis.',
-      'Loading the latest property data...',
+      'Agent session opened.',
+      'Collecting the latest property signals...',
     ],
     error: null,
     bundle: null,
@@ -191,7 +232,7 @@ export async function advancePropertyDetailsSession(sessionId: string, sessionRo
     }
 
     if (session.phase === 'load-bundle') {
-      session.terminalLines = appendTerminalLine(session.terminalLines, 'Loading listing snapshot and supporting property records...');
+      session.terminalLines = appendTerminalLine(session.terminalLines, 'Reading listing snapshot, ownership records, and surrounding market data...');
       session.updatedAt = Date.now();
       const pending = await persistSession(session);
 
@@ -205,7 +246,7 @@ export async function advancePropertyDetailsSession(sessionId: string, sessionRo
       session.phase = 'run-analysis';
       session.progress = 46;
       session.steps = updateStepStatuses(session.steps, 'run-analysis');
-      session.terminalLines = appendTerminalLine(session.terminalLines, `Loaded property bundle for ${bundle.listing.address}.`);
+      session.terminalLines = appendTerminalLine(session.terminalLines, `Property context assembled for ${bundle.listing.address}.`);
       session.updatedAt = Date.now();
       void pending;
       return persistSession(session);
@@ -216,7 +257,7 @@ export async function advancePropertyDetailsSession(sessionId: string, sessionRo
         throw new Error('Property bundle missing before analysis phase.');
       }
 
-      session.terminalLines = appendTerminalLine(session.terminalLines, 'Running the agent analysis on the 0G-backed pipeline...');
+      session.terminalLines = appendTerminalLine(session.terminalLines, 'Agent is scoring the deal on the 0G-backed analysis pipeline...');
       session.updatedAt = Date.now();
       await persistSession(session);
 
@@ -225,14 +266,28 @@ export async function advancePropertyDetailsSession(sessionId: string, sessionRo
         String(session.bundle.listing.analysisRoot || ''),
       );
       session.analysisResult = analysisResult;
+      if (analysisResult.record.storageRoot) {
+        session.bundle = {
+          ...session.bundle,
+          listing: {
+            ...session.bundle.listing,
+            analysisRoot: analysisResult.record.storageRoot,
+          },
+        };
+        session.listingsRoot = await updateListingsSnapshotAnalysisRoot(
+          session.listingsRoot,
+          String(session.bundle.listing.id),
+          analysisResult.record.storageRoot,
+        );
+      }
       session.phase = 'finalize';
       session.progress = 84;
       session.steps = updateStepStatuses(session.steps, 'finalize');
       session.terminalLines = appendTerminalLine(
         session.terminalLines,
         analysisResult.fromCache
-          ? 'Reused cached 0G investment memo for this property.'
-          : `Generated new ${analysisResult.record.provider === '0g-compute' ? '0G' : 'fallback'} property analysis.`
+          ? 'Recovered the saved investment memo for this property.'
+          : `Generated a new ${analysisResult.record.provider === '0g-compute' ? '0G' : 'fallback'} investment memo.`
       );
       session.updatedAt = Date.now();
       return persistSession(session);
@@ -243,7 +298,7 @@ export async function advancePropertyDetailsSession(sessionId: string, sessionRo
       session.status = 'completed';
       session.progress = 100;
       session.steps = updateStepStatuses(session.steps, 'completed');
-      session.terminalLines = appendTerminalLine(session.terminalLines, 'Property analysis is ready to render.');
+      session.terminalLines = appendTerminalLine(session.terminalLines, 'Agent memo is ready. Opening the property analysis view...');
       session.updatedAt = Date.now();
       return persistSession(session);
     }

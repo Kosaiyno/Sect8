@@ -48,9 +48,9 @@ function renderStepIcon(status: PropertyLoadingStep['status']) {
 
 export default function PropertyDetailsLoadingState({
   address,
-  title = 'Loading the property analysis.',
-  description = 'Sect8 is preparing the property analysis and loading the key details for this address.',
-  statusLabel = 'Loading',
+  title = 'Agent is analyzing this property.',
+  description = 'Sect8 is assembling the property context and building the investment memo in real time.',
+  statusLabel = 'Analyzing',
   progress = 12,
   steps,
   terminalLines,
@@ -115,12 +115,12 @@ export default function PropertyDetailsLoadingState({
               <div className="agent-terminal mt-5 space-y-3 rounded-[24px] border border-white/8 bg-[#05080d] p-4 font-mono text-[12px] leading-6 text-cyan-100/90">
                 <div className="flex items-center gap-2 text-[11px] text-white/45">
                   <Sparkles size={12} />
-                  /analysis/property
+                  /agent/analysis/live
                 </div>
                 {terminalLines.map((line) => (
                   <div key={line} className="agent-terminal-line">{line}</div>
                 ))}
-                {!error ? <div className="agent-terminal-line">Finalizing response<span className="agent-typing" /></div> : null}
+                {!error ? <div className="agent-terminal-line">Streaming live analysis state<span className="agent-typing" /></div> : null}
               </div>
 
               <div className="agent-progress mt-5 h-2 overflow-hidden rounded-full bg-white/8" aria-hidden="true">
@@ -130,24 +130,6 @@ export default function PropertyDetailsLoadingState({
           </div>
         </div>
       </section>
-
-      <div className="grid grid-cols-1 gap-6 xl:grid-cols-[1.05fr_0.95fr]">
-        {[0, 1].map((column) => (
-          <section key={column} className="glass-card border-white/8 bg-[#0f0f10] p-6">
-            <div className="h-3 w-32 rounded-full bg-white/8" />
-            <div className="mt-4 h-8 w-3/4 rounded-full bg-white/10" />
-            <div className="mt-6 space-y-4">
-              {[0, 1, 2].map((item) => (
-                <div key={item} className="agent-skeleton rounded-2xl border border-white/8 bg-white/[0.03] p-4">
-                  <div className="h-3 w-28 rounded-full bg-white/8" />
-                  <div className="mt-4 h-5 w-full rounded-full bg-white/10" />
-                  <div className="mt-3 h-5 w-4/5 rounded-full bg-white/10" />
-                </div>
-              ))}
-            </div>
-          </section>
-        ))}
-      </div>
     </div>
   );
 }

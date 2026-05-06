@@ -58,12 +58,14 @@ export default function AgentDashboard({
   onActivated?: (agent: ActivatedAgent) => void;
 }) {
   const [loading, setLoading] = useState(false);
+  const [activationPhase, setActivationPhase] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const { address } = useAccount();
   const owner = (userAddress || address || '').toLowerCase();
 
   async function launchAgent() {
     setLoading(true);
+    setActivationPhase('Preparing the first 0G memory root...');
     setError(null);
     try {
       if (!owner) throw new Error('Connect your wallet first');
@@ -77,8 +79,10 @@ export default function AgentDashboard({
         throw new Error(prepareJson.error || 'Failed to prepare the initial 0G memory root');
       }
 
+      setActivationPhase('Waiting for wallet confirmation on 0G Mainnet...');
       const onChain = await initializeAgentOnChain(owner, prepareJson.memoryRoot);
 
+      setActivationPhase('Finalizing the agent record and syncing memory...');
       const persistRes = await fetch('/api/agents/create', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -126,6 +130,7 @@ export default function AgentDashboard({
     } catch (error) {
       setError(String(error));
     } finally {
+      setActivationPhase(null);
       setLoading(false);
     }
   }
@@ -163,6 +168,8 @@ export default function AgentDashboard({
       <button onClick={launchAgent} disabled={loading} className="btn-primary mt-6 inline-flex items-center justify-center text-sm disabled:cursor-not-allowed disabled:opacity-60">
         {loading ? 'Creating My Agent...' : 'Create My Agent'}
       </button>
+
+      {activationPhase && <div className="mt-4 text-sm text-cyan-100">{activationPhase}</div>}
 
       {error && <div className="mt-4 text-sm text-red-300">{error}</div>}
     </div>

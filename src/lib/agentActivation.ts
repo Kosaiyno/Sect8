@@ -7,6 +7,38 @@ import { sect8AgentManagerAbi } from '@/lib/sect8AgentManagerAbi';
 
 const agentManagerAddress = process.env.NEXT_PUBLIC_AGENT_MANAGER_ADDRESS as `0x${string}` | undefined;
 
+function formatActivationError(error: unknown) {
+  const candidate = error as {
+    shortMessage?: unknown;
+    details?: unknown;
+    message?: unknown;
+    cause?: { message?: unknown; shortMessage?: unknown };
+  };
+
+  const messages = [
+    candidate?.shortMessage,
+    candidate?.cause?.shortMessage,
+    candidate?.message,
+    candidate?.cause?.message,
+    candidate?.details,
+  ]
+    .filter((value): value is string => typeof value === 'string' && value.trim().length > 0);
+
+  for (const message of messages) {
+    if (/^0x[0-9a-fA-F]{64,}$/.test(message.trim())) {
+      continue;
+    }
+
+    if (message.includes('User rejected')) {
+      return 'The wallet transaction was rejected before it reached the chain.';
+    }
+
+    return message;
+  }
+
+  return 'The activation transaction failed before the contract emitted AgentInitialized.';
+}
+
 export function getAgentManagerAddress() {
   return agentManagerAddress;
 }
@@ -22,38 +54,44 @@ export async function initializeAgentOnChain(owner: string, memoryRoot: string) 
     throw new Error(chainResult.error || 'Failed to switch wallet to 0G Mainnet.');
   }
 
-  const hash = await writeContract(config, {
-    address: contractAddress,
-    abi: sect8AgentManagerAbi,
-    functionName: 'initializeAgent',
-    args: [owner as `0x${string}`, memoryRoot],
-    chain: ogChain as any,
-  });
+  try {
+    const hash = await writeContract(config, {
+      address: contractAddress,
+      abi: sect8AgentManagerAbi,
+      functionName: 'initializeAgent',
+      args: [owner as `0x${string}`, memoryRoot],
+      account: owner as `0x${string}`,
+      chain: ogChain as any,
+    });
 
-  const receipt = await waitForTransactionReceipt(config, {
-    chainId: 16661,
-    hash,
-    confirmations: 1,
-  });
+    const receipt = await waitForTransactionReceipt(config, {
+      chainId: 16661,
+      hash,
+      confirmations: 1,
+    });
 
-  for (const log of receipt.logs) {
-    try {
-      const decoded = decodeEventLog({
-        abi: sect8AgentManagerAbi,
-        data: log.data,
-        topics: log.topics,
-      });
-      if (decoded.eventName === 'AgentInitialized') {
-        return {
-          tokenId: decoded.args.tokenId.toString(),
-          txHash: receipt.transactionHash,
-          contractAddress,
-        };
+    for (const log of receipt.logs) {
+      try {
+        const decoded = decodeEventLog({
+          abi: sect8AgentManagerAbi,
+          data: log.data,
+          topics: log.topics,
+        });
+        if (decoded.eventName === 'AgentInitialized') {
+          return {
+            tokenId: decoded.args.tokenId.toString(),
+            txHash: receipt.transactionHash,
+            contractAddress,
+          };
+        }
+      } catch {
+        // Ignore unrelated logs in the same transaction.
       }
-    } catch {
-      // Ignore unrelated logs in the same transaction.
     }
-  }
 
-  throw new Error('initializeAgent transaction succeeded, but AgentInitialized was not found in the receipt logs.');
+    throw new Error('The activation transaction was mined, but AgentInitialized was not found in the receipt logs.');
+  } catch (error) {
+    console.error('initializeAgentOnChain failed', error);
+    throw new Error(formatActivationError(error));
+  }
 }

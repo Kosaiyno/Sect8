@@ -62,6 +62,8 @@ type AttomSnapshot = {
   attom: AttomBundle;
 };
 
+const EXTERNAL_PROPERTY_FETCH_TIMEOUT_MS = 8000;
+
 export type PropertyDetailBundle = {
   listing: ListingRecord;
   housingAuthority: HousingAuthorityMatch | null;
@@ -198,6 +200,9 @@ async function fetchAttomJson<T>(url: string) {
     return null;
   }
 
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), EXTERNAL_PROPERTY_FETCH_TIMEOUT_MS);
+
   try {
     const response = await fetch(url, {
       headers: {
@@ -205,6 +210,7 @@ async function fetchAttomJson<T>(url: string) {
         Accept: 'application/json',
       },
       cache: 'no-store',
+      signal: controller.signal,
     });
 
     if (!response.ok) {
@@ -214,6 +220,8 @@ async function fetchAttomJson<T>(url: string) {
     return await response.json() as T;
   } catch {
     return null;
+  } finally {
+    clearTimeout(timeout);
   }
 }
 
@@ -236,29 +244,31 @@ export async function getPropertyDetailBundle(id: string, listingsRoot?: string 
   }
 
   const listing = { ...baseListing };
-  const cachedAttom = await readAttomSnapshot(String(listing.attomRoot || ''), String(listing.id));
-  const housingAuthority = await resolveHousingAuthorityContact({
-    address: String(listing.address || ''),
-    zipCode: String(listing.zip || ''),
-  });
+  const [cachedAttom, housingAuthority, fairMarketRent] = await Promise.all([
+    readAttomSnapshot(String(listing.attomRoot || ''), String(listing.id)),
+    resolveHousingAuthorityContact({
+      address: String(listing.address || ''),
+      zipCode: String(listing.zip || ''),
+    }),
+    listing.address && listing.purchasePrice && listing.bedrooms
+      ? getFairMarketRent(String(listing.zip || ''), Number(listing.bedrooms), String(listing.address))
+      : Promise.resolve(null),
+  ]);
 
-  if (listing.address && listing.purchasePrice && listing.bedrooms) {
-    const fairMarketRent = await getFairMarketRent(String(listing.zip || ''), Number(listing.bedrooms), String(listing.address));
-    if (fairMarketRent.source === 'hud') {
-      const estRent = Number(listing.estRent || fairMarketRent.value);
-      const underwriting = calculateUnderwriting({ purchasePrice: Number(listing.purchasePrice), estRent });
+  if (fairMarketRent?.source === 'hud') {
+    const estRent = Number(listing.estRent || fairMarketRent.value);
+    const underwriting = calculateUnderwriting({ purchasePrice: Number(listing.purchasePrice), estRent });
 
-      listing.fmr = fairMarketRent.value;
-      listing.fmrSource = 'hud';
-      listing.estRent = estRent;
-      listing.annualRent = underwriting.annualRent;
-      listing.annualCashflow = underwriting.annualCashflow;
-      listing.estExpenses = underwriting.estExpenses;
-      listing.netOperating = underwriting.netOperating;
-      listing.cashflow = underwriting.monthlyCashflow;
-      listing.capRate = underwriting.capRate;
-      listing.roi = underwriting.roi ?? undefined;
-    }
+    listing.fmr = fairMarketRent.value;
+    listing.fmrSource = 'hud';
+    listing.estRent = estRent;
+    listing.annualRent = underwriting.annualRent;
+    listing.annualCashflow = underwriting.annualCashflow;
+    listing.estExpenses = underwriting.estExpenses;
+    listing.netOperating = underwriting.netOperating;
+    listing.cashflow = underwriting.monthlyCashflow;
+    listing.capRate = underwriting.capRate;
+    listing.roi = underwriting.roi ?? undefined;
   }
 
   const { address1, address2 } = splitAddress(String(listing.address || ''));

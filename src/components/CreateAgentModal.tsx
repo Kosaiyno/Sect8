@@ -23,6 +23,8 @@ export function CreateAgentModal({
     maxPrice: 150000,
     minRoi: 0.1,
   });
+  const [loading, setLoading] = useState(false);
+  const [activationPhase, setActivationPhase] = useState<string | null>(null);
 
   return (
     <div className="fixed inset-0 z-100 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
@@ -88,7 +90,10 @@ export function CreateAgentModal({
         </div>
 
         <button 
+          disabled={loading}
           onClick={async () => {
+            setLoading(true);
+            setActivationPhase('Preparing the first 0G memory root...');
             try {
               const owner = ((window as unknown as { ethereum?: EthereumWithSelectedAddress }).ethereum?.selectedAddress || '').trim();
               if (!owner) throw new Error('Connect your wallet first');
@@ -102,8 +107,10 @@ export function CreateAgentModal({
               const prepared = await prepareResponse.json();
               if (!prepared.success || !prepared.memoryRoot) throw new Error(prepared.error || 'failed to prepare activation');
 
+              setActivationPhase('Waiting for wallet confirmation on 0G Mainnet...');
               const onChain = await initializeAgentOnChain(owner, prepared.memoryRoot);
 
+              setActivationPhase('Finalizing the agent record and syncing memory...');
               const response = await fetch('/api/agents/create', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -124,12 +131,17 @@ export function CreateAgentModal({
               onCreate(prefs);
             } catch (error) {
               alert('Failed to initialize agent: ' + String(error));
+            } finally {
+              setLoading(false);
+              setActivationPhase(null);
             }
           }}
-          className="btn-primary w-full py-4 text-lg"
+          className="btn-primary w-full py-4 text-lg disabled:cursor-not-allowed disabled:opacity-60"
         >
-          Activate Agent on 0G
+          {loading ? 'Creating My Agent...' : 'Activate Agent on 0G'}
         </button>
+
+        {activationPhase && <div className="text-sm text-cyan-100">{activationPhase}</div>}
       </div>
     </div>
   );

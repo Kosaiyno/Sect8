@@ -59,6 +59,39 @@ export class ZgStorageService {
     }
   }
 
+  private isNonceDriftError(error: unknown) {
+    const message = error instanceof Error ? error.message : String(error || '');
+    return message.includes('NONCE_EXPIRED')
+      || message.includes('nonce too low')
+      || message.includes('nonce has already been used');
+  }
+
+  private resetSigner() {
+    this.signerPromise = null;
+  }
+
+  private async runIndexerUpload(indexer: Indexer, mem: MemData, rpcArg: string) {
+    const signer = await this.getSigner(rpcArg);
+    console.log('ZgStorageService: calling indexer.upload', { rpcArg, indexerUrl: this.storageUrl, hasSigner: true });
+
+    const [uploadResult, err] = await indexer.upload(mem, rpcArg, signer as any);
+    if (err) {
+      const wrapped = new Error('Indexer.upload returned error: ' + String(err));
+      // @ts-ignore
+      wrapped.details = { rpcArg, indexerUrl: this.storageUrl, original: err };
+      throw wrapped;
+    }
+
+    const rootHash = typeof uploadResult === 'string'
+      ? uploadResult
+      : ('rootHash' in uploadResult ? uploadResult.rootHash : uploadResult.rootHashes?.[0]);
+    if (!rootHash) {
+      throw new Error('Indexer.upload succeeded but did not return a root hash');
+    }
+
+    return String(rootHash);
+  }
+
   /**
    * Uploads data to 0G Storage and returns a canonical dataRoot/hash
    */
@@ -78,27 +111,23 @@ export class ZgStorageService {
     const indexer = new Indexer(this.storageUrl);
     const mem = new MemData(content instanceof Buffer ? content : Buffer.from(content));
     return this.enqueueUpload(async () => {
-      const signer = await this.getSigner(rpcArg);
-      console.log('ZgStorageService: calling indexer.upload', { rpcArg, indexerUrl: this.storageUrl, hasSigner: true });
-
       try {
-        const [uploadResult, err] = await indexer.upload(mem, rpcArg, signer as any);
-        if (err) {
-          const wrapped = new Error('Indexer.upload returned error: ' + String(err));
-          // @ts-ignore
-          wrapped.details = { rpcArg, indexerUrl: this.storageUrl, original: err };
-          throw wrapped;
-        }
-
-        const rootHash = typeof uploadResult === 'string'
-          ? uploadResult
-          : ('rootHash' in uploadResult ? uploadResult.rootHash : uploadResult.rootHashes?.[0]);
-        if (!rootHash) {
-          throw new Error('Indexer.upload succeeded but did not return a root hash');
-        }
-
-        return String(rootHash);
+        return await this.runIndexerUpload(indexer, mem, rpcArg);
       } catch (e: any) {
+        if (this.isNonceDriftError(e)) {
+          console.warn('ZgStorageService: detected nonce drift, resetting signer and retrying upload once');
+          this.resetSigner();
+          try {
+            return await this.runIndexerUpload(indexer, mem, rpcArg);
+          } catch (retryError: any) {
+            const msg = `ZgStorageService.uploadData failed after nonce-refresh retry. indexerUrl=${this.storageUrl} rpcArg=${rpcArg} error=${retryError?.message || retryError}`;
+            const wrapped = new Error(msg);
+            // @ts-ignore
+            wrapped.original = retryError;
+            throw wrapped;
+          }
+        }
+
         const msg = `ZgStorageService.uploadData failed calling indexer.upload. indexerUrl=${this.storageUrl} rpcArg=${rpcArg} error=${e?.message || e}`;
         const wrapped = new Error(msg);
         // @ts-ignore

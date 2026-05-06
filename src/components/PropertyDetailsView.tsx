@@ -1,3 +1,5 @@
+"use client";
+
 import Link from 'next/link';
 import { ArrowLeft, BadgeDollarSign, Brain, FileBadge2, Home, Mail, MapPin, Phone, ShieldCheck, Waves, Wind } from 'lucide-react';
 import type { PropertyAnalysisBundle } from '@/lib/propertyAnalysis';
