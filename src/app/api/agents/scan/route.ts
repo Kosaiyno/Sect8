@@ -83,6 +83,7 @@ async function precomputePropertyAnalyses(listingIds: string[], listingsRoot: st
         status: analysis.fromCache ? 'cache-hit' as const : 'generated' as const,
         provider: analysis.record.provider,
         storageRoot: analysis.record.storageRoot,
+        attomRoot: bundle.listing.attomRoot || null,
       });
     } catch (error) {
       results.push({
@@ -337,11 +338,17 @@ export async function POST(req: Request) {
         .filter((entry) => entry.status !== 'error' && entry.storageRoot)
         .map((entry) => [String(entry.listingId), entry.storageRoot as string])
     );
+    const attomRootById = new Map(
+      analysisPrecompute
+        .filter((entry) => entry.status !== 'error' && entry.attomRoot)
+        .map((entry) => [String(entry.listingId), entry.attomRoot as string])
+    );
 
     const enrichedResults = results.map((result) => ({
       ...result,
       listingsRoot: null,
       analysisRoot: analysisRootById.get(String(result.id)) || null,
+      attomRoot: attomRootById.get(String(result.id)) || null,
     }));
 
     logsRoot = await write0gJson({

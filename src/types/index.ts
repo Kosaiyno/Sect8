@@ -3,6 +3,7 @@ export interface Property {
   address: string;
   listingsRoot?: string | null;
   analysisRoot?: string | null;
+  attomRoot?: string | null;
   price?: number;
   purchasePrice?: number | null;
   bedrooms: number;

@@ -1,6 +1,6 @@
 import 'server-only';
 
-import { read0gJson, type ListingsSnapshot } from '@/lib/0gPersistence';
+import { read0gJson, write0gJson, type ListingsSnapshot } from '@/lib/0gPersistence';
 import { getFairMarketRent } from '@/lib/realDataService';
 import { resolveHousingAuthorityContact, type HousingAuthorityMatch } from '@/lib/phaDirectory';
 import { readRentcastCache } from '@/lib/rentcastCache';
@@ -49,6 +49,17 @@ type AttomSaleHistoryRecord = {
     deedType?: string | null;
     saleDocNum?: string | null;
   };
+};
+
+type AttomBundle = PropertyDetailBundle['attom'];
+
+type AttomSnapshot = {
+  type: 'attom-property';
+  version: 1;
+  listingId: string;
+  address: string;
+  createdAt: number;
+  attom: AttomBundle;
 };
 
 export type PropertyDetailBundle = {
@@ -107,6 +118,17 @@ export type PropertyDetailBundle = {
     };
   };
 };
+
+function buildEmptyAttomBundle(): AttomBundle {
+  return {
+    ownership: { ownerName: null, mailingAddress: null, absenteeOwnerStatus: null, corporateOwner: false, verified: false },
+    parcel: { attomId: null, apn: null, propertyUse: null, yearBuilt: null, lotNumber: null, lotSizeSqft: null, latitude: null, longitude: null, geoIdV4: null },
+    assessedValue: { assessedTotal: null, marketTotal: null, taxAmount: null, assessorYear: null, taxYear: null },
+    taxHistory: [],
+    deedHistory: [],
+    risk: { flood: null, fire: null, environmental: [], naturalDisasters: [] },
+  };
+}
 
 async function readSavedListings(listingsRoot?: string | null) {
   const snapshot = await read0gJson<ListingsSnapshot>(listingsRoot);
@@ -214,6 +236,7 @@ export async function getPropertyDetailBundle(id: string, listingsRoot?: string 
   }
 
   const listing = { ...baseListing };
+  const cachedAttom = await readAttomSnapshot(String(listing.attomRoot || ''), String(listing.id));
   const housingAuthority = await resolveHousingAuthorityContact({
     address: String(listing.address || ''),
     zipCode: String(listing.zip || ''),
@@ -239,18 +262,19 @@ export async function getPropertyDetailBundle(id: string, listingsRoot?: string 
   }
 
   const { address1, address2 } = splitAddress(String(listing.address || ''));
+  if (cachedAttom) {
+    return {
+      listing,
+      housingAuthority,
+      attom: cachedAttom,
+    };
+  }
+
   if (!address1 || !address2) {
     return {
       listing,
       housingAuthority,
-      attom: {
-        ownership: { ownerName: null, mailingAddress: null, absenteeOwnerStatus: null, corporateOwner: false, verified: false },
-        parcel: { attomId: null, apn: null, propertyUse: null, yearBuilt: null, lotNumber: null, lotSizeSqft: null, latitude: null, longitude: null, geoIdV4: null },
-        assessedValue: { assessedTotal: null, marketTotal: null, taxAmount: null, assessorYear: null, taxYear: null },
-        taxHistory: [],
-        deedHistory: [],
-        risk: { flood: null, fire: null, environmental: [], naturalDisasters: [] },
-      },
+      attom: buildEmptyAttomBundle(),
     };
   }
 
@@ -280,10 +304,7 @@ export async function getPropertyDetailBundle(id: string, listingsRoot?: string 
   const naturalDisasters = communityJson?.community?.naturalDisasters;
   const airQuality = communityJson?.community?.airQuality;
 
-  return {
-    listing,
-    housingAuthority,
-    attom: {
+  const attom: AttomBundle = {
       ownership: {
         ownerName: owner?.owner1 || owner?.owner2 || null,
         mailingAddress: owner?.mailingaddressoneline || null,
@@ -352,6 +373,41 @@ export async function getPropertyDetailBundle(id: string, listingsRoot?: string 
           ]),
         ],
       },
-    },
+    };
+
+  try {
+    listing.attomRoot = await writeAttomSnapshot(String(listing.id), String(listing.address || ''), attom);
+  } catch {
+    listing.attomRoot = listing.attomRoot || null;
+  }
+
+  return {
+    listing,
+    housingAuthority,
+    attom,
   };
+}
+
+async function readAttomSnapshot(attomRoot: string | null | undefined, listingId: string) {
+  if (!attomRoot) {
+    return null;
+  }
+
+  const snapshot = await read0gJson<AttomSnapshot>(attomRoot);
+  if (!snapshot || snapshot.type !== 'attom-property' || snapshot.listingId !== listingId) {
+    return null;
+  }
+
+  return snapshot.attom;
+}
+
+async function writeAttomSnapshot(listingId: string, address: string, attom: AttomBundle) {
+  return write0gJson({
+    type: 'attom-property',
+    version: 1,
+    listingId,
+    address,
+    createdAt: Date.now(),
+    attom,
+  } satisfies AttomSnapshot);
 }
