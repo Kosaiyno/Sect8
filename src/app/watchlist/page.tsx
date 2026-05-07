@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { Bath, BedDouble, Heart, MapPin } from 'lucide-react';
+import { useAccount } from 'wagmi';
 import WatchlistButton from '@/components/WatchlistButton';
 import { getWatchlistUpdatedEventName, readWatchlist, type WatchlistItem } from '@/lib/watchlist';
 
@@ -26,11 +27,12 @@ function getPropertyType(item: WatchlistItem) {
 }
 
 export default function WatchlistPage() {
+  const { address, isConnected } = useAccount();
   const [items, setItems] = useState<WatchlistItem[]>([]);
 
   useEffect(() => {
     const syncItems = () => {
-      setItems(readWatchlist());
+      setItems(readWatchlist(address));
     };
 
     syncItems();
@@ -42,7 +44,7 @@ export default function WatchlistPage() {
       window.removeEventListener('storage', syncItems);
       window.removeEventListener(eventName, syncItems);
     };
-  }, []);
+  }, [address]);
 
   return (
     <div className="flex flex-col gap-8 animate-fade-in">
@@ -130,7 +132,17 @@ export default function WatchlistPage() {
                 </div>
 
                 <div className="mt-4 flex gap-2">
-                  <Link href={`/dashboard/properties/${encodeURIComponent(item.id)}`} prefetch className="btn-primary flex-1 text-center text-sm">
+                  <Link
+                    href={{
+                      pathname: `/dashboard/properties/${encodeURIComponent(item.id)}`,
+                      query: {
+                        ...(item.listingsRoot ? { listingsRoot: item.listingsRoot } : {}),
+                        ...(item.analysisRoot ? { analysisRoot: item.analysisRoot } : {}),
+                      },
+                    }}
+                    prefetch
+                    className="btn-primary flex-1 text-center text-sm"
+                  >
                     Open Analysis
                   </Link>
                 </div>
@@ -140,8 +152,8 @@ export default function WatchlistPage() {
         </div>
       ) : (
         <div className="dashboard-panel rounded-[32px] p-12 text-center">
-          <div className="font-outfit text-3xl font-black text-white">Your watchlist is empty</div>
-          <p className="mt-3 text-white/60">Tap the heart on a home card or on the details page to keep it here.</p>
+          <div className="font-outfit text-3xl font-black text-white">{isConnected ? 'Your watchlist is empty' : 'Connect your wallet to load your watchlist'}</div>
+          <p className="mt-3 text-white/60">{isConnected ? 'Tap the heart on a home card or on the details page to keep it here.' : 'Watchlist entries are now scoped per wallet, so this page only shows the connected address.'}</p>
           <div className="mt-6 flex justify-center gap-3">
             <Link href="/dashboard" prefetch className="btn-primary text-sm">Open dashboard</Link>
             <Link href="/market" prefetch className="rounded-full border border-white/10 bg-white/5 px-5 py-3 text-sm font-semibold text-white transition hover:bg-white/10">

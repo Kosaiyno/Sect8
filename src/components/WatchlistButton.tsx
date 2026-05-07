@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { Heart } from 'lucide-react';
+import { useAccount } from 'wagmi';
 import { getWatchlistUpdatedEventName, isInWatchlist, toggleWatchlist, type WatchlistItem } from '@/lib/watchlist';
 
 type WatchlistButtonProps = {
@@ -21,11 +22,12 @@ export default function WatchlistButton({
   label = 'Watchlist',
   showLabel = false,
 }: WatchlistButtonProps) {
+  const { address } = useAccount();
   const [saved, setSaved] = useState(false);
 
   useEffect(() => {
     const syncState = () => {
-      setSaved(isInWatchlist(item.id));
+      setSaved(isInWatchlist(item.id, address));
     };
 
     syncState();
@@ -37,14 +39,14 @@ export default function WatchlistButton({
       window.removeEventListener('storage', syncState);
       window.removeEventListener(eventName, syncState);
     };
-  }, [item.id]);
+  }, [address, item.id]);
 
   return (
     <button
       type="button"
       aria-pressed={saved}
       aria-label={saved ? 'Remove from watchlist' : 'Add to watchlist'}
-      onClick={() => setSaved(toggleWatchlist(item))}
+      onClick={() => setSaved(toggleWatchlist(item, address))}
       className={`${className} ${saved ? activeClassName : inactiveClassName}`.trim()}
     >
       <Heart size={16} fill={saved ? 'currentColor' : 'none'} />

@@ -102,6 +102,8 @@ export default function PropertyDetailsView({ bundle, analysisResult }: Property
   const watchlistItem = {
     id: String(listing.id),
     address: String(listing.address || ''),
+    listingsRoot: typeof listing.listingsRoot === 'string' ? listing.listingsRoot : null,
+    analysisRoot: typeof listing.analysisRoot === 'string' ? listing.analysisRoot : null,
     zip: listing.zip,
     bedrooms: listing.bedrooms,
     bathrooms: listing.bathrooms,

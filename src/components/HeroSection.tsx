@@ -98,6 +98,8 @@ export default function HeroSection({ recommendations, isScanning = false, targe
                   item={{
                     id: topPick.id,
                     address: topPick.address,
+                    listingsRoot: topPick.listingsRoot,
+                    analysisRoot: topPick.analysisRoot,
                     bedrooms: topPick.bedrooms,
                     bathrooms: topPick.bathrooms,
                     purchasePrice: topPick.purchasePrice,

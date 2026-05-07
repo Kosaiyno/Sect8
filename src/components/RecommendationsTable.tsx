@@ -120,6 +120,8 @@ export default function RecommendationsTable({ recommendations }: Recommendation
                     item={{
                       id: recommendation.id,
                       address: recommendation.address,
+                      listingsRoot: recommendation.listingsRoot,
+                      analysisRoot: recommendation.analysisRoot,
                       zip: recommendation.zip,
                       bedrooms: recommendation.bedrooms,
                       bathrooms: recommendation.bathrooms,
