@@ -138,7 +138,7 @@ export default function HeroSection({ recommendations, isScanning = false, targe
                     {metric.icon}
                     {metric.label}
                   </div>
-                  <div className="font-outfit text-[clamp(1.45rem,1.8vw,2rem)] leading-[1.02] font-black tracking-[-0.04em] text-white tabular-nums">{metric.value}</div>
+                  <div className="min-w-0 font-outfit text-[clamp(1.1rem,1.45vw,1.7rem)] leading-none font-black tracking-[-0.05em] text-white tabular-nums">{metric.value}</div>
                 </div>
               ))}
             </div>

@@ -167,7 +167,7 @@ export default function PropertyDetailsView({ bundle, analysisResult }: Property
             ].map((metric) => (
               <div key={metric.label} className="dashboard-subpanel flex min-h-[112px] flex-col justify-between rounded-[24px] px-4 py-4">
                 <div className="mb-2 flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] text-white/45">{metric.icon}{metric.label}</div>
-                <div className="font-outfit text-[clamp(1.35rem,1.8vw,2rem)] leading-[1.02] font-black tracking-[-0.04em] text-white tabular-nums">{metric.value}</div>
+                <div className="min-w-0 font-outfit text-[clamp(1.05rem,1.35vw,1.65rem)] leading-none font-black tracking-[-0.05em] text-white tabular-nums">{metric.value}</div>
               </div>
             ))}
           </div>
