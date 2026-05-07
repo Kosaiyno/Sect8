@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Manrope, Sora } from "next/font/google";
+import Image from "next/image";
 import "./globals.css";
 import "@rainbow-me/rainbowkit/styles.css";
 import Link from "next/link";
@@ -13,6 +14,11 @@ const outfit = Sora({ subsets: ["latin"], variable: "--font-outfit" });
 export const metadata: Metadata = {
   title: "Sect8 | Section 8 Acquisition Platform",
   description: "Professional Section 8 acquisition workflows, underwriting, and 0G-backed market memory.",
+  icons: {
+    icon: "/sect8%20logo.png",
+    shortcut: "/sect8%20logo.png",
+    apple: "/sect8%20logo.png",
+  },
 };
 
 export default function RootLayout({
@@ -28,8 +34,15 @@ export default function RootLayout({
           <div className="platform-bg" aria-hidden />
           <header className="fixed left-0 right-0 top-0 z-50 mx-4 mt-4 flex h-16 items-center justify-between rounded-[26px] border border-white/8 bg-[linear-gradient(180deg,rgba(11,16,24,0.92),rgba(10,16,22,0.86))] px-6 shadow-[0_18px_60px_rgba(0,0,0,0.35)] backdrop-blur-xl">
             <div className="flex items-center gap-3">
-              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[linear-gradient(135deg,#59c7ff_0%,#2d7cff_55%,#0f3dad_100%)] shadow-[0_12px_30px_rgba(36,107,255,0.32)]">
-                <span className="text-white font-bold text-xl">S8</span>
+              <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.06] p-1.5 shadow-[0_12px_30px_rgba(0,0,0,0.24)]">
+                <Image
+                  src="/sect8%20logo.png"
+                  alt="Sect8 logo"
+                  width={44}
+                  height={44}
+                  className="h-full w-full object-contain"
+                  priority
+                />
               </div>
               <div>
                 <div className="font-outfit text-xl font-black tracking-tight text-white">Sect8</div>
