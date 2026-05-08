@@ -1,7 +1,7 @@
 "use client";
 import Link from 'next/link';
-import React, { useState } from 'react';
-import { Bath, BedDouble, MapPin } from 'lucide-react';
+import React, { useEffect, useRef, useState } from 'react';
+import { Bath, BedDouble, ChevronDown, MapPin } from 'lucide-react';
 import WatchlistButton from '@/components/WatchlistButton';
 
 type RecommendationCard = {
@@ -32,6 +32,16 @@ type RecommendationTableProps = {
   recommendations: RecommendationCard[];
 };
 
+const SORT_OPTIONS = [
+  { value: 'newest', label: 'Newest' },
+  { value: 'yield-high', label: 'Highest Cap Rate' },
+  { value: 'cashflow-high', label: 'Highest Cashflow' },
+  { value: 'price-low', label: 'Lowest Price' },
+  { value: 'price-high', label: 'Highest Price' },
+] as const;
+
+type SortOptionValue = (typeof SORT_OPTIONS)[number]['value'];
+
 function getLocationParts(address: string) {
   const [street = '', city = '', stateZip = ''] = address.split(',').map((part) => part.trim());
   const [state = '', zip = ''] = stateZip.split(' ').filter(Boolean);
@@ -53,7 +63,33 @@ function formatNumber(value: number | null | undefined, suffix = '') {
 
 export default function RecommendationsTable({ recommendations }: RecommendationTableProps) {
   const saleRecommendations = recommendations.filter((recommendation) => Number(recommendation.purchasePrice || 0) >= 10000);
-  const [sortBy, setSortBy] = useState('newest');
+  const [sortBy, setSortBy] = useState<SortOptionValue>('newest');
+  const [isSortMenuOpen, setIsSortMenuOpen] = useState(false);
+  const sortMenuRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    function handlePointerDown(event: MouseEvent) {
+      if (!sortMenuRef.current?.contains(event.target as Node)) {
+        setIsSortMenuOpen(false);
+      }
+    }
+
+    function handleEscape(event: KeyboardEvent) {
+      if (event.key === 'Escape') {
+        setIsSortMenuOpen(false);
+      }
+    }
+
+    document.addEventListener('mousedown', handlePointerDown);
+    document.addEventListener('keydown', handleEscape);
+
+    return () => {
+      document.removeEventListener('mousedown', handlePointerDown);
+      document.removeEventListener('keydown', handleEscape);
+    };
+  }, []);
+
+  const activeSort = SORT_OPTIONS.find((option) => option.value === sortBy) || SORT_OPTIONS[0];
 
   const filteredRecommendations = [...saleRecommendations].sort((left, right) => {
     switch (sortBy) {
@@ -73,20 +109,55 @@ export default function RecommendationsTable({ recommendations }: Recommendation
 
   return (
     <div className="space-y-5">
-      <div className="dashboard-panel rounded-[30px] p-5">
+      <div className="dashboard-panel relative z-20 overflow-visible rounded-[30px] p-5">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div>
             <div className="text-[10px] font-black uppercase tracking-[0.24em] text-white/45">My recommendation board</div>
             <div className="mt-1 font-outfit text-2xl font-black tracking-[-0.04em] text-white">I am showing {filteredRecommendations.length} of {saleRecommendations.length} homes for sale</div>
           </div>
 
-          <select value={sortBy} onChange={(event) => setSortBy(event.target.value)} className="dashboard-field rounded-2xl px-4 py-3 text-sm outline-hidden">
-            <option value="newest">Newest</option>
-            <option value="yield-high">Highest Cap Rate</option>
-            <option value="cashflow-high">Highest Cashflow</option>
-            <option value="price-low">Lowest Price</option>
-            <option value="price-high">Highest Price</option>
-          </select>
+          <div ref={sortMenuRef} className="relative z-30 w-full lg:w-auto">
+            <button
+              type="button"
+              onClick={() => setIsSortMenuOpen((current) => !current)}
+              className="dashboard-field flex w-full min-w-[220px] items-center justify-between rounded-[22px] px-4 py-3 text-left text-sm font-semibold text-white lg:w-auto"
+              aria-haspopup="listbox"
+              aria-expanded={isSortMenuOpen}
+            >
+              <span className="flex flex-col">
+                <span className="text-[10px] font-black uppercase tracking-[0.18em] text-white/40">Sort board</span>
+                <span className="mt-1 text-base text-white">{activeSort.label}</span>
+              </span>
+              <ChevronDown size={18} className={`text-white/55 transition-transform ${isSortMenuOpen ? 'rotate-180' : ''}`} />
+            </button>
+
+            {isSortMenuOpen ? (
+              <div className="absolute right-0 z-40 mt-3 w-full overflow-hidden rounded-[24px] border border-white/10 bg-[#0d141d] p-2 shadow-[0_24px_80px_rgba(0,0,0,0.42)] backdrop-blur-xl lg:w-[240px]">
+                <div className="mb-1 px-3 pt-2 text-[10px] font-black uppercase tracking-[0.18em] text-white/35">Order results</div>
+                <div className="space-y-1" role="listbox" aria-label="Sort recommendations">
+                  {SORT_OPTIONS.map((option) => {
+                    const isActive = option.value === sortBy;
+
+                    return (
+                      <button
+                        key={option.value}
+                        type="button"
+                        onClick={() => {
+                          setSortBy(option.value);
+                          setIsSortMenuOpen(false);
+                        }}
+                        className={`flex w-full items-center rounded-[18px] px-3 py-3 text-left text-sm transition ${isActive ? 'bg-cyan-300/12 text-cyan-100 shadow-[inset_0_0_0_1px_rgba(103,232,249,0.16)]' : 'text-white/72 hover:bg-white/[0.05] hover:text-white'}`}
+                        role="option"
+                        aria-selected={isActive}
+                      >
+                        <span className="font-semibold">{option.label}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            ) : null}
+          </div>
         </div>
       </div>
 

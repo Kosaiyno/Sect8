@@ -41,6 +41,40 @@ flowchart LR
 	P --> V
 ```
 
+## 0G Integration Proof
+
+### 0G Mainnet Contract
+
+- Contract address: `0x7D3BF702030Ea8a9988f3A2ddc46ba7DaE315F7a`
+- Explorer: `https://explorer.0g.ai/address/0x7D3BF702030Ea8a9988f3A2ddc46ba7DaE315F7a`
+
+### What is actually using 0G
+
+- 0G Compute is used to generate the property investment memo shown on the property analysis page.
+- 0G Storage is used to persist:
+	- the initial agent memory root
+	- updated agent memory state
+	- the property-analysis payload and its storage root
+- 0G Chain is used to register the user-facing agent contract path.
+
+### Why the proof is trustworthy
+
+The app does not always claim 0G was used. It only shows the 0G labels when the runtime actually succeeded:
+
+- If compute succeeds, the property page shows `Analysis generated with: 0G Compute`.
+- If compute fails, the same UI falls back to `fallback analysis`.
+- If storage succeeds, the property page shows `Stored at: 0x...`.
+- If storage fails, the same UI shows `Storage upload unavailable`.
+
+This behavior is implemented, not hardcoded marketing copy:
+
+- Compute call: `src/lib/propertyAnalysis.ts` -> `generateAnalysis()` -> `zgCompute.runAnalysis(...)`
+- Compute client: `src/og-integration/compute.ts`
+- Analysis storage upload: `src/lib/propertyAnalysis.ts` -> `uploadAnalysisRecord()` -> `uploadAgentMemory(...)`
+- Storage client: `src/og-integration/storage.ts`
+- Property page proof labels: `src/components/PropertyDetailsView.tsx`
+- Agent-memory uploads: `src/app/actions/og.ts`, `src/app/api/agents/create/route.ts`, `src/app/api/agents/uploadMemory/route.ts`
+
 ## 0G Modules Used
 
 ### 1. 0G Compute
@@ -176,13 +210,100 @@ After deployment, record the deployed contract address in your environment or ap
 
 ## Judge / Reviewer Notes
 
-### What to test first
+### Fastest working verification path
 
-1. Open the dashboard.
-2. Create or restore an agent.
+This is the clearest end-to-end path for judges to verify the project is really using 0G Compute and 0G Storage for the workflow we claim.
+
+1. Start the app and open `/dashboard`.
+2. Connect a wallet and create or restore an agent.
 3. Run a ZIP-based scan.
-4. Open an `Agent Analysis` page for a property.
-5. Confirm that the analysis view shows the provider and storage root when available.
+4. Open any `Agent Analysis` page for a property.
+5. On the property page, verify these two lines:
+
+	 - `Analysis generated with: 0G Compute`
+	 - `Stored at: 0x...`
+
+6. Refresh the same property flow or reopen the same property from the dashboard.
+7. Verify the app reuses the saved memo instead of inventing a new one.
+
+The session pipeline explicitly records this behavior:
+
+- When a new compute-backed memo is created, the session logs `Generated a new 0G investment memo.`
+- When the saved analysis root is reused, the session logs `Recovered the saved investment memo for this property.`
+
+That behavior is implemented in `src/lib/propertyDetailsSession.ts` and `src/lib/propertyAnalysis.ts`.
+
+### What exactly this proves
+
+#### 1. 0G Compute proof
+
+The property memo is not labeled as 0G by default. It is labeled `0G Compute` only when `generateAnalysis()` successfully returns `provider: '0g-compute'` after calling the 0G compute service.
+
+Relevant code:
+
+- `src/lib/propertyAnalysis.ts`
+- `src/og-integration/compute.ts`
+
+Discriminating check:
+
+- If the 0G compute call fails, the UI will say `fallback analysis`, not `0G Compute`.
+
+#### 2. 0G Storage proof for property analysis
+
+After compute completes, the app uploads a structured `property-analysis` payload to 0G Storage and keeps the returned root hash.
+
+Relevant code:
+
+- `src/lib/propertyAnalysis.ts` -> `uploadAnalysisRecord()`
+- `src/og-integration/storage.ts`
+
+Discriminating checks:
+
+- The property page shows `Stored at: 0x...` only when the upload succeeded.
+- On repeat open, the app reads the saved payload back from 0G Storage using that root and rehydrates the memo.
+
+#### 3. 0G Storage proof for agent memory
+
+Agent memory is also persisted to 0G Storage, not only property analyses.
+
+Working proof points:
+
+- Agent creation uploads initial memory and returns `memoryRoot`.
+- The Memory panel shows the current memory root for the active wallet.
+- The upload routes return a storage hash only when 0G Storage succeeds.
+
+Relevant code:
+
+- `src/app/actions/og.ts`
+- `src/app/api/agents/create/route.ts`
+- `src/app/api/agents/uploadMemory/route.ts`
+- `src/components/MemoryPanel.tsx`
+
+### Optional API-level verification
+
+Judges who want a direct storage check without relying only on the UI can call the memory-upload endpoint locally.
+
+Example request:
+
+```bash
+curl -X POST http://localhost:3000/api/agents/uploadMemory \
+	-H "Content-Type: application/json" \
+	-d '{"memory":{"agentId":"judge-check","history":["0G storage verification"]}}'
+```
+
+Expected result:
+
+- `success: true`
+- `hash: 0x...`
+
+That hash is the 0G Storage root returned by the SDK upload path.
+
+### What judges should reject
+
+If the app shows either of these values during the property flow, that means the 0G path did not complete successfully for that specific run:
+
+- `fallback analysis`
+- `Storage upload unavailable`
 
 ### Faucet / wallet notes
 

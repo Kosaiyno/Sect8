@@ -7,7 +7,6 @@ import { useAccount } from "wagmi";
 import AgentHeader from '@/components/AgentHeader';
 import HeroSection from '@/components/HeroSection';
 import RecommendationsTable from '@/components/RecommendationsTable';
-import MemoryPanel from '@/components/MemoryPanel';
 import AgentDashboardWrapper from '@/components/AgentDashboardWrapper';
 
 type DashboardAgent = {
@@ -56,7 +55,6 @@ type DashboardViewState = {
   };
   scanNotice: string | null;
   usingFallback: boolean;
-  activeTab: 'recommendations' | 'memory';
 };
 
 function getAgentStorageKey(address: string) {
@@ -76,7 +74,6 @@ export default function Dashboard() {
   const [zipOptions, setZipOptions] = useState<Array<{ zipCode: string; city: string; state: string; label: string }>>([]);
   const [agent, setAgent] = useState<DashboardAgent | null>(null);
   const [checked, setChecked] = useState(false);
-  const [activeTab, setActiveTab] = useState<"recommendations" | "memory">("recommendations");
   const [usingFallback, setUsingFallback] = useState<boolean>(false);
   const [recommendations, setRecommendations] = useState<Recommendation[]>([]);
   const [searchMode, setSearchMode] = useState<'zip' | 'filter'>('zip');
@@ -98,7 +95,6 @@ export default function Dashboard() {
     const activeAgent = { ...nextAgent, status: 'active' };
     setAgent(activeAgent);
     setChecked(true);
-    setActiveTab('recommendations');
     if (address) {
       localStorage.setItem(getAgentStorageKey(address), JSON.stringify(activeAgent));
     }
@@ -149,7 +145,6 @@ export default function Dashboard() {
         });
         setScanNotice(parsed.scanNotice || null);
         setUsingFallback(Boolean(parsed.usingFallback));
-        setActiveTab(parsed.activeTab || 'recommendations');
       } catch {
         sessionStorage.removeItem(getDashboardStateKey(address));
       }
@@ -168,11 +163,10 @@ export default function Dashboard() {
       filterSearch,
       scanNotice,
       usingFallback,
-      activeTab,
     };
 
     sessionStorage.setItem(getDashboardStateKey(address), JSON.stringify(nextState));
-  }, [activeTab, address, filterSearch, recommendations, scanNotice, searchMode, selectedZip, usingFallback]);
+  }, [address, filterSearch, recommendations, scanNotice, searchMode, selectedZip, usingFallback]);
 
   useEffect(() => {
     async function loadZipOptions() {
@@ -347,7 +341,6 @@ export default function Dashboard() {
       } else {
         setScanNotice(null);
       }
-      setActiveTab('recommendations');
     } catch (error) {
       console.error('Scan failed', error);
       setAgent((current) => current ? { ...current, status: 'active' } : current);
@@ -379,7 +372,6 @@ export default function Dashboard() {
       } else {
         setScanNotice(null);
       }
-      setActiveTab('recommendations');
     } catch (error) {
       console.error('Filter search failed', error);
       setScanNotice(`Filter search failed: ${String(error)}`);
@@ -444,7 +436,7 @@ export default function Dashboard() {
         {[
           { label: "Target ZIP", value: String(selectedZip || agent.preferences?.zipCode || "N/A"), icon: <Database size={16} /> },
           { label: "Matches Found", value: recommendations.length.toString(), icon: <TrendingUp size={16} /> },
-          { label: "Memory Entries", value: (agent.memory?.history?.length?.toString() ?? "0"), icon: <ShieldCheck size={16} /> },
+          { label: "Verified Analyses", value: String(agent.memory?.recentAnalyses?.length || 0), icon: <ShieldCheck size={16} /> },
           { label: "Reliability", value: "99.9%", icon: <CheckCircle2 size={16} /> }
         ].map((stat, i) => (
           <div key={i} className="dashboard-panel rounded-[26px] p-6 transition-colors hover:border-cyan-300/20">
@@ -460,30 +452,8 @@ export default function Dashboard() {
       <div className="flex flex-col gap-6">
         <HeroSection recommendations={recommendations} isScanning={isScanning} targetZip={selectedZip || String(agent.preferences?.zipCode || '')} />
 
-        <div className="dashboard-panel flex w-full flex-wrap gap-2 rounded-[24px] p-1.5 lg:w-fit">
-          {(["recommendations", "memory"] as const).map((tab) => (
-            <button
-              key={tab}
-              onClick={() => setActiveTab(tab)}
-              className={`dashboard-tab ${
-                activeTab === tab 
-                  ? "dashboard-tab-active" 
-                  : "dashboard-tab-idle"
-              }`}
-            >
-              {tab}
-            </button>
-          ))}
-        </div>
-
         <div className="min-h-[400px]">
-          {activeTab === "recommendations" && (
-            <RecommendationsTable recommendations={recommendations} />
-          )}
-
-          {activeTab === "memory" && (
-            <MemoryPanel agent={agent} />
-          )}
+          <RecommendationsTable recommendations={recommendations} />
         </div>
       </div>
     </div>

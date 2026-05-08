@@ -88,6 +88,10 @@ function formatPercent(value: number | null | undefined) {
   return `${Number(value).toFixed(1)}%`;
 }
 
+function getRentMetricLabel(source: string | null | undefined) {
+  return source === 'hud' ? 'HUD FMR' : 'Modeled FMR';
+}
+
 type PropertyDetailsViewProps = {
   bundle: PropertyDetailBundle;
   analysisResult: PropertyAnalysisBundle;
@@ -117,6 +121,8 @@ export default function PropertyDetailsView({ bundle, analysisResult }: Property
     squareFootage: listing.squareFootage,
     url: listing.url,
   };
+  const rentMetricLabel = getRentMetricLabel(listing.fmrSource);
+  const hasModeledRent = listing.fmrSource && listing.fmrSource !== 'hud';
 
   return (
     <div className="mx-auto flex w-full max-w-[1320px] flex-col gap-6 px-4 py-8 text-white md:px-6 xl:px-8">
@@ -161,11 +167,11 @@ export default function PropertyDetailsView({ bundle, analysisResult }: Property
           <div className="grid grid-cols-2 gap-4 lg:grid-cols-3 xl:grid-cols-6">
             {[
               { label: 'Purchase Price', value: formatCurrency(listing.purchasePrice), icon: <BadgeDollarSign size={16} /> },
-              { label: 'HUD FMR', value: listing.fmrSource === 'hud' ? formatCurrency(listing.fmr, '/mo') : 'Unavailable', icon: <Home size={16} /> },
-              { label: 'Projected Cash Flow', value: listing.fmrSource === 'hud' ? formatCurrency(listing.cashflow, '/mo') : 'Unavailable', icon: <FileBadge2 size={16} /> },
-              { label: 'Annual Cash Flow', value: listing.fmrSource === 'hud' ? formatCurrency(listing.annualCashflow) : 'Unavailable', icon: <FileBadge2 size={16} /> },
-              { label: 'Cap Rate', value: listing.fmrSource === 'hud' ? formatPercent(listing.capRate) : 'Unavailable', icon: <ShieldCheck size={16} /> },
-              { label: 'ROI', value: listing.fmrSource === 'hud' ? formatPercent(listing.roi) : 'Unavailable', icon: <ShieldCheck size={16} /> },
+              { label: rentMetricLabel, value: formatCurrency(listing.fmr, '/mo'), icon: <Home size={16} /> },
+              { label: 'Projected Cash Flow', value: formatCurrency(listing.cashflow, '/mo'), icon: <FileBadge2 size={16} /> },
+              { label: 'Annual Cash Flow', value: formatCurrency(listing.annualCashflow), icon: <FileBadge2 size={16} /> },
+              { label: 'Cap Rate', value: formatPercent(listing.capRate), icon: <ShieldCheck size={16} /> },
+              { label: 'ROI', value: formatPercent(listing.roi), icon: <ShieldCheck size={16} /> },
             ].map((metric) => (
               <div key={metric.label} className="dashboard-subpanel flex min-h-[112px] flex-col justify-between rounded-[24px] px-4 py-4">
                 <div className="mb-2 flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] text-white/45">{metric.icon}{metric.label}</div>
@@ -173,6 +179,12 @@ export default function PropertyDetailsView({ bundle, analysisResult }: Property
               </div>
             ))}
           </div>
+
+          {hasModeledRent ? (
+            <div className="rounded-[22px] border border-amber-300/15 bg-amber-300/10 px-4 py-3 text-sm leading-6 text-amber-50/90">
+              HUD rent support was not verified for this address, so Sect8 is showing modeled rent and underwriting instead of HUD-backed figures.
+            </div>
+          ) : null}
         </div>
       </section>
 

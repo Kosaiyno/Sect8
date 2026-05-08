@@ -255,12 +255,12 @@ export async function getPropertyDetailBundle(id: string, listingsRoot?: string 
       : Promise.resolve(null),
   ]);
 
-  if (fairMarketRent?.source === 'hud') {
+  if (fairMarketRent) {
     const estRent = Number(listing.estRent || fairMarketRent.value);
     const underwriting = calculateUnderwriting({ purchasePrice: Number(listing.purchasePrice), estRent });
 
     listing.fmr = fairMarketRent.value;
-    listing.fmrSource = 'hud';
+    listing.fmrSource = fairMarketRent.source;
     listing.estRent = estRent;
     listing.annualRent = underwriting.annualRent;
     listing.annualCashflow = underwriting.annualCashflow;
