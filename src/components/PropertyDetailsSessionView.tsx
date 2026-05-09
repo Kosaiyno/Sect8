@@ -6,6 +6,7 @@ import PropertyDetailsLoadingState, { type PropertyLoadingStep } from '@/compone
 import PropertyDetailsView from '@/components/PropertyDetailsView';
 import type { PropertyAnalysisBundle } from '@/lib/propertyAnalysis';
 import type { PropertyDetailBundle } from '@/lib/propertyDetails';
+import type { ComputeProof } from '@/types';
 
 type SessionPayload = {
   id: string;
@@ -16,6 +17,9 @@ type SessionPayload = {
   steps: PropertyLoadingStep[];
   terminalLines: string[];
   error: string | null;
+  analysisProvider: '0g-compute' | 'fallback' | null;
+  computeProof: ComputeProof | null;
+  analysisStorageRoot: string | null;
   sessionRoot?: string | null;
   result: null | {
     bundle: PropertyDetailBundle;
@@ -147,6 +151,9 @@ export default function PropertyDetailsSessionView({
         'Agent session opened.',
         'Collecting the first property signals...',
       ]}
+      analysisProvider={session?.analysisProvider || null}
+      computeProof={session?.computeProof || null}
+      analysisStorageRoot={session?.analysisStorageRoot || null}
       error={error || session?.error || null}
     />
   );

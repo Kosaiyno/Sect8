@@ -1,45 +1,175 @@
 # Sect8
 
-Sect8 is the AI agent that finds Section 8 deals and analyzes them before you buy. The product focuses on one core workflow: create a user agent on 0G chain, analyze properties with 0G compute, and persist analysis and memory state with 0G storage.
+Sect8 is an AI acquisition agent for Section 8 rental investing. It creates a wallet-linked agent on 0G Mainnet, scans live or cached for-sale inventory, enriches each property with housing and ownership data, runs a 0G Compute-backed investment memo, and persists agent state plus analysis artifacts through 0G Storage.
 
 ## Project Overview
 
-Sect8 is built for investors who buy rental property and want an AI agent to help them find, screen, and analyze Section 8 opportunities faster.
+Sect8 is built for investors who want a faster way to find and underwrite Section 8 opportunities before making an offer.
 
-The product workflow is:
+The core workflow is:
 
-1. Create a user agent tied to a wallet.
-2. Pull for-sale inventory and supporting housing data.
-3. Run property analysis using 0G compute.
-4. Store memory and analysis artifacts using 0G storage.
-5. Present a decision-ready property dossier with cash flow, cap rate, ROI, ownership context, hazard context, and housing-authority contacts.
+1. Create or restore a wallet-linked Sect8 agent.
+2. Pull property inventory and supporting housing data.
+3. Build underwriting inputs such as rent support, cash flow, cap rate, and ROI.
+4. Run a property memo through 0G Compute.
+5. Persist the resulting analysis and agent state through 0G Storage.
+6. Present a decision-ready property dossier with verification context for ownership, parcel records, deed history, hazard signals, and housing-authority contacts.
 
-This repo positions Sect8 as an AI agent for Section 8 acquisitions. The strongest part of the project is the use of 0G compute for property analysis, with 0G storage for persistent memory and 0G chain for agent creation.
+Sect8 is intentionally narrow. It is not a generic chat bot or a general market browser. It is a Section 8 deal-finding and underwriting workflow anchored on 0G Compute, 0G Storage, and 0G Chain.
 
 ## System Architecture
 
 ### Technical Description
 
-- Frontend: Next.js App Router UI for landing page, dashboard, market page, and property analysis views.
-- Data layer: listing data, HUD fair market rent, ATTOM property context, and PHA contact data.
-- Analysis layer: 0G compute generates property-level analysis and decision text.
-- Storage layer: 0G storage persists memory and analysis payloads as retrievable roots.
-- Chain layer: a Sect8 agent contract on 0G Mainnet creates a chain-backed user agent identity.
+- Frontend: Next.js App Router UI for the landing page, dashboard, market page, and property analysis pages.
+- Agent identity: a 0G Mainnet ERC-721 contract creates a wallet-linked Sect8 agent.
+- Listing layer: RentCast sale inventory plus locally cached listing snapshots.
+- Rent support layer: HUD Fair Market Rent data, with a modeled fallback when HUD support cannot be verified.
+- Property intelligence layer: ATTOM parcel, owner, tax, sale-history, and community risk context.
+- Voucher operations layer: local housing-authority directory matching by ZIP, city, county, and state.
+- Analysis layer: 0G Compute generates the structured investment memo.
+- Persistence layer: 0G Storage stores agent state, listings snapshots, ATTOM snapshots, and property-analysis payloads.
 
 ### Architecture Diagram
 
 ```mermaid
 flowchart LR
 	U[User Wallet] --> D[Dashboard]
-	D --> M[Market + Property Data]
 	D --> C[0G Chain Agent Creation]
-	M --> A[Property Analysis Service]
-	A --> G[0G Compute]
-	A --> S[0G Storage]
-	S --> P[Stored Memory + Analysis Roots]
-	A --> V[Property Dossier View]
-	P --> V
+	D --> L[RentCast Listings + Cached Snapshots]
+	L --> H[HUD FMR + Modeled Rent]
+	L --> A[ATTOM Parcel + Ownership Data]
+	L --> P[PHA Directory Match]
+	H --> X[Property Underwriting]
+	A --> X
+	P --> X
+	X --> G[0G Compute Investment Memo]
+	G --> S[0G Storage Persistence]
+	S --> V[Agent Analysis View + Proof Panel]
 ```
+
+## External Data and How It Is Used
+
+Sect8 uses several external data sources and support datasets. Each has a specific role in the underwriting workflow.
+
+### 1. RentCast sale listings
+
+- Source: RentCast sale listings API
+- Main file: `src/lib/realDataService.ts`
+- Supporting cache file: `data/rentcast-cache.json`
+- Supporting cache helpers: `src/lib/rentcastCache.ts`
+
+How it is used:
+
+- Pulls active for-sale inventory by ZIP code.
+- Supplies the property address, price, bedrooms, bathrooms, property type, square footage, and listing URL used in the dashboard and market views.
+- Provides the base listing record that later gets enriched with ATTOM, HUD, and PHA context.
+- Scan results can be cached locally and linked to 0G Storage roots so the app can restore prior listing snapshots.
+
+### 2. HUD Fair Market Rent data
+
+- Source: HUD FMR API and bundled HUD cache
+- Main file: `src/lib/realDataService.ts`
+- Bundled cache file: `data/hud-fmr-cache.json`
+
+How it is used:
+
+- Resolves the Fair Market Rent for the property ZIP and bedroom count when HUD support is available.
+- Drives voucher-oriented rent benchmarking for Section 8 underwriting.
+- Feeds the underwriting model that calculates annual rent, cash flow, cap rate, and ROI.
+- If HUD data cannot be verified, the app falls back to a modeled rent estimate and explicitly labels it as modeled instead of pretending it is HUD-backed.
+
+### 3. ATTOM property and ownership data
+
+- Source: ATTOM property APIs
+- Main file: `src/lib/propertyDetails.ts`
+
+How it is used:
+
+- Pulls parcel identifiers, APN, property use, year built, lot details, latitude, and longitude.
+- Pulls owner name, mailing address, absentee-owner status, and corporate-owner indicators.
+- Pulls assessed value, market value, tax amount, assessor year, and tax year.
+- Pulls deed and sale-history records to expose transfer history and ownership continuity.
+- Pulls community risk context such as flood, fire, environmental, and natural-disaster indicators.
+- Provides the verification context shown in the property dossier so the memo is not based on listing data alone.
+
+### 4. Housing authority directory data
+
+- Source: locally bundled housing-authority directory
+- Main file: `src/lib/phaDirectory.ts`
+- Data file: `data/pha-directory.json`
+
+How it is used:
+
+- Matches a property to a likely housing authority using ZIP, city, county, and state.
+- Exposes phone, email, office address, program type, and source URL when available.
+- Gives the investor an actual operational next step for voucher verification instead of stopping at a financial score.
+
+### 5. ZIP and county lookup services
+
+- Sources: Zippopotam.us and FCC Census Block API
+- Main file: `src/lib/realDataService.ts`
+
+How it is used:
+
+- Resolves ZIP metadata such as state, latitude, and longitude.
+- Resolves county FIPS codes for HUD FMR lookup and housing-authority matching.
+- Supports the rent and PHA matching pipeline rather than serving as a user-facing feature.
+
+## 0G Modules Used
+
+### 1. 0G Chain
+
+- Contract: `contracts/Sect8AgentManager.sol`
+- Deploy script: `scripts/deploy.ts`
+- Client activation flow: `src/lib/agentActivation.ts`
+
+What it does in Sect8:
+
+- Mints a wallet-linked Sect8 agent NFT.
+- Stores the initial `memoryRoot` passed into `initializeAgent`.
+- Allows later agent-state updates and decision logging.
+- Anchors the agent identity on 0G Mainnet instead of keeping it only in client state.
+
+### 2. 0G Compute
+
+- Compute client: `src/og-integration/compute.ts`
+- Main property analysis flow: `src/lib/propertyAnalysis.ts`
+- Supporting agent compute route: `src/app/api/agentCompute/route.ts`
+- Supporting ranking/decision helpers: `src/lib/ogAgent.ts`, `src/lib/agentDecision.ts`
+
+What it does in Sect8:
+
+- Generates the structured property investment memo.
+- Produces the summary, verdict, strengths, risks, next steps, and confidence.
+- Returns the provider metadata used in the new Agent analysis proof panel.
+
+### 3. 0G Storage
+
+- Storage client: `src/og-integration/storage.ts`
+- Upload wrapper: `src/app/actions/og.ts`
+- Agent create/persist routes: `src/app/api/agents/create/route.ts`, `src/app/api/agents/uploadMemory/route.ts`
+- Analysis persistence: `src/lib/propertyAnalysis.ts`
+- Session and JSON snapshot helpers: `src/lib/0gPersistence.ts`, `src/lib/propertyDetailsSession.ts`
+
+What it does in Sect8:
+
+- Stores the initial agent memory root before on-chain activation.
+- Stores updated memory and agent record snapshots.
+- Stores listings snapshots and normalized listing payloads.
+- Stores ATTOM-backed property snapshots.
+- Stores property-analysis payloads and their retrievable storage roots.
+
+## How the Product Flow Works
+
+1. A user connects a wallet and creates or restores a Sect8 agent.
+2. The app prepares an initial memory object and uploads it to 0G Storage.
+3. The wallet signs a 0G Mainnet transaction that calls `initializeAgent` on the Sect8 agent manager contract.
+4. The dashboard runs a ZIP-based scan and loads listing inventory.
+5. When a property is opened, Sect8 assembles listing, rent, ATTOM, and housing-authority context.
+6. Sect8 computes underwriting inputs and sends the full property bundle to 0G Compute.
+7. The returned memo is normalized, stored to 0G Storage, and attached back to the property flow through a storage root.
+8. The Agent analysis UI shows both the final memo and the runtime proof artifacts for the compute and storage steps.
 
 ## 0G Integration Proof
 
@@ -50,93 +180,152 @@ flowchart LR
 
 ### What is actually using 0G
 
+- 0G Chain is used to mint the wallet-linked Sect8 agent NFT and anchor the initial memory root.
 - 0G Compute is used to generate the property investment memo shown on the property analysis page.
-- 0G Storage is used to persist:
-	- the initial agent memory root
-	- updated agent memory state
-	- the property-analysis payload and its storage root
-- 0G Chain is used to register the user-facing agent contract path.
+- 0G Storage is used to persist agent memory, listings snapshots, ATTOM-backed property snapshots, and property-analysis records.
+
+### New proof surface: Agent analysis proof panel
+
+The strongest runtime proof surface is now the `Agent analysis` view. During a live property analysis run, the panel shows structured proof artifacts pulled from the actual 0G-backed execution path:
+
+- compute status
+- provider address
+- compute endpoint
+- model name
+- returned response ID
+- HTTP status
+- storage root for the persisted analysis
+- live session lines showing the compute and storage path that completed
+
+This is implemented through:
+
+- compute metadata capture: `src/og-integration/compute.ts`
+- analysis record persistence: `src/lib/propertyAnalysis.ts`
+- session proof propagation: `src/lib/propertyDetailsSession.ts`
+- live proof UI: `src/components/PropertyDetailsLoadingState.tsx`
+- completed analysis proof UI: `src/components/PropertyDetailsView.tsx`
 
 ### Why the proof is trustworthy
 
-The app does not always claim 0G was used. It only shows the 0G labels when the runtime actually succeeded:
+The app does not claim 0G success unconditionally. It only shows the 0G proof values when those runtime steps actually succeeded.
 
-- If compute succeeds, the property page shows `Analysis generated with: 0G Compute`.
-- If compute fails, the same UI falls back to `fallback analysis`.
-- If storage succeeds, the property page shows `Stored at: 0x...`.
-- If storage fails, the same UI shows `Storage upload unavailable`.
+- If compute succeeds, the completed page shows `Analysis generated with: 0G Compute`.
+- If compute fails, the page falls back to `fallback analysis`.
+- If storage succeeds, the completed page shows `Stored at: 0x...`.
+- If storage fails, the page shows `Storage upload unavailable`.
+- The live Agent analysis panel now exposes provider, response, and storage artifacts from the actual run instead of only showing generic loading text.
 
-This behavior is implemented, not hardcoded marketing copy:
+## Judge / Reviewer Notes
 
-- Compute call: `src/lib/propertyAnalysis.ts` -> `generateAnalysis()` -> `zgCompute.runAnalysis(...)`
-- Compute client: `src/og-integration/compute.ts`
-- Analysis storage upload: `src/lib/propertyAnalysis.ts` -> `uploadAnalysisRecord()` -> `uploadAgentMemory(...)`
-- Storage client: `src/og-integration/storage.ts`
-- Property page proof labels: `src/components/PropertyDetailsView.tsx`
-- Agent-memory uploads: `src/app/actions/og.ts`, `src/app/api/agents/create/route.ts`, `src/app/api/agents/uploadMemory/route.ts`
+### Fastest verification path
 
-## 0G Modules Used
+This is the clearest end-to-end path for judges to verify the project is really using 0G Chain, 0G Compute, and 0G Storage for the workflow we claim.
 
-### 1. 0G Compute
+1. Verify the contract on 0G Explorer:
 
-Used for property-level analysis generation.
+   - `0x7D3BF702030Ea8a9988f3A2ddc46ba7DaE315F7a`
+   - `https://explorer.0g.ai/address/0x7D3BF702030Ea8a9988f3A2ddc46ba7DaE315F7a`
 
-- Integration file: `src/og-integration/compute.ts`
-- Main analysis usage: `src/lib/propertyAnalysis.ts`
-- Supporting analysis usage: `src/app/api/agentCompute/route.ts`, `src/lib/agentDecision.ts`, `src/lib/ogAgent.ts`
+2. Start the app and open `/dashboard`.
+3. Connect a wallet and create or restore an agent.
+4. Run a ZIP-based scan.
+5. Open any `Agent analysis` page for a property.
+6. In the live proof panel, verify that the run exposes:
 
-What it does in Sect8:
+   - the 0G compute provider address
+   - the compute endpoint and model
+   - a returned response ID
+   - an HTTP success status
+   - a 0G Storage root for the persisted analysis
 
-- Generates structured investment analysis for a property.
-- Produces reasoning, strengths, risks, next steps, and confidence.
-- Powers the property dossier experience.
+7. On the completed page, verify these lines:
 
-### 2. 0G Storage
+   - `Analysis generated with: 0G Compute`
+   - `Stored at: 0x...`
 
-Used for memory and analysis persistence.
+8. Reopen the same property or refresh the flow and verify the app can recover the saved analysis instead of inventing a new one.
 
-- Integration file: `src/og-integration/storage.ts`
-- Upload helper: `src/app/actions/og.ts`
-- Used by agent creation, memory sync, scan persistence, and property analysis caching.
+### What exactly this proves
 
-What it does in Sect8:
+#### 1. 0G Chain proof
 
-- Stores initial agent memory.
-- Stores updated memory roots tied to agent activity.
-- Stores property-analysis payloads and analysis roots.
-- Lets the UI show that an analysis was persisted through the 0G stack.
+The explorer verifies that the Sect8 agent manager contract is deployed on 0G Mainnet.
 
-### 3. 0G Chain
+Relevant code:
 
-Used for user agent creation.
+- `contracts/Sect8AgentManager.sol`
+- `src/lib/agentActivation.ts`
 
-- Contract: `contracts/Sect8AgentManager.sol`
-- Deploy script: `scripts/deploy.ts`
+#### 2. 0G Compute proof
 
-What it does in Sect8:
+The Agent analysis panel now exposes provider and response metadata tied to the live run. The completed page labels the memo as `0G Compute` only when the property analysis flow successfully returned from the 0G compute path.
 
-- Creates a chain-backed Sect8 agent identity for a user.
-- Anchors the agent concept to a wallet and contract path on 0G Mainnet.
+Relevant code:
 
-Current scope note:
+- `src/og-integration/compute.ts`
+- `src/lib/propertyAnalysis.ts`
+- `src/lib/propertyDetailsSession.ts`
 
-- In this project, 0G chain is used for agent creation. The main product emphasis is on 0G compute for analysis rather than on-chain execution of every workflow step.
+Discriminating check:
 
-## How the 0G Modules Support the Product
+- If the 0G compute call fails, the UI says `fallback analysis`, not `0G Compute`.
 
-- Sect8 is the AI agent layer: it finds deals, ranks them, and opens a decision-ready property dossier before a user buys.
-- 0G compute is the product differentiator. It turns raw property inputs into a readable, structured investment analysis instead of just showing listings.
-- 0G storage preserves memory and analysis artifacts so the workflow can recover state and show proof of persistence.
-- 0G chain gives each user a chain-backed agent creation path, which makes the agent identity more durable than a client-only profile.
+#### 3. 0G Storage proof for property analysis
 
-## Key Product Capabilities
+After compute completes, Sect8 uploads a structured `property-analysis` payload to 0G Storage and keeps the returned root.
 
-- Pulls for-sale inventory instead of generic market browsing.
-- Calculates projected cash flow, cap rate, and ROI.
-- Adds ATTOM ownership, parcel, tax, deed, and hazard context.
-- Adds housing-authority contacts where available.
-- Produces a property dossier backed by 0G compute analysis.
-- Persists memory and analysis roots through 0G storage.
+Relevant code:
+
+- `src/lib/propertyAnalysis.ts` -> `uploadAnalysisRecord()`
+- `src/og-integration/storage.ts`
+
+Discriminating checks:
+
+- The live proof panel exposes the returned storage root.
+- The completed page shows `Stored at: 0x...` only when the upload succeeded.
+- On repeat open, the app can read the saved payload back from 0G Storage using that root.
+
+#### 4. 0G Storage proof for agent state
+
+Sect8 also uses 0G Storage before and after activation to persist agent memory and agent-record state.
+
+Relevant code:
+
+- `src/app/actions/og.ts`
+- `src/app/api/agents/create/route.ts`
+- `src/app/api/agents/uploadMemory/route.ts`
+
+### Optional API-level verification
+
+Judges who want a direct storage check without relying only on the UI can call the memory-upload endpoint locally.
+
+```bash
+curl -X POST http://localhost:3000/api/agents/uploadMemory \
+	-H "Content-Type: application/json" \
+	-d '{"memory":{"agentId":"judge-check","history":["0G storage verification"]}}'
+```
+
+Expected result:
+
+- `success: true`
+- `hash: 0x...`
+
+That hash is the 0G Storage root returned by the SDK upload path.
+
+### What judges should reject
+
+If the app shows either of these values during the property flow, that means the 0G path did not complete successfully for that specific run:
+
+- `fallback analysis`
+- `Storage upload unavailable`
+
+### Reviewer guidance
+
+- The most important feature to evaluate is the property-analysis flow and its proof panel.
+- 0G Chain is used for agent creation and identity anchoring.
+- 0G Compute is used for memo generation.
+- 0G Storage is used for state and analysis persistence.
+- RentCast, HUD, ATTOM, and the housing-authority directory are all used as real underwriting inputs rather than decorative metadata.
 
 ## Local Deployment / Reproduction Steps
 
@@ -144,7 +333,7 @@ Current scope note:
 
 - Node.js 20+
 - npm
-- A funded 0G-compatible wallet/private key for storage uploads and chain deployment
+- A funded 0G-compatible wallet or private key for storage uploads and chain deployment
 
 ### Environment Variables
 
@@ -159,9 +348,23 @@ OG_COMPUTE_PROVIDER=your_0g_compute_provider_address
 OG_COMPUTE_API_KEY=your_0g_compute_api_key
 OG_COMPUTE_MODEL=deepseek/deepseek-chat-v3-0324
 AGENT_DEPLOYER_PRIVATE_KEY=your_private_key
+NEXT_PUBLIC_AGENT_MANAGER_ADDRESS=your_deployed_contract_address
 ```
 
-Additional product data providers used by this repo may require their own keys depending on the flows you exercise.
+Common external-data variables:
+
+```bash
+RENTCAST_API_KEY=your_rentcast_api_key
+ATTOM_API_KEY=your_attom_api_key
+HUD_USER_API_TOKEN=your_hud_token_optional
+HUD_ENABLE_LIVE_FETCH=0
+```
+
+Notes:
+
+- If `HUD_ENABLE_LIVE_FETCH` is disabled, Sect8 reads the committed HUD cache from `data/hud-fmr-cache.json`.
+- If ATTOM is unavailable, the property dossier still renders, but ATTOM-backed verification sections will be limited.
+- If RentCast is unavailable, live sale listings are unavailable and the app relies on cached listing data where present.
 
 ### Install
 
@@ -171,13 +374,13 @@ npm install
 
 ### Refresh bundled HUD FMR data
 
-Run this from a US-accessible environment before deploying when you want to refresh the committed HUD rent cache:
+Run this from a US-accessible environment when you want to refresh the committed HUD rent cache:
 
 ```bash
 npm run import:hud
 ```
 
-This writes `data/hud-fmr-cache.json`, which the app uses at runtime so deployed users are not blocked by HUD regional access restrictions.
+This writes `data/hud-fmr-cache.json`, which lets deployed users keep a working HUD-based rent path even when live HUD access is restricted.
 
 ### Run in Development
 
@@ -206,130 +409,18 @@ To deploy the Sect8 agent manager contract to 0G:
 npx hardhat run scripts/deploy.ts --network og
 ```
 
-After deployment, record the deployed contract address in your environment or app configuration as needed.
-
-## Judge / Reviewer Notes
-
-### Fastest working verification path
-
-This is the clearest end-to-end path for judges to verify the project is really using 0G Compute and 0G Storage for the workflow we claim.
-
-1. Start the app and open `/dashboard`.
-2. Connect a wallet and create or restore an agent.
-3. Run a ZIP-based scan.
-4. Open any `Agent Analysis` page for a property.
-5. On the property page, verify these two lines:
-
-	 - `Analysis generated with: 0G Compute`
-	 - `Stored at: 0x...`
-
-6. Refresh the same property flow or reopen the same property from the dashboard.
-7. Verify the app reuses the saved memo instead of inventing a new one.
-
-The session pipeline explicitly records this behavior:
-
-- When a new compute-backed memo is created, the session logs `Generated a new 0G investment memo.`
-- When the saved analysis root is reused, the session logs `Recovered the saved investment memo for this property.`
-
-That behavior is implemented in `src/lib/propertyDetailsSession.ts` and `src/lib/propertyAnalysis.ts`.
-
-### What exactly this proves
-
-#### 1. 0G Compute proof
-
-The property memo is not labeled as 0G by default. It is labeled `0G Compute` only when `generateAnalysis()` successfully returns `provider: '0g-compute'` after calling the 0G compute service.
-
-Relevant code:
-
-- `src/lib/propertyAnalysis.ts`
-- `src/og-integration/compute.ts`
-
-Discriminating check:
-
-- If the 0G compute call fails, the UI will say `fallback analysis`, not `0G Compute`.
-
-#### 2. 0G Storage proof for property analysis
-
-After compute completes, the app uploads a structured `property-analysis` payload to 0G Storage and keeps the returned root hash.
-
-Relevant code:
-
-- `src/lib/propertyAnalysis.ts` -> `uploadAnalysisRecord()`
-- `src/og-integration/storage.ts`
-
-Discriminating checks:
-
-- The property page shows `Stored at: 0x...` only when the upload succeeded.
-- On repeat open, the app reads the saved payload back from 0G Storage using that root and rehydrates the memo.
-
-#### 3. 0G Storage proof for agent memory
-
-Agent memory is also persisted to 0G Storage, not only property analyses.
-
-Working proof points:
-
-- Agent creation uploads initial memory and returns `memoryRoot`.
-- The Memory panel shows the current memory root for the active wallet.
-- The upload routes return a storage hash only when 0G Storage succeeds.
-
-Relevant code:
-
-- `src/app/actions/og.ts`
-- `src/app/api/agents/create/route.ts`
-- `src/app/api/agents/uploadMemory/route.ts`
-- `src/components/MemoryPanel.tsx`
-
-### Optional API-level verification
-
-Judges who want a direct storage check without relying only on the UI can call the memory-upload endpoint locally.
-
-Example request:
-
-```bash
-curl -X POST http://localhost:3000/api/agents/uploadMemory \
-	-H "Content-Type: application/json" \
-	-d '{"memory":{"agentId":"judge-check","history":["0G storage verification"]}}'
-```
-
-Expected result:
-
-- `success: true`
-- `hash: 0x...`
-
-That hash is the 0G Storage root returned by the SDK upload path.
-
-### What judges should reject
-
-If the app shows either of these values during the property flow, that means the 0G path did not complete successfully for that specific run:
-
-- `fallback analysis`
-- `Storage upload unavailable`
-
-### Faucet / wallet notes
-
-- Judges who want to exercise storage uploads or contract deployment need a funded account on the relevant 0G network.
-- If a wallet has no balance, chain deployment and some storage-backed operations may fail.
-
-### Reviewer guidance
-
-- The most important feature to evaluate is the property-analysis flow powered by 0G compute.
-- 0G storage is used to persist memory and analysis roots.
-- 0G chain is used for user agent creation rather than broad workflow execution.
+After deployment, record the deployed contract address in `NEXT_PUBLIC_AGENT_MANAGER_ADDRESS`.
 
 ## Repository Notes
 
 - Main dashboard route: `src/app/dashboard/page.tsx`
+- Property details and ATTOM integration: `src/lib/propertyDetails.ts`
 - Property analysis pipeline: `src/lib/propertyAnalysis.ts`
+- Live analysis session pipeline: `src/lib/propertyDetailsSession.ts`
 - 0G compute integration: `src/og-integration/compute.ts`
 - 0G storage integration: `src/og-integration/storage.ts`
 - 0G chain contract: `contracts/Sect8AgentManager.sol`
 
 ## Submission Summary
 
-Sect8 is the AI agent that finds Section 8 deals and analyzes them before you buy. Its core advantage is property analysis on 0G compute. The project uses:
-
-- 0G compute for analysis generation
-- 0G storage for memory and analysis persistence
-- 0G chain for user agent creation
-
-That is the intended product scope and the clearest way to evaluate the project.
+Sect8 is a Section 8 acquisition agent built on top of 0G Chain, 0G Compute, and 0G Storage. It scans property listings, enriches them with HUD rent support, ATTOM verification data, and housing-authority contacts, then produces a decision-ready investment memo and exposes the live 0G proof artifacts directly in the Agent analysis view.

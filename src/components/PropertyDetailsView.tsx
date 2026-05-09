@@ -92,6 +92,17 @@ function getRentMetricLabel(source: string | null | undefined) {
   return source === 'hud' ? 'HUD FMR' : 'Modeled FMR';
 }
 
+function truncateMiddle(value: string | null | undefined, edge = 12) {
+  const normalized = String(value || '').trim();
+  if (!normalized) {
+    return 'Unavailable';
+  }
+  if (normalized.length <= edge * 2 + 3) {
+    return normalized;
+  }
+  return `${normalized.slice(0, edge)}...${normalized.slice(-edge)}`;
+}
+
 type PropertyDetailsViewProps = {
   bundle: PropertyDetailBundle;
   analysisResult: PropertyAnalysisBundle;
@@ -255,6 +266,23 @@ export default function PropertyDetailsView({ bundle, analysisResult }: Property
         <div className="dashboard-subpanel mt-5 rounded-[24px] p-4 text-sm text-white/70">
           <div>Analysis generated with: <strong>{analysisResult.record.provider === '0g-compute' ? '0G Compute' : 'fallback analysis'}</strong></div>
           <div className="mt-1">Stored at: <strong>{analysisResult.record.storageRoot || 'Storage upload unavailable'}</strong></div>
+          {analysisResult.record.computeProof ? (
+            <div className="mt-4 grid grid-cols-1 gap-3 lg:grid-cols-2">
+              <div className="rounded-[18px] border border-white/8 bg-white/[0.03] p-3">
+                <div className="text-[10px] font-black uppercase tracking-[0.2em] text-white/42">0G provider</div>
+                <div className="mt-2 break-all font-mono text-[12px] text-cyan-100">{analysisResult.record.computeProof.providerAddress || 'Unavailable'}</div>
+              </div>
+              <div className="rounded-[18px] border border-white/8 bg-white/[0.03] p-3">
+                <div className="text-[10px] font-black uppercase tracking-[0.2em] text-white/42">Compute response</div>
+                <div className="mt-2 font-mono text-[12px] text-emerald-100">{truncateMiddle(analysisResult.record.computeProof.responseId)}</div>
+              </div>
+              <div className="rounded-[18px] border border-white/8 bg-white/[0.03] p-3 lg:col-span-2">
+                <div className="text-[10px] font-black uppercase tracking-[0.2em] text-white/42">Endpoint and model</div>
+                <div className="mt-2 break-all font-mono text-[12px] text-white/82">{analysisResult.record.computeProof.endpoint || 'Unavailable'}</div>
+                <div className="mt-2 font-mono text-[12px] text-white/82">{analysisResult.record.computeProof.model || 'Unavailable'}</div>
+              </div>
+            </div>
+          ) : null}
         </div>
       </section>
 

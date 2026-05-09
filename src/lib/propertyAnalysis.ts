@@ -4,6 +4,7 @@ import crypto from 'node:crypto';
 import { downloadAgentMemory, uploadAgentMemory } from '@/og-integration/storage';
 import { zgCompute } from '@/og-integration/compute';
 import type { PropertyDetailBundle } from '@/lib/propertyDetails';
+import type { ComputeProof } from '@/types';
 
 const ANALYSIS_PROMPT_VERSION = 4;
 
@@ -12,6 +13,7 @@ export type AnalysisRecord = {
   sourceFingerprint: string;
   generatedAt: number;
   provider: '0g-compute' | 'fallback';
+  computeProof: ComputeProof | null;
   storageRoot: string | null;
   analysis: PropertyInvestmentAnalysis;
 };
@@ -503,17 +505,18 @@ async function generateAnalysis(bundle: PropertyDetailBundle) {
     const text = extractText(response);
     const jsonText = extractJsonObject(text);
     if (!jsonText) {
-      return { provider: 'fallback' as const, analysis: fallback };
+      return { provider: 'fallback' as const, analysis: fallback, computeProof: null };
     }
 
     const parsed = JSON.parse(jsonText) as Partial<PropertyInvestmentAnalysis>;
     return {
       provider: '0g-compute' as const,
+      computeProof: response?.meta?.proof || null,
       analysis: normalizeAnalysis(parsed, fallback, bundle),
     };
   } catch (error) {
     console.error('Property analysis compute error', error);
-    return { provider: 'fallback' as const, analysis: fallback };
+    return { provider: 'fallback' as const, analysis: fallback, computeProof: null };
   }
 }
 
@@ -557,6 +560,7 @@ async function uploadAnalysisRecord(
   sourceFingerprint: string,
   generatedAt: number,
   provider: AnalysisRecord['provider'],
+  computeProof: ComputeProof | null,
   analysis: PropertyInvestmentAnalysis,
 ) {
   return uploadAgentMemory({
@@ -565,6 +569,7 @@ async function uploadAnalysisRecord(
     generatedAt,
     sourceFingerprint,
     provider,
+    computeProof,
     payload: {
       listing: bundle.listing,
       attom: bundle.attom,
@@ -591,6 +596,7 @@ async function readAnalysisRecordFromStorage(
       generatedAt?: number;
       sourceFingerprint?: string;
       provider?: AnalysisRecord['provider'];
+      computeProof?: ComputeProof | null;
       payload?: {
         analysis?: PropertyInvestmentAnalysis;
       };
@@ -610,6 +616,7 @@ async function readAnalysisRecordFromStorage(
       sourceFingerprint,
       generatedAt: Number(snapshot.generatedAt || Date.now()),
       provider: snapshot.provider || 'fallback',
+      computeProof: snapshot.computeProof || null,
       storageRoot,
       analysis: postProcessAnalysis(snapshot.payload.analysis, fallback, bundle),
     } satisfies AnalysisRecord;
@@ -643,6 +650,7 @@ export async function getOrCreatePropertyAnalysis(
     sourceFingerprint: fingerprint,
     generatedAt: Date.now(),
     provider: generated.provider,
+    computeProof: generated.computeProof,
     storageRoot: null,
     analysis: generated.analysis,
   };
@@ -654,6 +662,7 @@ export async function getOrCreatePropertyAnalysis(
       fingerprint,
       record.generatedAt,
       generated.provider,
+      generated.computeProof,
       generated.analysis,
     );
     record.storageRoot = storageRoot;

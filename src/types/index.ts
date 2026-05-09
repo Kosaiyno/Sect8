@@ -59,3 +59,13 @@ export interface OnChainLog {
   propertyId: string;
   decision: string;
 }
+
+export interface ComputeProof {
+  providerAddress: string | null;
+  endpoint: string | null;
+  model: string | null;
+  responseId: string | null;
+  status: number | null;
+  statusText: string | null;
+  responsePreview: string | null;
+}

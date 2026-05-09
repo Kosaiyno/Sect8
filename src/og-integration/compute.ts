@@ -1,6 +1,7 @@
 import "server-only";
 
 import { createZGComputeNetworkReadOnlyBroker } from "@0gfoundation/0g-compute-ts-sdk";
+import type { ComputeProof } from "@/types";
 
 type ChatMessage = {
   role: "system" | "user" | "assistant";
@@ -14,7 +15,28 @@ function getModel(defaultModel?: string) {
 type ServiceMetadata = {
   endpoint?: string;
   model?: string;
+  providerAddress?: string;
 };
+
+function sanitizePreview(value: unknown) {
+  const normalized = String(value || "").replace(/\s+/g, " ").trim();
+  if (!normalized) {
+    return null;
+  }
+
+  return normalized.slice(0, 220);
+}
+
+function getResponsePreview(body: any, rawBody: string) {
+  const candidate = body?.choices?.[0]?.message?.content
+    || body?.output_text
+    || body?.message
+    || body?.detail
+    || body?.raw
+    || rawBody;
+
+  return sanitizePreview(candidate);
+}
 
 function getRequiredEnv(name: string): string {
   const value = process.env[name];
@@ -51,6 +73,7 @@ export class ZgComputeService {
         const metadata = {
           endpoint: service?.url ? `${String(service.url).replace(/\/$/, "")}/v1/proxy` : undefined,
           model: service?.model,
+          providerAddress,
         };
 
         if (!metadata?.endpoint) {
@@ -98,7 +121,17 @@ export class ZgComputeService {
       throw new Error(errorMessage);
     }
 
-    return { result: body, meta: metadata };
+    const proof: ComputeProof = {
+      providerAddress: metadata.providerAddress || null,
+      endpoint: metadata.endpoint || null,
+      model: payload.model || metadata.model || null,
+      responseId: typeof body?.id === "string" ? body.id : null,
+      status: response.status,
+      statusText: response.statusText || null,
+      responsePreview: getResponsePreview(body, rawBody),
+    };
+
+    return { result: body, meta: { ...metadata, proof } };
   }
 
   async runAnalysis(payload: { messages?: ChatMessage[]; model?: string }): Promise<any> {

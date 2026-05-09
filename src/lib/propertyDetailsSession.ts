@@ -5,6 +5,7 @@ import { read0gJson, write0gJson, type ListingsSnapshot } from '@/lib/0gPersiste
 import { getOrCreatePropertyAnalysis, type PropertyAnalysisBundle } from '@/lib/propertyAnalysis';
 import { getPropertyDetailBundle, getPropertyListingPreview, type PropertyDetailBundle } from '@/lib/propertyDetails';
 import type { PropertyLoadingStep } from '@/components/PropertyDetailsLoadingState';
+import type { ComputeProof } from '@/types';
 
 type SessionStatus = 'running' | 'completed' | 'failed';
 type SessionPhase = 'load-bundle' | 'run-analysis' | 'finalize' | 'completed';
@@ -22,6 +23,9 @@ type PropertyDetailsSession = {
   steps: PropertyLoadingStep[];
   terminalLines: string[];
   error: string | null;
+  analysisProvider: '0g-compute' | 'fallback' | null;
+  computeProof: ComputeProof | null;
+  analysisStorageRoot: string | null;
   bundle: PropertyDetailBundle | null;
   analysisResult: PropertyAnalysisBundle | null;
 };
@@ -193,6 +197,9 @@ export async function createPropertyDetailsSession(listingId: string, listingsRo
       'Collecting the latest property signals...',
     ],
     error: null,
+    analysisProvider: null,
+    computeProof: null,
+    analysisStorageRoot: null,
     bundle: null,
     analysisResult: null,
   };
@@ -266,6 +273,9 @@ export async function advancePropertyDetailsSession(sessionId: string, sessionRo
         String(session.bundle.listing.analysisRoot || ''),
       );
       session.analysisResult = analysisResult;
+      session.analysisProvider = analysisResult.record.provider;
+      session.computeProof = analysisResult.record.computeProof;
+      session.analysisStorageRoot = analysisResult.record.storageRoot;
       if (analysisResult.record.storageRoot) {
         session.bundle = {
           ...session.bundle,
@@ -283,6 +293,25 @@ export async function advancePropertyDetailsSession(sessionId: string, sessionRo
       session.phase = 'finalize';
       session.progress = 84;
       session.steps = updateStepStatuses(session.steps, 'finalize');
+      if (analysisResult.record.computeProof?.providerAddress) {
+        const statusCode = analysisResult.record.computeProof.status;
+        session.terminalLines = appendTerminalLine(
+          session.terminalLines,
+          `0G provider ${analysisResult.record.computeProof.providerAddress} responded${statusCode ? ` with HTTP ${statusCode}` : ''}.`
+        );
+      }
+      if (analysisResult.record.computeProof?.responseId) {
+        session.terminalLines = appendTerminalLine(
+          session.terminalLines,
+          `Returned compute response ID ${analysisResult.record.computeProof.responseId}.`
+        );
+      }
+      if (analysisResult.record.storageRoot) {
+        session.terminalLines = appendTerminalLine(
+          session.terminalLines,
+          `Persisted analysis to 0G Storage at ${analysisResult.record.storageRoot}.`
+        );
+      }
       session.terminalLines = appendTerminalLine(
         session.terminalLines,
         analysisResult.fromCache

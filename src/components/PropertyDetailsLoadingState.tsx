@@ -1,4 +1,5 @@
 import { Brain, CheckCircle2, Clock3, Database, ScanSearch, ShieldAlert, ShieldCheck, Sparkles } from 'lucide-react';
+import type { ComputeProof } from '@/types';
 
 export type PropertyLoadingStep = {
   key: string;
@@ -15,8 +16,22 @@ type PropertyDetailsLoadingStateProps = {
   progress?: number;
   steps: PropertyLoadingStep[];
   terminalLines: string[];
+  analysisProvider?: '0g-compute' | 'fallback' | null;
+  computeProof?: ComputeProof | null;
+  analysisStorageRoot?: string | null;
   error?: string | null;
 };
+
+function truncateMiddle(value: string | null | undefined, edge = 10) {
+  const normalized = String(value || '').trim();
+  if (!normalized) {
+    return 'Pending';
+  }
+  if (normalized.length <= edge * 2 + 3) {
+    return normalized;
+  }
+  return `${normalized.slice(0, edge)}...${normalized.slice(-edge)}`;
+}
 
 function getStepAccent(status: PropertyLoadingStep['status']) {
   switch (status) {
@@ -54,6 +69,9 @@ export default function PropertyDetailsLoadingState({
   progress = 12,
   steps,
   terminalLines,
+  analysisProvider,
+  computeProof,
+  analysisStorageRoot,
   error,
 }: PropertyDetailsLoadingStateProps) {
   return (
@@ -121,6 +139,45 @@ export default function PropertyDetailsLoadingState({
                   <div key={line} className="agent-terminal-line">{line}</div>
                 ))}
                 {!error ? <div className="agent-terminal-line">Streaming live analysis state<span className="agent-typing" /></div> : null}
+              </div>
+
+              <div className="mt-5 rounded-[24px] border border-white/8 bg-white/[0.03] p-4 text-sm text-white/72">
+                <div className="text-[10px] font-black uppercase tracking-[0.22em] text-white/42">0G execution proof</div>
+                <div className="mt-3 space-y-2">
+                  <div className="flex items-start justify-between gap-3">
+                    <span className="text-white/45">Compute status</span>
+                    <span className="text-right font-semibold text-white">{analysisProvider === '0g-compute' ? 'Verified 0G Compute' : analysisProvider === 'fallback' ? 'Fallback analysis' : 'Waiting for provider response'}</span>
+                  </div>
+                  <div className="flex items-start justify-between gap-3">
+                    <span className="text-white/45">Provider</span>
+                    <span className="max-w-[190px] break-all text-right font-mono text-[12px] text-cyan-100">{truncateMiddle(computeProof?.providerAddress)}</span>
+                  </div>
+                  <div className="flex items-start justify-between gap-3">
+                    <span className="text-white/45">Endpoint</span>
+                    <span className="max-w-[190px] break-all text-right font-mono text-[12px] text-white/85">{computeProof?.endpoint || 'Pending'}</span>
+                  </div>
+                  <div className="flex items-start justify-between gap-3">
+                    <span className="text-white/45">Model</span>
+                    <span className="max-w-[190px] break-all text-right font-mono text-[12px] text-white/85">{computeProof?.model || 'Pending'}</span>
+                  </div>
+                  <div className="flex items-start justify-between gap-3">
+                    <span className="text-white/45">Response ID</span>
+                    <span className="max-w-[190px] break-all text-right font-mono text-[12px] text-emerald-100">{truncateMiddle(computeProof?.responseId)}</span>
+                  </div>
+                  <div className="flex items-start justify-between gap-3">
+                    <span className="text-white/45">HTTP</span>
+                    <span className="text-right font-mono text-[12px] text-white/85">{computeProof?.status ? `${computeProof.status}${computeProof.statusText ? ` ${computeProof.statusText}` : ''}` : 'Pending'}</span>
+                  </div>
+                  <div className="flex items-start justify-between gap-3">
+                    <span className="text-white/45">Storage root</span>
+                    <span className="max-w-[190px] break-all text-right font-mono text-[12px] text-emerald-100">{truncateMiddle(analysisStorageRoot)}</span>
+                  </div>
+                  {computeProof?.responsePreview ? (
+                    <div className="rounded-[18px] border border-cyan-300/10 bg-cyan-300/[0.05] p-3 text-[12px] leading-6 text-cyan-50/88">
+                      {computeProof.responsePreview}
+                    </div>
+                  ) : null}
+                </div>
               </div>
 
               <div className="agent-progress mt-5 h-2 overflow-hidden rounded-full bg-white/8" aria-hidden="true">
