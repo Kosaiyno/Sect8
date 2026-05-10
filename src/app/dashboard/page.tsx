@@ -69,6 +69,20 @@ function hasOnChainActivation(agent: DashboardAgent | null | undefined) {
   return Boolean(agent?.onChainTokenId && agent?.contractAddress && agent?.activationTxHash);
 }
 
+function isExcludedListingLike(item: { address?: string | null; id?: string | null; propertyType?: string | null }) {
+  const values = [item.propertyType, item.address, item.id]
+    .map((value) => String(value || '').trim().toLowerCase())
+    .filter(Boolean);
+
+  return values.some((value) => value.includes(' land')
+    || value.startsWith('land ')
+    || value.includes(' lot ')
+    || /\blot\s+#?\d+/i.test(value)
+    || /\blots\s+#?\d+/i.test(value)
+    || value.includes('vacant lot')
+    || value.includes('vacant land'));
+}
+
 export default function Dashboard() {
   const { address, isConnected } = useAccount();
   const [zipOptions, setZipOptions] = useState<Array<{ zipCode: string; city: string; state: string; label: string }>>([]);
@@ -90,6 +104,7 @@ export default function Dashboard() {
   const [isScanning, setIsScanning] = useState(false);
   const hydratedRef = useRef(false);
   const initialBoardLoadTriggeredRef = useRef(false);
+  const visibleRecommendations = recommendations.filter((recommendation) => !isExcludedListingLike(recommendation));
 
   const handleActivated = (nextAgent: DashboardAgent) => {
     const activeAgent = { ...nextAgent, status: 'active' };
@@ -425,7 +440,7 @@ export default function Dashboard() {
         </div>
       )}
 
-      {recommendations.length > 0 && recommendations.some((recommendation) => recommendation.fmrSource !== 'hud') && (
+      {visibleRecommendations.length > 0 && visibleRecommendations.some((recommendation) => recommendation.fmrSource !== 'hud') && (
         <div className="rounded-[24px] border border-amber-300/20 bg-amber-400/10 p-4 text-sm text-amber-50 shadow-[0_20px_60px_rgba(0,0,0,0.2)]">
           <div className="text-[10px] font-black uppercase tracking-[0.22em]">HUD Verification</div>
           <div className="mt-2 leading-6">Some listings have real sale prices but no verified HUD benchmark. For those rows, I hide rent benchmark, monthly NOI, and cap rate instead of inventing estimates.</div>
@@ -435,7 +450,7 @@ export default function Dashboard() {
       <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
         {[
           { label: "Target ZIP", value: String(selectedZip || agent.preferences?.zipCode || "N/A"), icon: <Database size={16} /> },
-          { label: "Matches Found", value: recommendations.length.toString(), icon: <TrendingUp size={16} /> },
+          { label: "Matches Found", value: visibleRecommendations.length.toString(), icon: <TrendingUp size={16} /> },
           { label: "Verified Analyses", value: String(agent.memory?.recentAnalyses?.length || 0), icon: <ShieldCheck size={16} /> },
           { label: "Reliability", value: "99.9%", icon: <CheckCircle2 size={16} /> }
         ].map((stat, i) => (
@@ -450,10 +465,10 @@ export default function Dashboard() {
       </div>
 
       <div className="flex flex-col gap-6">
-        <HeroSection recommendations={recommendations} isScanning={isScanning} targetZip={selectedZip || String(agent.preferences?.zipCode || '')} />
+        <HeroSection recommendations={visibleRecommendations} isScanning={isScanning} targetZip={selectedZip || String(agent.preferences?.zipCode || '')} />
 
         <div className="min-h-[400px]">
-          <RecommendationsTable recommendations={recommendations} />
+          <RecommendationsTable recommendations={visibleRecommendations} />
         </div>
       </div>
     </div>

@@ -27,12 +27,27 @@ function getLocation(address: string) {
   return parts.slice(1).join(', ') || address;
 }
 
+function isExcludedListingLike(item: { address?: string | null; id?: string | null; propertyType?: string | null }) {
+  const values = [item.propertyType, item.address, item.id]
+    .map((value) => String(value || '').trim().toLowerCase())
+    .filter(Boolean);
+
+  return values.some((value) => value.includes(' land')
+    || value.startsWith('land ')
+    || value.includes(' lot ')
+    || /\blot\s+#?\d+/i.test(value)
+    || /\blots\s+#?\d+/i.test(value)
+    || value.includes('vacant lot')
+    || value.includes('vacant land'));
+}
+
 export default function MarketPage() {
   const [zipOptions, setZipOptions] = useState<Array<{ zipCode: string; city: string; state: string; label: string }>>([]);
   const [selectedZip, setSelectedZip] = useState('');
   const [properties, setProperties] = useState<Property[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [dataSource, setDataSource] = useState<'rentcast-live' | 'rentcast-cache' | 'mock-enriched' | 'none'>('none');
+  const visibleProperties = properties.filter((property) => !isExcludedListingLike(property));
 
   const loadProperties = async () => {
     if (!selectedZip) {
@@ -130,14 +145,14 @@ export default function MarketPage() {
         <div className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
           <div>
             <div className="text-[10px] font-black uppercase tracking-[0.24em] text-white/45">Market queue</div>
-            <div className="mt-1 font-outfit text-2xl font-black text-white">I found {properties.length} homes in {selectedZip || 'the selected ZIP'}</div>
+            <div className="mt-1 font-outfit text-2xl font-black text-white">I found {visibleProperties.length} homes in {selectedZip || 'the selected ZIP'}</div>
           </div>
           <div className="text-sm text-white/55">Use this feed to shortlist addresses. When a home looks promising, move to the dashboard for my full underwriting and property dossier.</div>
         </div>
       </div>
 
       <div className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
-        {properties.map((property) => (
+        {visibleProperties.map((property) => (
           <div key={property.id} className="dashboard-panel market-card relative rounded-[30px] p-5">
             <div className="market-card-accent absolute inset-x-6 top-0 h-px bg-gradient-to-r from-cyan-300/0 via-cyan-300/70 to-cyan-300/0" />
             <div className="flex items-start justify-between gap-4">
@@ -192,7 +207,7 @@ export default function MarketPage() {
         ))}
       </div>
 
-      {!isLoading && properties.length === 0 && (
+      {!isLoading && visibleProperties.length === 0 && (
         <div className="dashboard-panel rounded-[32px] p-10 text-center">
           <div className="font-outfit text-3xl font-black text-white">I do not have a market snapshot for this ZIP yet</div>
           <p className="mt-3 text-white/60">Choose another market or open the dashboard so I can seed the acquisition workflow and store a new listing snapshot.</p>
