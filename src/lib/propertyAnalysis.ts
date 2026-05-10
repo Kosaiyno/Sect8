@@ -202,6 +202,14 @@ function buildListingSearchStep(bundle: PropertyDetailBundle) {
   return `Copy the address ${address} and search it on Zillow, Realtor.com, or Redfin to review photos, confirm the live listing, and contact the local listing agent.`;
 }
 
+function isListingSearchStep(step: string) {
+  const normalized = step.toLowerCase();
+  const mentionsSearchSite = normalized.includes('zillow') || normalized.includes('realtor.com') || normalized.includes('redfin');
+  const mentionsAddressFlow = normalized.includes('address') || normalized.includes('copy') || normalized.includes('search');
+
+  return mentionsSearchSite && mentionsAddressFlow;
+}
+
 function postProcessAnalysis(analysis: PropertyInvestmentAnalysis, fallback: PropertyInvestmentAnalysis, bundle: PropertyDetailBundle) {
   const housingAuthorityStep = buildHousingAuthorityStep(bundle);
   const listingSearchStep = buildListingSearchStep(bundle);
@@ -211,6 +219,11 @@ function postProcessAnalysis(analysis: PropertyInvestmentAnalysis, fallback: Pro
     ...(listingSearchStep ? [listingSearchStep] : []),
     ...(housingAuthorityStep ? [housingAuthorityStep] : []),
   ]).filter((step, index, allSteps) => {
+    if (isListingSearchStep(step)) {
+      const firstListingSearchIndex = allSteps.findIndex((candidate) => isListingSearchStep(candidate));
+      return index === firstListingSearchIndex;
+    }
+
     if (!entry) {
       return true;
     }
