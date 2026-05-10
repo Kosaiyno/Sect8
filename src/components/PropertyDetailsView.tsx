@@ -1,7 +1,8 @@
 "use client";
 
 import Link from 'next/link';
-import { ArrowLeft, BadgeDollarSign, Brain, FileBadge2, Home, Mail, MapPin, Phone, ShieldCheck, Waves, Wind } from 'lucide-react';
+import { useState } from 'react';
+import { ArrowLeft, BadgeDollarSign, Brain, Check, Copy, FileBadge2, Home, Mail, MapPin, Phone, ShieldCheck, Waves, Wind } from 'lucide-react';
 import type { PropertyAnalysisBundle } from '@/lib/propertyAnalysis';
 import type { PropertyDetailBundle } from '@/lib/propertyDetails';
 import WatchlistButton from '@/components/WatchlistButton';
@@ -103,6 +104,10 @@ function truncateMiddle(value: string | null | undefined, edge = 12) {
   return `${normalized.slice(0, edge)}...${normalized.slice(-edge)}`;
 }
 
+function buildAddressSearchUrl(baseUrl: string, address: string) {
+  return `${baseUrl}${encodeURIComponent(address)}`;
+}
+
 type PropertyDetailsViewProps = {
   bundle: PropertyDetailBundle;
   analysisResult: PropertyAnalysisBundle;
@@ -114,6 +119,13 @@ export default function PropertyDetailsView({ bundle, analysisResult }: Property
   const strengths = cleanPresentationList(analysis.strengths);
   const risks = cleanPresentationList(analysis.risks);
   const nextSteps = cleanPresentationList(analysis.nextSteps);
+  const [copyState, setCopyState] = useState<'idle' | 'copied' | 'error'>('idle');
+  const address = String(listing.address || '').trim();
+  const searchLinks = address ? [
+    { label: 'Zillow', href: buildAddressSearchUrl('https://www.zillow.com/homes/', address) },
+    { label: 'Realtor.com', href: buildAddressSearchUrl('https://www.realtor.com/realestateandhomes-search/', address) },
+    { label: 'Redfin', href: buildAddressSearchUrl('https://www.redfin.com/stingray/do/location-autocomplete?location=', address) },
+  ] : [];
   const watchlistItem = {
     id: String(listing.id),
     address: String(listing.address || ''),
@@ -135,6 +147,21 @@ export default function PropertyDetailsView({ bundle, analysisResult }: Property
   const rentMetricLabel = getRentMetricLabel(listing.fmrSource);
   const hasModeledRent = listing.fmrSource && listing.fmrSource !== 'hud';
 
+  async function handleCopyAddress() {
+    if (!address) {
+      return;
+    }
+
+    try {
+      await navigator.clipboard.writeText(address);
+      setCopyState('copied');
+      window.setTimeout(() => setCopyState('idle'), 2000);
+    } catch {
+      setCopyState('error');
+      window.setTimeout(() => setCopyState('idle'), 2500);
+    }
+  }
+
   return (
     <div className="mx-auto flex w-full max-w-[1320px] flex-col gap-6 px-4 py-8 text-white md:px-6 xl:px-8">
       <div className="flex flex-wrap items-center justify-between gap-4">
@@ -149,11 +176,6 @@ export default function PropertyDetailsView({ bundle, analysisResult }: Property
             label="Add to watchlist"
             className="inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-semibold transition"
           />
-          {listing.url ? (
-            <a href={listing.url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 rounded-full border border-cyan-300/20 bg-cyan-300/10 px-4 py-2 text-sm font-semibold text-cyan-100 transition hover:bg-cyan-300/15">
-              Open live listing
-            </a>
-          ) : null}
         </div>
       </div>
 
@@ -260,6 +282,36 @@ export default function PropertyDetailsView({ bundle, analysisResult }: Property
                 <li key={item}>{item}</li>
               ))}
             </ul>
+            {address ? (
+              <div className="mt-4 rounded-[18px] border border-white/10 bg-black/10 p-3 text-sm text-white/78">
+                <div className="text-[10px] font-black uppercase tracking-[0.18em] text-white/42">Address search</div>
+                <div className="mt-2 break-words font-medium text-white">{address}</div>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    onClick={handleCopyAddress}
+                    className="inline-flex items-center gap-2 rounded-full border border-white/12 bg-white/6 px-3 py-2 text-xs font-semibold text-white transition hover:bg-white/10"
+                  >
+                    {copyState === 'copied' ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+                    {copyState === 'copied' ? 'Copied' : copyState === 'error' ? 'Copy failed' : 'Copy address'}
+                  </button>
+                  {searchLinks.map((link) => (
+                    <a
+                      key={link.label}
+                      href={link.href}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex items-center gap-2 rounded-full border border-cyan-200/16 bg-cyan-300/[0.08] px-3 py-2 text-xs font-semibold text-cyan-50 transition hover:bg-cyan-300/[0.14]"
+                    >
+                      {link.label}
+                    </a>
+                  ))}
+                </div>
+                <p className="mt-3 text-xs leading-5 text-white/58">
+                  Use the saved address to review photos, confirm the live listing, and contact the local agent.
+                </p>
+              </div>
+            ) : null}
           </div>
         </div>
 

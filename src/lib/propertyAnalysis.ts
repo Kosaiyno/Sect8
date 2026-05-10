@@ -193,11 +193,22 @@ function buildFinancialMetricsSentence(bundle: PropertyDetailBundle) {
   return `Projected monthly cash flow is ${formatMoney(monthlyCashflow)}, annual cash flow is ${formatMoney(annualCashflow)}, cap rate is ${capRate !== null && capRate !== undefined ? `${Number(capRate).toFixed(1)}%` : 'Unavailable'}, and all-cash ROI is ${roi !== null && roi !== undefined ? `${Number(roi).toFixed(1)}%` : 'Unavailable'} before financing, rehab, vacancy, and inspection adjustments.`;
 }
 
+function buildListingSearchStep(bundle: PropertyDetailBundle) {
+  const address = String(bundle.listing.address || '').trim();
+  if (!address) {
+    return null;
+  }
+
+  return `Copy the address ${address} and search it on Zillow, Realtor.com, or Redfin to review photos, confirm the live listing, and contact the local listing agent.`;
+}
+
 function postProcessAnalysis(analysis: PropertyInvestmentAnalysis, fallback: PropertyInvestmentAnalysis, bundle: PropertyDetailBundle) {
   const housingAuthorityStep = buildHousingAuthorityStep(bundle);
+  const listingSearchStep = buildListingSearchStep(bundle);
   const entry = bundle.housingAuthority?.entry;
   const canonicalizedNextSteps = dedupeStrings([
     ...analysis.nextSteps,
+    ...(listingSearchStep ? [listingSearchStep] : []),
     ...(housingAuthorityStep ? [housingAuthorityStep] : []),
   ]).filter((step, index, allSteps) => {
     if (!entry) {
@@ -445,6 +456,7 @@ function buildFallbackAnalysis(bundle: PropertyDetailBundle): PropertyInvestment
     ],
     nextSteps: [
       'Verify physical condition and rehab budget before trusting the projected cash flow, cap rate, and ROI.',
+      ...(buildListingSearchStep(bundle) ? [buildListingSearchStep(bundle)!] : []),
       'Review the deed history and title path for distressed transfers or land-bank events.',
       'Confirm that the target rent is achievable under the local voucher payment standard and property condition.',
       ...(housingAuthority ? [`Contact ${housingAuthority.entry.name}${housingAuthority.entry.phone ? ` at ${housingAuthority.entry.phone}` : ''}${housingAuthority.entry.email ? ` or ${housingAuthority.entry.email}` : ''} to ask about voucher availability, leasing steps, and local payment standards.`] : []),
@@ -471,6 +483,7 @@ function buildPrompt(bundle: PropertyDetailBundle) {
     'Treat ATTOM environmental and natural-disaster scores as broad area-level context only. Mention them briefly and do not let them dominate the verdict unless the dataset shows a specific parcel-level risk.',
     'Explicitly discuss ownership verification status and hazard context as separate considerations.',
     'Explicitly discuss projected monthly cash flow, annual cash flow, cap rate, and ROI using the provided underwriting numbers.',
+    'Include a practical next step telling the investor to copy the property address into Zillow, Realtor.com, or Redfin to review photos, confirm the live listing, and contact the listing agent.',
     'If cap rate or ROI is below 4%, the score should stay below 60 unless there is an exceptional offset in the supplied data.',
     'If the ATTOM market value is dramatically below the purchase price, call out the mismatch and reduce both score and confidence.',
     'If a local housing authority contact is provided, include a practical next step telling the investor to contact that authority by name to verify voucher demand, payment standards, and leasing questions.',
