@@ -86,7 +86,7 @@ export const fetchRealProperties = async (zipCode: string, bedrooms: number) => 
     const response = await axios.get(`https://api.rentcast.io/v1/listings/sale?zipCode=${zipCode}&status=active&limit=100`, {
       headers: { 'X-Api-Key': apiKey }
     });
-    return response.data;
+    return Array.isArray(response.data) ? filterExcludedListings(response.data) : response.data;
   } catch (error) {
     console.error("Sect8: Error fetching from RentCast API:", error);
     return null;
@@ -110,6 +110,10 @@ export function normalizePropertyType(propertyType: unknown) {
 export function isExcludedPropertyType(propertyType: unknown) {
   const normalized = normalizePropertyType(propertyType).toLowerCase();
   return normalized.includes("land") || normalized.includes("lot");
+}
+
+export function filterExcludedListings<T extends { propertyType?: unknown }>(items: T[]) {
+  return items.filter((item) => !isExcludedPropertyType(item?.propertyType));
 }
 
 export function getValidatedPurchasePrice(rawPrice: number, estRent: number) {

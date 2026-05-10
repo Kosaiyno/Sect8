@@ -1,9 +1,9 @@
 import { NextResponse } from 'next/server';
-import { getFMR } from '@/lib/realDataService';
+import { filterExcludedListings, getFMR } from '@/lib/realDataService';
 import { loadCachedRentcastListings } from '@/lib/rentcastCache';
 
 function normalizeMarketListings(items: Array<Record<string, unknown>>, zipCode: string, bedrooms: number, sourceOverride?: string) {
-  return items.map((item, index) => {
+  return filterExcludedListings(items).map((item, index) => {
     const bedroomCount = Number(item.bedrooms || item.bedroomCount || item.beds || bedrooms || 3);
     const bathroomCount = Number(item.bathrooms || item.bathroomCount || item.baths || 1);
     const address = String(

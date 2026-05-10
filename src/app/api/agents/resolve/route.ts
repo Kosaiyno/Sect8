@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { getAgentRecordCookieName, read0gJson, readCookieValue, type ListingsSnapshot } from '@/lib/0gPersistence';
 import { getAgentRecord } from '@/lib/agentStore';
 import { loadCachedRentcastListings } from '@/lib/rentcastCache';
-import { getFairMarketRent, getValidatedPurchasePrice, isExcludedPropertyType } from '@/lib/realDataService';
+import { filterExcludedListings, getFairMarketRent, getValidatedPurchasePrice, isExcludedPropertyType } from '@/lib/realDataService';
 
 type VerifiedRecentAnalysis = {
   id: string;
@@ -178,7 +178,7 @@ export async function POST(req: Request) {
     const preferences = stored?.preferences || DEFAULT_PREFERENCES;
     const activeZip = stored.latestListingsZip || String((preferences as { zipCode?: string })?.zipCode || DEFAULT_PREFERENCES.zipCode);
     const snapshot = await read0gJson<ListingsSnapshot>(stored.latestListingsRoot);
-    const snapshotListings = Array.isArray(snapshot?.listings) ? snapshot.listings : null;
+    const snapshotListings = Array.isArray(snapshot?.listings) ? filterExcludedListings(snapshot.listings) : null;
     const cached = !snapshotListings && stored.latestListingsZip && stored.latestListingsBedrooms
       ? await loadCachedRentcastListings(stored.latestListingsZip, stored.latestListingsBedrooms)
       : null;
