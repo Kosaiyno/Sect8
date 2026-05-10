@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { getAgentRecordCookieName, read0gJson, readCookieValue, type ListingsSnapshot } from '@/lib/0gPersistence';
 import { getAgentRecord } from '@/lib/agentStore';
 import { loadCachedRentcastListings } from '@/lib/rentcastCache';
-import { filterExcludedListings, getFairMarketRent, getValidatedPurchasePrice, isExcludedPropertyType } from '@/lib/realDataService';
+import { filterExcludedListings, getFairMarketRent, getValidatedPurchasePrice, isExcludedListingRecord } from '@/lib/realDataService';
 
 type VerifiedRecentAnalysis = {
   id: string;
@@ -65,9 +65,8 @@ function buildReasoning(listing: {
 async function toRecommendations(listings: Array<Record<string, unknown>>, zipCode: string) {
   const mapped = await Promise.all(listings.map(async (listing) => {
     const bedrooms = Number(listing.bedrooms || 1);
-    const propertyType = String(listing.propertyType || '');
 
-    if (isExcludedPropertyType(propertyType)) {
+    if (isExcludedListingRecord(listing)) {
       return null;
     }
 

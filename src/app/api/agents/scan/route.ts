@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { fetchRealProperties, getFairMarketRent, getValidatedPurchasePrice, isExcludedPropertyType, normalizePropertyType } from '@/lib/realDataService';
+import { fetchRealProperties, getFairMarketRent, getValidatedPurchasePrice, isExcludedListingRecord, normalizePropertyType } from '@/lib/realDataService';
 import { uploadToStorage } from '@/app/actions/og';
 import { getAgentRecordCookieName, readCookieValue, write0gJson, type AgentLogEntry, type ListingsSnapshot } from '@/lib/0gPersistence';
 import { upsertAgentRecord } from '@/lib/agentStore';
@@ -144,7 +144,7 @@ function normalizeListings(items: Array<Record<string, unknown>>, zip: string, m
     contactEmail: it.contactEmail || null,
     contactPhone: it.contactPhone || null,
   });
-  }).filter((listing) => !isExcludedPropertyType(listing.propertyType) && Number(listing.purchasePrice || 0) >= 10000 && Number(listing.bedrooms || 0) >= Number(minBedrooms || 0));
+  }).filter((listing) => !isExcludedListingRecord(listing) && Number(listing.purchasePrice || 0) >= 10000 && Number(listing.bedrooms || 0) >= Number(minBedrooms || 0));
 }
 
 export async function POST(req: Request) {
