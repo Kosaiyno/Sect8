@@ -17,8 +17,8 @@ type WatchlistButtonProps = {
 export default function WatchlistButton({
   item,
   className = '',
-  activeClassName = 'border-rose-200 bg-rose-50 text-rose-600',
-  inactiveClassName = 'border-gray-200 bg-gray-50 text-slate-500 hover:text-slate-900',
+  activeClassName = 'border-rose-300/30 bg-rose-300/15 text-rose-100',
+  inactiveClassName = 'border-white/10 bg-white/5 text-white/80 hover:text-white',
   label = 'Watchlist',
   showLabel = false,
 }: WatchlistButtonProps) {

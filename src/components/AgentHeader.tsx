@@ -82,7 +82,7 @@ export default function AgentHeader({
               <div className="flex flex-wrap items-center gap-3">
                 <h2 className="font-outfit text-3xl font-black tracking-[-0.04em] text-[#0f1629] md:text-4xl">{`Agent ${displayId}`}</h2>
                 <span className={`rounded-full border px-3 py-1 text-[10px] font-black uppercase tracking-[0.24em] ${statusTone}`}>
-                  {isWorking ? 'Analysis' : hasError ? 'Failed' : (agent.status || 'active')}
+                  {isWorking ? 'Scanning' : hasError ? 'Failed' : (agent.status || 'active')}
                 </span>
               </div>
               <div className="mt-3 max-w-xl text-base leading-7 text-[#64748b]">
@@ -93,10 +93,10 @@ export default function AgentHeader({
 
           <div className="grid gap-3 sm:grid-cols-2">
             {[
-              { label: 'Workflow', value: isWorking ? 'Analysis' : hasError ? 'Failed' : 'Purchasable homes scanning', icon: <Radar size={13} /> },
-              { label: 'Intelligence', value: isWorking ? 'Analysis' : hasError ? 'Failed' : '0G Compute analysis', icon: <Brain size={13} /> },
-              { label: 'Memory', value: isWorking ? 'Analysis' : hasError ? 'Failed' : (agent.memory?.memoryRoot ? '0G Storage synced' : 'Ready for 0G sync'), icon: <Database size={13} /> },
-              { label: 'Verification', value: isWorking ? 'Analysis' : hasError ? 'Failed' : 'HUD Rent Support', icon: <ShieldCheck size={13} /> },
+              { label: 'Workflow', value: isWorking ? 'Scanning' : hasError ? 'Failed' : 'Purchasable homes scanning', icon: <Radar size={13} /> },
+              { label: 'Intelligence', value: isWorking ? 'Scanning' : hasError ? 'Failed' : '0G Compute analysis', icon: <Brain size={13} /> },
+              { label: 'Memory', value: isWorking ? 'Scanning' : hasError ? 'Failed' : (agent.memory?.memoryRoot ? '0G Storage synced' : 'Ready for 0G sync'), icon: <Database size={13} /> },
+              { label: 'Verification', value: isWorking ? 'Scanning' : hasError ? 'Failed' : 'HUD Rent Support', icon: <ShieldCheck size={13} /> },
             ].map((item) => (
               <div key={item.label} className="dashboard-subpanel rounded-2xl px-4 py-3.5 hover-lift">
                 <div className="flex items-center gap-2 text-[9px] font-black uppercase tracking-[0.24em] text-[#b8942f]">
@@ -143,7 +143,7 @@ export default function AgentHeader({
 
               <button onClick={onRunZipSearch} disabled={!selectedZip || isWorking} className="btn-primary flex w-full items-center justify-center gap-2.5 py-4 text-base disabled:cursor-not-allowed disabled:opacity-50">
                 <Zap size={16} className={isWorking ? 'animate-pulse' : ''} />
-                {isWorking ? 'Analysis' : hasError ? 'Failed' : selectedZip ? 'Run Market Scan' : 'Select A ZIP'}
+                {isWorking ? 'Scanning' : hasError ? 'Failed' : selectedZip ? 'Run Market Scan' : 'Select A ZIP'}
               </button>
             </div>
           ) : (

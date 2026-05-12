@@ -265,12 +265,12 @@ export default function PropertyDetailsView({ bundle, analysisResult }: Property
 
         <section className="fintech-card bento-item-4 p-8 flex flex-col items-center justify-center text-center hover-lift">
           <div className="w-full space-y-8">
-            <div className="platform-eyebrow-muted text-xs tracking-widest uppercase">Proprietary Score</div>
+            <div className="platform-eyebrow-muted text-xs tracking-widest uppercase">Section 8 Score</div>
             <div className="relative inline-flex items-center justify-center">
               <div className="absolute inset-0 rounded-full bg-[#b8942f]/10 animate-ping" />
               <div className="relative h-44 w-44 rounded-full border-[10px] border-[#f8f9fb] bg-white flex flex-col items-center justify-center shadow-2xl">
                 <div className="font-outfit text-6xl font-black text-[#b8942f]">{analysis.score}</div>
-                <div className="text-[10px] font-black uppercase tracking-widest text-[#64748b]/60 mt-1">S8 Rating</div>
+                <div className="text-[10px] font-black uppercase tracking-widest text-[#64748b]/60 mt-1">Section 8 Rating</div>
               </div>
             </div>
             <div className="space-y-4">
@@ -306,7 +306,8 @@ export default function PropertyDetailsView({ bundle, analysisResult }: Property
           </ul>
         </div>
         <div className="fintech-card p-8 border-l-4 border-l-[#b8942f] hover-lift">
-          <div className="text-[11px] font-black uppercase tracking-[0.24em] text-[#b8942f] mb-6">Strategic actions</div>
+          <div className="text-[11px] font-black uppercase tracking-[0.24em] text-[#b8942f] mb-6">Next actions</div>
+          <div className="mb-4 text-[13px] text-[#b8942f] font-semibold">To see the listing, images, and more details, click the <span className='underline'>Zillow</span> button below.</div>
           <ul className="space-y-4 mb-8">
             {nextSteps.map((item) => (
               <li key={item} className="flex items-start gap-3 text-sm leading-7 text-[#64748b] font-medium">
@@ -325,7 +326,7 @@ export default function PropertyDetailsView({ bundle, analysisResult }: Property
                   {copyState === 'copied' ? 'Copied' : 'Copy'}
                 </button>
                 {searchLinks.slice(0, 2).map((link) => (
-                  <a key={link.label} href={link.href} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 rounded-full border border-[#b8942f]/20 bg-[#b8942f]/05 px-3 py-2 text-[10px] font-black uppercase tracking-wider text-[#b8942f] transition hover:bg-[#b8942f]/10">
+                  <a key={link.label} href={link.href} target="_blank" rel="noreferrer" className={`inline-flex items-center gap-2 rounded-full border border-[#b8942f]/20 bg-[#b8942f]/05 px-3 py-2 text-[10px] font-black uppercase tracking-wider text-[#b8942f] transition hover:bg-[#b8942f]/10 ${link.label === 'Zillow' ? 'ring-2 ring-[#b8942f]/40' : ''}`}>
                     {link.label}
                   </a>
                 ))}

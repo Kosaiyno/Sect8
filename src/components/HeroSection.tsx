@@ -65,11 +65,11 @@ export default function HeroSection({ recommendations, isScanning = false, targe
         <div className="max-w-2xl space-y-5">
           <div className="platform-chip">
             <Sparkles size={14} />
-            {isScanning ? 'Analysis' : 'Loading board'}
+            {isScanning ? 'Scanning' : 'Loading board'}
           </div>
           <h3 className="font-outfit text-2xl font-black tracking-tight text-[#0f1629] md:text-4xl">
             {isScanning
-              ? `Analysis`
+              ? `Scanning`
               : `Loading the saved board for ${targetZip || 'your selected ZIP'}.`}
           </h3>
           <p className="max-w-xl text-base leading-7 text-[#64748b]">
