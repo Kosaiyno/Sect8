@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Bed, Bath, MapPin, Activity, ChevronDown, Building2, DollarSign, Search } from "lucide-react";
+import { MapPin, Activity, ChevronDown, Building2, DollarSign, Search } from "lucide-react";
 import { Property } from "@/types";
 
 async function fetchMarketListings(zipCode: string) {
@@ -173,11 +173,11 @@ export default function MarketPage() {
               <div className="grid grid-cols-3 gap-4 border-y border-gray-100 py-6">
                 <div className="text-center space-y-1">
                   <div className="text-[10px] font-black uppercase tracking-widest text-[#64748b]/40">Beds</div>
-                  <div className="flex items-center justify-center gap-1.5 font-bold text-[#0f1629]"><Bed size={14} className="text-[#b8942f]" /> {property.bedrooms || '—'}</div>
+                    <div className="flex items-center justify-center gap-1.5 font-bold text-[#0f1629]"><MarketBed size={14} className="text-[#b8942f]" /> {property.bedrooms || '—'}</div>
                 </div>
                 <div className="text-center space-y-1 border-x border-gray-100">
                   <div className="text-[10px] font-black uppercase tracking-widest text-[#64748b]/40">Baths</div>
-                  <div className="flex items-center justify-center gap-1.5 font-bold text-[#0f1629]"><Bath size={14} className="text-[#b8942f]" /> {property.bathrooms ?? '—'}</div>
+                    <div className="flex items-center justify-center gap-1.5 font-bold text-[#0f1629]"><MarketBath size={14} className="text-[#b8942f]" /> {property.bathrooms ?? '—'}</div>
                 </div>
                 <div className="text-center space-y-1">
                   <div className="text-[10px] font-black uppercase tracking-widest text-[#64748b]/40">Voucher Cap</div>
@@ -222,13 +222,13 @@ export default function MarketPage() {
   );
 }
 
-function Bed({ size, className }: { size?: number, className?: string }) {
+function MarketBed({ size, className }: { size?: number, className?: string }) {
   return (
     <svg xmlns="http://www.w3.org/2000/svg" width={size || 24} height={size || 24} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M2 4v16"/><path d="M2 8h18a2 2 0 0 1 2 2v10"/><path d="M2 17h20"/><path d="M6 8v9"/></svg>
   );
 }
 
-function Bath({ size, className }: { size?: number, className?: string }) {
+function MarketBath({ size, className }: { size?: number, className?: string }) {
   return (
     <svg xmlns="http://www.w3.org/2000/svg" width={size || 24} height={size || 24} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M9 6 6.5 3.5a1.5 1.5 0 0 0-1-1.5h-1"/><path d="M14 6h1.5a1.5 1.5 0 0 1 1.5 1.5V11a4 4 0 0 1-4 4H9"/><path d="M3 11h18v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z"/></svg>
   );
