@@ -108,32 +108,32 @@ export default function RecommendationsTable({ recommendations }: Recommendation
   });
 
   return (
-    <div className="space-y-5">
-      <div className="dashboard-panel relative z-20 overflow-visible rounded-[30px] p-5">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+    <div className="space-y-6">
+      <div className="fintech-card relative z-20 overflow-visible p-6 md:p-8">
+        <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
           <div>
-            <div className="text-[10px] font-black uppercase tracking-[0.24em] text-white/45">My recommendation board</div>
-            <div className="mt-1 font-outfit text-2xl font-black tracking-[-0.04em] text-white">I am showing {filteredRecommendations.length} of {saleRecommendations.length} homes for sale</div>
+            <div className="platform-eyebrow-muted">Recommendation Board</div>
+            <div className="mt-2 font-outfit text-3xl font-black tracking-[-0.04em] text-[#0f1629]">Showing {filteredRecommendations.length} of {saleRecommendations.length} active homes</div>
           </div>
 
           <div ref={sortMenuRef} className="relative z-30 w-full lg:w-auto">
             <button
               type="button"
               onClick={() => setIsSortMenuOpen((current) => !current)}
-              className="dashboard-field flex w-full min-w-[220px] items-center justify-between rounded-[22px] px-4 py-3 text-left text-sm font-semibold text-white lg:w-auto"
+              className="dashboard-field flex w-full min-w-[220px] items-center justify-between rounded-xl px-4 py-3 text-left text-sm font-semibold text-[#0f1629] lg:w-auto"
               aria-haspopup="listbox"
               aria-expanded={isSortMenuOpen}
             >
               <span className="flex flex-col">
-                <span className="text-[10px] font-black uppercase tracking-[0.18em] text-white/40">Sort board</span>
-                <span className="mt-1 text-base text-white">{activeSort.label}</span>
+                <span className="text-[9px] font-black uppercase tracking-[0.22em] text-[#b8942f]">Sort board</span>
+                <span className="mt-1 text-base text-[#0f1629]">{activeSort.label}</span>
               </span>
-              <ChevronDown size={18} className={`text-white/55 transition-transform ${isSortMenuOpen ? 'rotate-180' : ''}`} />
+              <ChevronDown size={18} className={`text-[#64748b] transition-transform ${isSortMenuOpen ? 'rotate-180' : ''}`} />
             </button>
 
             {isSortMenuOpen ? (
-              <div className="absolute right-0 z-40 mt-3 w-full overflow-hidden rounded-[24px] border border-white/10 bg-[#0d141d] p-2 shadow-[0_24px_80px_rgba(0,0,0,0.42)] backdrop-blur-xl lg:w-[240px]">
-                <div className="mb-1 px-3 pt-2 text-[10px] font-black uppercase tracking-[0.18em] text-white/35">Order results</div>
+              <div className="absolute right-0 z-40 mt-3 w-full overflow-hidden rounded-2xl border border-gray-200 bg-white p-2 shadow-[0_24px_80px_rgba(0,0,0,0.1)] backdrop-blur-xl lg:w-[240px]">
+                <div className="mb-1 px-3 pt-2 text-[9px] font-black uppercase tracking-[0.22em] text-[#b8942f]/60">Order results</div>
                 <div className="space-y-1" role="listbox" aria-label="Sort recommendations">
                   {SORT_OPTIONS.map((option) => {
                     const isActive = option.value === sortBy;
@@ -146,7 +146,7 @@ export default function RecommendationsTable({ recommendations }: Recommendation
                           setSortBy(option.value);
                           setIsSortMenuOpen(false);
                         }}
-                        className={`flex w-full items-center rounded-[18px] px-3 py-3 text-left text-sm transition ${isActive ? 'bg-cyan-300/12 text-cyan-100 shadow-[inset_0_0_0_1px_rgba(103,232,249,0.16)]' : 'text-white/72 hover:bg-white/[0.05] hover:text-white'}`}
+                        className={`flex w-full items-center rounded-xl px-3 py-2.5 text-left text-sm transition ${isActive ? 'bg-[rgba(184,148,47,0.08)] text-[#b8942f] shadow-[inset_0_0_0_1px_rgba(184,148,47,0.2)]' : 'text-[#64748b] hover:bg-gray-50 hover:text-[#0f1629]'}`}
                         role="option"
                         aria-selected={isActive}
                       >
@@ -177,13 +177,13 @@ export default function RecommendationsTable({ recommendations }: Recommendation
             };
 
             return (
-              <div key={recommendation.id} className="dashboard-panel market-card relative rounded-[28px] p-5">
-                <div className="market-card-accent absolute inset-x-6 top-0 h-px bg-gradient-to-r from-cyan-300/0 via-cyan-300/70 to-cyan-300/0" />
-                <div className="flex items-start justify-between gap-4 text-white">
+              <div key={recommendation.id} className="fintech-card hover-lift group relative p-6">
+                <div className="absolute inset-x-8 top-0 h-px bg-gradient-to-r from-transparent via-[#b8942f]/30 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+                <div className="flex items-start justify-between gap-4 text-[#0f1629]">
                   <div>
                     <div className="line-clamp-1 font-outfit text-[1.35rem] font-black tracking-[-0.04em]">{location.street || recommendation.address}</div>
-                    <div className="mt-1 flex items-center gap-2 text-sm text-white/55">
-                      <MapPin size={14} />
+                    <div className="mt-1 flex items-center gap-2 text-sm text-[#64748b]">
+                      <MapPin size={13} className="text-[#b8942f]/80" />
                       <span>{[location.city, location.state, location.zip || recommendation.zip].filter(Boolean).join(', ')}</span>
                     </div>
                   </div>
@@ -206,69 +206,72 @@ export default function RecommendationsTable({ recommendations }: Recommendation
                       squareFootage: recommendation.squareFootage,
                       url: recommendation.url,
                     }}
-                    className="rounded-full border p-2 transition"
+                    className="rounded-full border border-[#eef0f3] p-3 transition hover:border-[#b8942f]/30 hover:bg-[#b8942f]/05"
                   />
                 </div>
 
-                <div className="mt-4 flex flex-wrap items-center gap-2 text-white">
-                  <span className="rounded-full border border-white/15 bg-white/10 px-3 py-1 text-[10px] font-black uppercase tracking-[0.22em]">
+                <div className="mt-5 flex flex-wrap items-center gap-2.5 text-[#0f1629]">
+                  <span className="rounded-full border border-gray-100 bg-gray-50/50 px-3 py-1.5 text-[9px] font-black uppercase tracking-[0.2em] text-[#64748b]">
                     {propertyType}
                   </span>
-                  <span className="rounded-full border border-cyan-300/15 bg-cyan-300/10 px-3 py-1 text-[10px] font-black uppercase tracking-[0.22em] text-cyan-100">
+                  <span className="glass-badge rounded-full px-3 py-1.5 text-[9px] font-black uppercase tracking-[0.2em]">
                     For Sale
                   </span>
                 </div>
 
-                <div className="dashboard-subpanel mt-4 rounded-[24px] p-4 text-white">
-                  <div className="text-[10px] font-black uppercase tracking-[0.22em] text-white/40">Listed Price</div>
-                  <div className="mt-2 font-outfit text-[2rem] font-black leading-none tracking-[-0.05em]">{formatNumber(recommendation.purchasePrice)}</div>
+                <div className="stat-block mt-6 rounded-[24px] p-5 text-[#0f1629]">
+                  <div className="text-[10px] font-black uppercase tracking-[0.24em] text-[#b8942f]">Listed Price</div>
+                  <div className="mt-2.5 font-outfit text-3xl font-black leading-none tracking-[-0.04em]">{formatNumber(recommendation.purchasePrice)}</div>
                 </div>
 
-                <div className="dashboard-subpanel mt-4 grid grid-cols-3 gap-3 rounded-[24px] p-3 text-sm">
-                  <div>
-                    <div className="text-[10px] font-black uppercase tracking-[0.22em] text-white/40">Beds</div>
-                    <div className="mt-2 flex items-center gap-2 font-semibold text-white"><BedDouble size={14} /> {recommendation.bedrooms || 'N/A'}</div>
+                <div className="mt-4 grid grid-cols-3 gap-3 text-sm">
+                  <div className="rounded-[20px] border border-[#eef0f3] bg-[#f8f9fb]/50 p-4">
+                    <div className="text-[9px] font-black uppercase tracking-[0.2em] text-[#64748b]/60">Beds</div>
+                    <div className="mt-2 flex items-center gap-2 font-bold text-[#0f1629]"><BedDouble size={14} className="text-[#b8942f]/60" /> {recommendation.bedrooms || 'N/A'}</div>
                   </div>
-                  <div>
-                    <div className="text-[10px] font-black uppercase tracking-[0.22em] text-white/40">Baths</div>
-                    <div className="mt-2 flex items-center gap-2 font-semibold text-white"><Bath size={14} /> {recommendation.bathrooms ?? 'N/A'}</div>
+                  <div className="rounded-[20px] border border-[#eef0f3] bg-[#f8f9fb]/50 p-4">
+                    <div className="text-[9px] font-black uppercase tracking-[0.2em] text-[#64748b]/60">Baths</div>
+                    <div className="mt-2 flex items-center gap-2 font-bold text-[#0f1629]"><Bath size={14} className="text-[#b8942f]/60" /> {recommendation.bathrooms ?? 'N/A'}</div>
                   </div>
-                  <div>
-                    <div className="text-[10px] font-black uppercase tracking-[0.22em] text-white/40">Cap Rate</div>
-                    <div className="mt-2 font-semibold text-white">{hasVerifiedHud && recommendation.capRate !== null && recommendation.capRate !== undefined ? `${Number(recommendation.capRate).toFixed(1)}%` : 'Hidden'}</div>
+                  <div className="rounded-[20px] border border-[#eef0f3] bg-[#f8f9fb]/50 p-4">
+                    <div className="text-[9px] font-black uppercase tracking-[0.2em] text-[#64748b]/60">Cap Rate</div>
+                    <div className="mt-2 font-bold text-[#b8942f]">{hasVerifiedHud && recommendation.capRate !== null && recommendation.capRate !== undefined ? `${Number(recommendation.capRate).toFixed(1)}%` : 'Hidden'}</div>
                   </div>
                 </div>
 
-                <div className="mt-4 grid grid-cols-2 gap-3 text-sm text-white">
-                  <div>
-                    <div className="text-[10px] font-black uppercase tracking-[0.22em] text-white/40">Monthly NOI</div>
-                    <div className="mt-1 font-bold text-emerald-300">{hasVerifiedHud ? formatNumber(monthlyNoi, '/mo') : 'Hidden'}</div>
+                <div className="mt-5 grid grid-cols-2 gap-4 text-sm text-[#0f1629]">
+                  <div className="dashboard-subpanel rounded-2xl p-4">
+                    <div className="text-[9px] font-black uppercase tracking-[0.24em] text-[#64748b]/50">Monthly NOI</div>
+                    <div className="mt-1.5 font-black text-[#0d9668] text-base">{hasVerifiedHud ? formatNumber(monthlyNoi, '/mo') : 'Hidden'}</div>
                   </div>
-                  <div className="text-left md:text-right">
-                    <div className="text-[10px] font-black uppercase tracking-[0.22em] text-white/40">Rent Benchmark</div>
-                    <div className="mt-1 font-bold text-cyan-200">{hasVerifiedHud ? formatNumber(recommendation.fmr, '/mo') : 'Hidden'}</div>
+                  <div className="dashboard-subpanel rounded-2xl p-4">
+                    <div className="text-[9px] font-black uppercase tracking-[0.24em] text-[#64748b]/50 text-right">Voucher Support</div>
+                    <div className="mt-1.5 font-black text-[#b8942f] text-base text-right">{hasVerifiedHud ? formatNumber(recommendation.fmr, '/mo') : 'Hidden'}</div>
                   </div>
                 </div>
 
                 {!hasVerifiedHud && (
-                  <div className="mt-3 rounded-2xl border border-amber-300/15 bg-amber-300/10 p-3 text-xs leading-5 text-amber-50/90">
+                  <div className="mt-3 rounded-xl border border-amber-400/25 bg-amber-400/[0.08] p-3 text-xs leading-5 text-amber-800">
                     HUD verification failed for this ZIP, so rent benchmark, monthly NOI, and cap rate are hidden.
                   </div>
                 )}
 
-                <div className="mt-4 flex gap-2">
-                  <Link href={detailHref} prefetch className="btn-primary flex-1 text-center text-sm">
+                <div className="mt-6 flex flex-col gap-3">
+                  <Link href={detailHref} prefetch className="btn-primary flex-1 text-center text-sm py-4 shadow-lg group-hover:shadow-[#b8942f]/20 transition-all duration-500">
                     Agent Analysis
                   </Link>
+                  <div className="bento-reveal text-center">
+                    <span className="text-[10px] font-black uppercase tracking-[0.24em] text-[#b8942f]/60">Full Underwriting Dossier Available</span>
+                  </div>
                 </div>
               </div>
             );
           })}
         </div>
       ) : (
-        <div className="dashboard-panel rounded-[30px] p-12 text-center">
-          <div className="font-outfit text-3xl font-black text-white">I did not find for-sale houses that match this search</div>
-          <p className="mt-3 text-white/60">Change the search inputs above and I will repopulate the board.</p>
+        <div className="fintech-card rounded-[28px] p-12 text-center">
+          <div className="font-outfit text-2xl font-black text-[#0f1629]">No matching homes found</div>
+          <p className="mt-3 text-sm text-[#64748b]">Change the search inputs above to repopulate the board.</p>
         </div>
       )}
     </div>

@@ -505,9 +505,9 @@ function buildPrompt(bundle: PropertyDetailBundle) {
     'Scoring rules:',
     '- score must be an integer from 0 to 100',
     '- confidence must be an integer from 0 to 100',
-    '- verdict must directly say whether this is a good Section 8 investment or not',
-    '- strengths, risks, and nextSteps should each have 3 to 5 concise bullet strings',
-    '- summary should be a detailed paragraph that synthesizes the whole property',
+    '- verdict must be a single concise sentence',
+    '- strengths, risks, and nextSteps should each have exactly 3 punchy bullet strings',
+    '- summary should be a concise 2-3 sentence overview that synthesizes the property',
     'Property dataset:',
     JSON.stringify(bundle, null, 2),
   ].join('\n');
@@ -666,11 +666,15 @@ export async function getOrCreatePropertyAnalysis(
     bundle,
   );
 
-  if (cached) {
+  if (cached && cached.provider === '0g-compute') {
     return { record: cached, fromCache: true };
   }
 
   const generated = await generateAnalysis(bundle);
+  if (generated.provider === 'fallback' && cached) {
+    return { record: cached, fromCache: true };
+  }
+
   const record: AnalysisRecord = {
     listingId,
     sourceFingerprint: fingerprint,

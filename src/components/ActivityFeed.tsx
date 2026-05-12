@@ -10,10 +10,10 @@ type ActivityAgent = {
 
 function inferType(entry: string) {
   const value = entry.toLowerCase();
-  if (value.includes('scan')) return { label: 'Scan', icon: <Workflow size={14} />, tone: 'bg-cyan-300/10 text-cyan-100 border-cyan-300/15' };
-  if (value.includes('0g') || value.includes('memory')) return { label: 'Memory', icon: <Database size={14} />, tone: 'bg-emerald-300/10 text-emerald-100 border-emerald-300/15' };
-  if (value.includes('agent:')) return { label: 'AI', icon: <BrainCircuit size={14} />, tone: 'bg-violet-300/10 text-violet-100 border-violet-300/15' };
-  return { label: 'System', icon: <Activity size={14} />, tone: 'bg-white/8 text-white/75 border-white/10' };
+  if (value.includes('scan')) return { label: 'Scan', icon: <Workflow size={14} />, tone: 'bg-cyan-50 text-cyan-700 border-cyan-100' };
+  if (value.includes('0g') || value.includes('memory')) return { label: 'Memory', icon: <Database size={14} />, tone: 'bg-emerald-50 text-emerald-700 border-emerald-100' };
+  if (value.includes('agent:')) return { label: 'AI', icon: <BrainCircuit size={14} />, tone: 'bg-violet-50 text-violet-700 border-violet-100' };
+  return { label: 'System', icon: <Activity size={14} />, tone: 'bg-gray-50 text-[#64748b] border-gray-100' };
 }
 
 export default function ActivityFeed({ agent }: { agent: ActivityAgent }) {
@@ -25,9 +25,9 @@ export default function ActivityFeed({ agent }: { agent: ActivityAgent }) {
       <div className="flex items-start justify-between gap-4">
         <div>
           <div className="platform-eyebrow">Activity Feed</div>
-          <h4 className="mt-2 font-outfit text-2xl font-black text-white">Platform actions and agent events</h4>
+          <h4 className="mt-2 font-outfit text-2xl font-black text-[#0f1629]">Platform actions and agent events</h4>
         </div>
-        <div className="platform-chip border-white/10 bg-white/5 text-white/70">
+        <div className="platform-chip border-gray-100 bg-gray-50/50 text-[#64748b]">
           <Activity size={14} />
           {items.length} events
         </div>
@@ -43,12 +43,12 @@ export default function ActivityFeed({ agent }: { agent: ActivityAgent }) {
                 {meta.label}
               </div>
               <div className="min-w-0 flex-1">
-                <div className="text-sm leading-6 text-white/80">{String(item)}</div>
-                <div className="mt-2 text-[11px] font-black uppercase tracking-[0.22em] text-white/35">Recorded in session memory</div>
+                <div className="text-sm leading-6 text-[#64748b]">{String(item)}</div>
+                <div className="mt-2 text-[11px] font-black uppercase tracking-[0.22em] text-[#94a3b8]">Recorded in session memory</div>
               </div>
             </div>
           );
-        }) : <div className="dashboard-subpanel rounded-[24px] p-4 text-sm text-white/55">No activity yet</div>}
+        }) : <div className="dashboard-subpanel rounded-[24px] p-4 text-sm text-[#94a3b8]">No activity yet</div>}
       </div>
     </div>
   );

@@ -163,359 +163,267 @@ export default function PropertyDetailsView({ bundle, analysisResult }: Property
   }
 
   return (
-    <div className="mx-auto flex w-full max-w-[1320px] flex-col gap-6 px-4 py-8 text-white md:px-6 xl:px-8">
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        <Link href="/dashboard" className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm font-semibold text-white transition hover:bg-white/10">
-          <ArrowLeft size={16} />
-          Back to dashboard
+    <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-8 px-6 py-10 text-[#0f1629]">
+      <div className="flex flex-wrap items-center justify-between gap-6">
+        <Link href="/dashboard" className="inline-flex items-center gap-2.5 rounded-full border border-[#eef0f3] bg-white px-5 py-2.5 text-sm font-bold text-[#0f1629] transition-all hover:bg-gray-50 hover:border-[#b8942f]/20 shadow-sm">
+          <ArrowLeft size={18} />
+          Dashboard
         </Link>
-        <div className="flex flex-wrap items-center gap-3">
+        <div className="flex flex-wrap items-center gap-4">
           <WatchlistButton
             item={watchlistItem}
             showLabel
-            label="Add to watchlist"
-            className="inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-semibold transition"
+            label="Watchlist"
+            className="inline-flex items-center gap-2.5 rounded-full border border-[#eef0f3] px-5 py-2.5 text-sm font-bold transition-all shadow-sm"
           />
         </div>
       </div>
 
-      <section className="dashboard-panel rounded-[34px] p-6 md:p-8">
-        <div className="space-y-6">
-          <div className="inline-flex items-center gap-2 rounded-full border border-cyan-400/30 bg-cyan-400/10 px-3 py-1 text-[11px] font-black uppercase tracking-[0.25em] text-cyan-200">
+      {/* HERO SECTION */}
+      <section className="fintech-card p-8 md:p-12">
+        <div className="space-y-10">
+          <div className="platform-chip">
             <ShieldCheck size={14} />
-            Agent analysis
+            Institutional Underwriting
           </div>
 
-          <div>
-            <h1 className="max-w-4xl font-outfit text-3xl font-black tracking-[-0.05em] text-white md:text-[3.2rem] md:leading-[1.01]">{listing.address}</h1>
-            <div className="mt-3 flex flex-wrap items-center gap-4 text-[15px] text-white/68">
-              <span className="inline-flex items-center gap-2"><MapPin size={14} /> {listing.zip || 'Unknown ZIP'}</span>
-              <span>{listing.bedrooms || 'N/A'} beds</span>
-              <span>{listing.bathrooms ?? 'N/A'} baths</span>
-              <span>{listing.propertyType || 'Residential'}</span>
-              <span>{listing.squareFootage ? `${listing.squareFootage.toLocaleString()} sqft` : 'Sqft unavailable'}</span>
+          <div className="grid gap-10 lg:grid-cols-[1fr_auto]">
+            <div>
+              <h1 className="font-outfit text-4xl font-black tracking-[-0.05em] text-[#0f1629] md:text-6xl md:leading-[1.0]">{listing.address}</h1>
+              <div className="mt-6 flex flex-wrap items-center gap-6 text-[15px] text-[#64748b] font-medium">
+                <span className="inline-flex items-center gap-2 text-[#b8942f] font-bold"><MapPin size={16} /> {listing.zip || 'Unknown ZIP'}</span>
+                <span className="h-1 w-1 rounded-full bg-gray-300" />
+                <span>{listing.bedrooms || 'N/A'} beds</span>
+                <span className="h-1 w-1 rounded-full bg-gray-300" />
+                <span>{listing.bathrooms ?? 'N/A'} baths</span>
+                <span className="h-1 w-1 rounded-full bg-gray-300" />
+                <span>{listing.propertyType || 'Residential'}</span>
+                <span className="h-1 w-1 rounded-full bg-gray-300" />
+                <span>{listing.squareFootage ? `${listing.squareFootage.toLocaleString()} sqft` : 'N/A'}</span>
+              </div>
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4 lg:grid-cols-3 xl:grid-cols-6">
+          <div className="grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-6">
             {[
               { label: 'Purchase Price', value: formatCurrency(listing.purchasePrice), icon: <BadgeDollarSign size={16} /> },
               { label: rentMetricLabel, value: formatCurrency(listing.fmr, '/mo'), icon: <Home size={16} /> },
-              { label: 'Projected Cash Flow', value: formatCurrency(listing.cashflow, '/mo'), icon: <FileBadge2 size={16} /> },
-              { label: 'Annual Cash Flow', value: formatCurrency(listing.annualCashflow), icon: <FileBadge2 size={16} /> },
+              { label: 'Monthly NOI', value: formatCurrency(listing.cashflow, '/mo'), icon: <FileBadge2 size={16} /> },
+              { label: 'Annual NOI', value: formatCurrency(listing.annualCashflow), icon: <FileBadge2 size={16} /> },
               { label: 'Cap Rate', value: formatPercent(listing.capRate), icon: <ShieldCheck size={16} /> },
               { label: 'ROI', value: formatPercent(listing.roi), icon: <ShieldCheck size={16} /> },
             ].map((metric) => (
-              <div key={metric.label} className="dashboard-subpanel flex min-h-[112px] flex-col justify-between rounded-[24px] px-4 py-4">
-                <div className="mb-2 flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] text-white/45">{metric.icon}{metric.label}</div>
-                <div className="min-w-0 font-outfit text-[clamp(1.05rem,1.35vw,1.65rem)] leading-none font-black tracking-[-0.05em] text-white tabular-nums">{metric.value}</div>
+              <div key={metric.label} className="stat-block flex min-h-[120px] flex-col justify-between rounded-[28px] px-6 py-5 hover-lift">
+                <div className="mb-2 flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.24em] text-[#b8942f]">{metric.icon}{metric.label}</div>
+                <div className="min-w-0 font-outfit text-2xl leading-none font-black tracking-[-0.05em] text-[#0f1629] tabular-nums">{metric.value}</div>
               </div>
             ))}
           </div>
 
           {hasModeledRent ? (
-            <div className="rounded-[22px] border border-amber-300/15 bg-amber-300/10 px-4 py-3 text-sm leading-6 text-amber-50/90">
-              HUD rent support was not verified for this address, so Sect8 is showing modeled rent and underwriting instead of HUD-backed figures.
+            <div className="rounded-[24px] border border-amber-300/20 bg-amber-300/05 p-6 text-sm leading-7 text-amber-900 backdrop-blur-md">
+              <span className="font-black uppercase tracking-widest text-amber-600 text-[10px] block mb-1">Modeling Alert</span>
+              HUD rent support was not verified for this address. Sect8 is showing modeled rent and underwriting instead of verified HUD figures.
             </div>
           ) : null}
         </div>
       </section>
 
-      <section className="dashboard-panel rounded-[34px] p-6 md:p-8">
-        <div className="flex flex-wrap items-start justify-between gap-4">
-          <div>
-            <div className="inline-flex items-center gap-2 rounded-full border border-cyan-400/30 bg-cyan-400/10 px-3 py-1 text-[11px] font-black uppercase tracking-[0.25em] text-cyan-200">
-              <Brain size={14} />
-              Investment overview
+      {/* ANALYSIS BENTO */}
+      <div className="bento-grid">
+        <section className="fintech-card bento-item-8 p-8 md:p-10 hover-lift">
+          <div className="space-y-8">
+            <div>
+              <div className="platform-chip mb-6">
+                <Brain size={14} />
+                Agent Insights
+              </div>
+              <h2 className="font-outfit text-3xl font-black tracking-[-0.05em] text-[#0f1629] md:text-5xl">{cleanPresentationText(analysis.headline)}</h2>
+              <p className="mt-6 text-base leading-8 text-[#64748b]">{cleanPresentationText(analysis.summary)}</p>
             </div>
-            <h2 className="mt-3 font-outfit text-2xl font-black tracking-[-0.05em] text-white md:text-[2.4rem]">{cleanPresentationText(analysis.headline)}</h2>
-            <p className="mt-3 max-w-4xl text-sm leading-7 text-white/72">{cleanPresentationText(analysis.summary)}</p>
-          </div>
-          <div className="dashboard-subpanel rounded-[28px] px-6 py-5 text-center text-cyan-50 bg-[linear-gradient(180deg,rgba(73,214,255,0.12),rgba(73,214,255,0.05))]">
-            <div className="text-[10px] font-black uppercase tracking-[0.22em] text-cyan-100/70">Section 8 Score</div>
-            <div className="mt-2 font-outfit text-5xl font-black leading-none">{analysis.score}</div>
-            <div className="mt-2 text-sm font-semibold">{cleanPresentationText(analysis.verdict)}</div>
-            <div className="mt-2 text-xs text-cyan-50/75">Confidence {analysis.confidence}/100</div>
-          </div>
-        </div>
 
-        <div className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
-          <div className="dashboard-subpanel rounded-[24px] p-4">
-            <div className="text-[10px] font-black uppercase tracking-[0.22em] text-white/40">Section 8 fit</div>
-            <p className="mt-3 text-sm leading-6 text-white/78">{cleanPresentationText(analysis.section8Fit)}</p>
-          </div>
-          <div className="dashboard-subpanel rounded-[24px] p-4">
-            <div className="text-[10px] font-black uppercase tracking-[0.22em] text-white/40">Financial read</div>
-            <p className="mt-3 text-sm leading-6 text-white/78">{cleanPresentationText(analysis.financialView)}</p>
-          </div>
-          <div className="dashboard-subpanel rounded-[24px] p-4">
-            <div className="text-[10px] font-black uppercase tracking-[0.22em] text-white/40">Ownership read</div>
-            <p className="mt-3 text-sm leading-6 text-white/78">{cleanPresentationText(analysis.ownershipAndTitleView)}</p>
-          </div>
-          <div className="dashboard-subpanel rounded-[24px] p-4">
-            <div className="text-[10px] font-black uppercase tracking-[0.22em] text-white/40">Hazard read</div>
-            <p className="mt-3 text-sm leading-6 text-white/78">{cleanPresentationText(analysis.riskView)} {getHazardSnapshot(bundle)}</p>
-          </div>
-        </div>
-
-        <div className="mt-6 grid grid-cols-1 gap-4 xl:grid-cols-3">
-          <div className="rounded-[24px] border border-emerald-300/12 bg-emerald-300/[0.06] p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.03)]">
-            <div className="text-[10px] font-black uppercase tracking-[0.22em] text-emerald-100/70">Positive signals</div>
-            <ul className="mt-3 space-y-3 text-sm leading-6 text-white/80">
-              {strengths.map((item) => (
-                <li key={item}>{item}</li>
-              ))}
-            </ul>
-          </div>
-          <div className="rounded-[24px] border border-amber-300/12 bg-amber-300/[0.06] p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.03)]">
-            <div className="text-[10px] font-black uppercase tracking-[0.22em] text-amber-100/70">Watchouts</div>
-            <ul className="mt-3 space-y-3 text-sm leading-6 text-white/80">
-              {risks.map((item) => (
-                <li key={item}>{item}</li>
-              ))}
-            </ul>
-          </div>
-          <div className="rounded-[24px] border border-cyan-300/12 bg-cyan-300/[0.06] p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.03)]">
-            <div className="text-[10px] font-black uppercase tracking-[0.22em] text-cyan-100/70">Next actions</div>
-            <ul className="mt-3 space-y-3 text-sm leading-6 text-white/80">
-              {nextSteps.map((item) => (
-                <li key={item}>{item}</li>
-              ))}
-            </ul>
-            {address ? (
-              <div className="mt-4 rounded-[18px] border border-white/10 bg-black/10 p-3 text-sm text-white/78">
-                <div className="text-[10px] font-black uppercase tracking-[0.18em] text-white/42">Address search</div>
-                <div className="mt-2 break-words font-medium text-white">{address}</div>
-                <div className="mt-3 flex flex-wrap gap-2">
-                  <button
-                    type="button"
-                    onClick={handleCopyAddress}
-                    className="inline-flex items-center gap-2 rounded-full border border-white/12 bg-white/6 px-3 py-2 text-xs font-semibold text-white transition hover:bg-white/10"
-                  >
-                    {copyState === 'copied' ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
-                    {copyState === 'copied' ? 'Copied' : copyState === 'error' ? 'Copy failed' : 'Copy address'}
-                  </button>
-                  {searchLinks.map((link) => (
-                    <a
-                      key={link.label}
-                      href={link.href}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="inline-flex items-center gap-2 rounded-full border border-cyan-200/16 bg-cyan-300/[0.08] px-3 py-2 text-xs font-semibold text-cyan-50 transition hover:bg-cyan-300/[0.14]"
-                    >
-                      {link.label}
-                    </a>
-                  ))}
-                </div>
-                <p className="mt-3 text-xs leading-5 text-white/58">
-                  Use the saved address to review photos, confirm the live listing, and contact the local agent.
-                </p>
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <div className="dashboard-subpanel rounded-[28px] p-6 hover-lift bg-white">
+                <div className="text-[10px] font-black uppercase tracking-[0.24em] text-[#b8942f]">Section 8 Fit</div>
+                <p className="mt-4 text-sm leading-7 text-[#475569] font-medium">{cleanPresentationText(analysis.section8Fit)}</p>
               </div>
-            ) : null}
-          </div>
-        </div>
-
-        <div className="dashboard-subpanel mt-5 rounded-[24px] p-4 text-sm text-white/70">
-          <div>Analysis generated with: <strong>{analysisResult.record.provider === '0g-compute' ? '0G Compute' : 'fallback analysis'}</strong></div>
-          <div className="mt-1">Stored at: <strong>{analysisResult.record.storageRoot || 'Storage upload unavailable'}</strong></div>
-          {analysisResult.record.computeProof ? (
-            <div className="mt-4 grid grid-cols-1 gap-3 lg:grid-cols-2">
-              <div className="rounded-[18px] border border-white/8 bg-white/[0.03] p-3">
-                <div className="text-[10px] font-black uppercase tracking-[0.2em] text-white/42">0G provider</div>
-                <div className="mt-2 break-all font-mono text-[12px] text-cyan-100">{analysisResult.record.computeProof.providerAddress || 'Unavailable'}</div>
+              <div className="dashboard-subpanel rounded-[28px] p-6 hover-lift bg-white">
+                <div className="text-[10px] font-black uppercase tracking-[0.24em] text-[#b8942f]">Financial Thesis</div>
+                <p className="mt-4 text-sm leading-7 text-[#475569] font-medium">{cleanPresentationText(analysis.financialView)}</p>
               </div>
-              <div className="rounded-[18px] border border-white/8 bg-white/[0.03] p-3">
-                <div className="text-[10px] font-black uppercase tracking-[0.2em] text-white/42">Compute response</div>
-                <div className="mt-2 font-mono text-[12px] text-emerald-100">{truncateMiddle(analysisResult.record.computeProof.responseId)}</div>
+              <div className="dashboard-subpanel rounded-[28px] p-6 hover-lift bg-white">
+                <div className="text-[10px] font-black uppercase tracking-[0.24em] text-[#b8942f]">Ownership Profile</div>
+                <p className="mt-4 text-sm leading-7 text-[#475569] font-medium">{cleanPresentationText(analysis.ownershipAndTitleView)}</p>
               </div>
-              <div className="rounded-[18px] border border-white/8 bg-white/[0.03] p-3 lg:col-span-2">
-                <div className="text-[10px] font-black uppercase tracking-[0.2em] text-white/42">Endpoint and model</div>
-                <div className="mt-2 break-all font-mono text-[12px] text-white/82">{analysisResult.record.computeProof.endpoint || 'Unavailable'}</div>
-                <div className="mt-2 font-mono text-[12px] text-white/82">{analysisResult.record.computeProof.model || 'Unavailable'}</div>
+              <div className="dashboard-subpanel rounded-[28px] p-6 hover-lift bg-white">
+                <div className="text-[10px] font-black uppercase tracking-[0.24em] text-[#b8942f]">Hazard Assessment</div>
+                <p className="mt-4 text-sm leading-7 text-[#475569] font-medium">{cleanPresentationText(analysis.riskView)} {getHazardSnapshot(bundle)}</p>
               </div>
             </div>
-          ) : null}
-        </div>
-      </section>
+          </div>
+        </section>
 
-      <div className="grid grid-cols-1 gap-6 xl:grid-cols-[1.1fr_0.9fr]">
-        <section className="dashboard-panel rounded-[32px] p-6">
-          <div className="text-[10px] font-black uppercase tracking-[0.24em] text-white/45">Voucher verification</div>
-          <h2 className="mt-2 font-outfit text-2xl font-black text-white">Housing authority contact</h2>
+        <section className="fintech-card bento-item-4 p-8 flex flex-col items-center justify-center text-center hover-lift">
+          <div className="w-full space-y-8">
+            <div className="platform-eyebrow-muted text-xs tracking-widest uppercase">Proprietary Score</div>
+            <div className="relative inline-flex items-center justify-center">
+              <div className="absolute inset-0 rounded-full bg-[#b8942f]/10 animate-ping" />
+              <div className="relative h-44 w-44 rounded-full border-[10px] border-[#f8f9fb] bg-white flex flex-col items-center justify-center shadow-2xl">
+                <div className="font-outfit text-6xl font-black text-[#b8942f]">{analysis.score}</div>
+                <div className="text-[10px] font-black uppercase tracking-widest text-[#64748b]/60 mt-1">S8 Rating</div>
+              </div>
+            </div>
+            <div className="space-y-4">
+              <div className="text-2xl font-black text-[#0f1629]">{cleanPresentationText(analysis.verdict)}</div>
+              <div className="platform-chip mx-auto">Confidence {analysis.confidence}%</div>
+            </div>
+          </div>
+        </section>
+      </div>
+
+      {/* POSITIVE / WATCHOUTS / ACTIONS */}
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
+        <div className="fintech-card p-8 border-l-4 border-l-[#0d9668] hover-lift">
+          <div className="text-[11px] font-black uppercase tracking-[0.24em] text-[#0d9668] mb-6">Positive signals</div>
+          <ul className="space-y-4">
+            {strengths.map((item) => (
+              <li key={item} className="flex items-start gap-3 text-sm leading-7 text-[#64748b] font-medium">
+                <div className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-[#0d9668]" />
+                {item}
+              </li>
+            ))}
+          </ul>
+        </div>
+        <div className="fintech-card p-8 border-l-4 border-l-amber-500 hover-lift">
+          <div className="text-[11px] font-black uppercase tracking-[0.24em] text-amber-600 mb-6">Watchouts</div>
+          <ul className="space-y-4">
+            {risks.map((item) => (
+              <li key={item} className="flex items-start gap-3 text-sm leading-7 text-[#64748b] font-medium">
+                <div className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-amber-500" />
+                {item}
+              </li>
+            ))}
+          </ul>
+        </div>
+        <div className="fintech-card p-8 border-l-4 border-l-[#b8942f] hover-lift">
+          <div className="text-[11px] font-black uppercase tracking-[0.24em] text-[#b8942f] mb-6">Strategic actions</div>
+          <ul className="space-y-4 mb-8">
+            {nextSteps.map((item) => (
+              <li key={item} className="flex items-start gap-3 text-sm leading-7 text-[#64748b] font-medium">
+                <div className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-[#b8942f]" />
+                {item}
+              </li>
+            ))}
+          </ul>
+          {address && (
+            <div className="mt-auto dashboard-subpanel rounded-2xl p-5">
+              <div className="text-[10px] font-black uppercase tracking-[0.2em] text-[#64748b]/60 mb-3">Address Reference</div>
+              <div className="text-sm font-bold text-[#0f1629] mb-4">{address}</div>
+              <div className="flex flex-wrap gap-2">
+                <button onClick={handleCopyAddress} className="inline-flex items-center gap-2 rounded-full border border-[#eef0f3] bg-white px-3 py-2 text-[10px] font-black uppercase tracking-wider text-[#0f1629] transition hover:bg-gray-50">
+                  {copyState === 'copied' ? <Check size={12} /> : <Copy size={12} />}
+                  {copyState === 'copied' ? 'Copied' : 'Copy'}
+                </button>
+                {searchLinks.slice(0, 2).map((link) => (
+                  <a key={link.label} href={link.href} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 rounded-full border border-[#b8942f]/20 bg-[#b8942f]/05 px-3 py-2 text-[10px] font-black uppercase tracking-wider text-[#b8942f] transition hover:bg-[#b8942f]/10">
+                    {link.label}
+                  </a>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* DATA DETAILS (ATTOM / HUD) */}
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+        <section className="fintech-card p-8">
+          <div className="platform-eyebrow-muted mb-4">Voucher Verification</div>
+          <h2 className="font-outfit text-2xl font-black text-[#0f1629] mb-6">Housing Authority</h2>
           {housingAuthority ? (
-            <div className="mt-5 grid grid-cols-1 gap-4 md:grid-cols-2">
-              <div className="dashboard-subpanel rounded-[24px] p-4 md:col-span-2">
-                <div className="text-[11px] uppercase tracking-[0.18em] text-white/40">Authority</div>
-                <div className="mt-2 text-lg font-semibold text-white">{housingAuthority.entry.name}</div>
-                <div className="mt-2 text-sm leading-6 text-white/70">
-                  {housingAuthority.entry.programType || 'Program type unavailable'}
-                  <span className="ml-2 rounded-full border border-cyan-300/20 bg-cyan-300/10 px-2 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-cyan-100">
-                    Matched by {housingAuthority.matchedBy}
-                  </span>
+            <div className="space-y-4">
+              <div className="dashboard-subpanel rounded-2xl p-6">
+                <div className="text-[10px] font-black uppercase tracking-[0.24em] text-[#b8942f] mb-2">Agency</div>
+                <div className="text-lg font-black text-[#0f1629]">{housingAuthority.entry.name}</div>
+                <div className="mt-2 text-sm font-medium text-[#64748b]">{housingAuthority.entry.programType}</div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="dashboard-subpanel rounded-2xl p-5">
+                  <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.24em] text-[#64748b]/60 mb-2"><Phone size={12} /> Contact</div>
+                  <div className="text-sm font-bold text-[#0f1629]">{housingAuthority.entry.phone || 'N/A'}</div>
+                </div>
+                <div className="dashboard-subpanel rounded-2xl p-5">
+                  <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.24em] text-[#64748b]/60 mb-2"><Mail size={12} /> Email</div>
+                  <div className="text-sm font-bold text-[#0f1629] truncate">{housingAuthority.entry.email || 'N/A'}</div>
                 </div>
               </div>
-              <div className="dashboard-subpanel rounded-[24px] p-4">
-                <div className="flex items-center gap-2 text-[11px] uppercase tracking-[0.18em] text-white/40"><Phone size={14} /> Phone</div>
-                <div className="mt-2 text-sm font-semibold text-white">{housingAuthority.entry.phone || 'Unavailable'}</div>
-                <div className="mt-2 text-xs text-white/55">Fax: {housingAuthority.entry.fax || 'Unavailable'}</div>
-              </div>
-              <div className="dashboard-subpanel rounded-[24px] p-4">
-                <div className="flex items-center gap-2 text-[11px] uppercase tracking-[0.18em] text-white/40"><Mail size={14} /> Email</div>
-                <div className="mt-2 break-all text-sm font-semibold text-white">{housingAuthority.entry.email || 'Unavailable'}</div>
-                <div className="mt-2 text-xs text-white/55">HUD office record</div>
-              </div>
-              <div className="dashboard-subpanel rounded-[24px] p-4 md:col-span-2">
-                <div className="text-[11px] uppercase tracking-[0.18em] text-white/40">Office Address</div>
-                <div className="mt-2 text-sm leading-6 text-white/80">
-                  {[
-                    housingAuthority.entry.address,
-                    [housingAuthority.entry.city, housingAuthority.entry.state, housingAuthority.entry.zip].filter(Boolean).join(' '),
-                  ].filter(Boolean).join(', ') || 'Unavailable'}
+              <div className="dashboard-subpanel rounded-2xl p-5">
+                <div className="text-[10px] font-black uppercase tracking-[0.24em] text-[#64748b]/60 mb-2">Office Headquarters</div>
+                <div className="text-sm font-medium text-[#64748b] leading-6">
+                  {[housingAuthority.entry.address, [housingAuthority.entry.city, housingAuthority.entry.state, housingAuthority.entry.zip].filter(Boolean).join(' ')].filter(Boolean).join(', ')}
                 </div>
               </div>
             </div>
           ) : (
-            <div className="mt-5 rounded-2xl border border-amber-300/15 bg-amber-300/10 p-4 text-sm leading-6 text-amber-50/90">
-              No local housing authority match was found in the current HUD directory snapshot for this property yet.
-            </div>
+            <div className="rounded-2xl bg-gray-50 p-6 text-sm text-[#64748b] text-center italic">No authority records found for this market.</div>
           )}
         </section>
 
-        <section className="dashboard-panel rounded-[32px] p-6">
-          <div className="text-[10px] font-black uppercase tracking-[0.24em] text-white/45">Ownership verification</div>
-          <h2 className="mt-2 font-outfit text-2xl font-black text-white">Current owner record</h2>
-          <div className="mt-5 grid grid-cols-1 gap-4 md:grid-cols-2">
-            <div className="dashboard-subpanel rounded-[24px] p-4">
-              <div className="text-[11px] uppercase tracking-[0.18em] text-white/40">Owner Name</div>
-              <div className="mt-2 text-lg font-semibold text-white">{attom.ownership.ownerName || 'Unavailable from ATTOM owner record'}</div>
+        <section className="fintech-card p-8">
+          <div className="platform-eyebrow-muted mb-4">Ownership Records</div>
+          <h2 className="font-outfit text-2xl font-black text-[#0f1629] mb-6">ATTOM Parcel Profile</h2>
+          <div className="space-y-4">
+            <div className="dashboard-subpanel rounded-2xl p-6">
+              <div className="text-[10px] font-black uppercase tracking-[0.24em] text-[#b8942f] mb-2">Current Owner</div>
+              <div className="text-lg font-black text-[#0f1629]">{attom.ownership.ownerName || 'Unavailable'}</div>
+              <div className="mt-2 text-sm font-medium text-[#64748b]">{attom.ownership.mailingAddress || 'No mailing address on file'}</div>
             </div>
-            <div className="dashboard-subpanel rounded-[24px] p-4">
-              <div className="text-[11px] uppercase tracking-[0.18em] text-white/40">Verification Status</div>
-              <div className="mt-2 text-lg font-semibold text-white">{attom.ownership.verified ? 'Verified via ATTOM' : 'ATTOM owner record unavailable'}</div>
-            </div>
-            <div className="dashboard-subpanel rounded-[24px] p-4">
-              <div className="text-[11px] uppercase tracking-[0.18em] text-white/40">Mailing Address</div>
-              <div className="mt-2 text-sm leading-6 text-white/80">{attom.ownership.mailingAddress || 'Unavailable'}</div>
-            </div>
-            <div className="dashboard-subpanel rounded-[24px] p-4">
-              <div className="text-[11px] uppercase tracking-[0.18em] text-white/40">Owner Flags</div>
-              <div className="mt-2 text-sm leading-6 text-white/80">
-                {`Absentee: ${attom.ownership.absenteeOwnerStatus || 'Unknown'}`}
-                <br />
-                {`Corporate owner: ${attom.ownership.corporateOwner ? 'Yes' : 'No / not flagged'}`}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="dashboard-subpanel rounded-2xl p-5">
+                <div className="text-[10px] font-black uppercase tracking-[0.24em] text-[#64748b]/60 mb-2">Year Built</div>
+                <div className="text-sm font-bold text-[#0f1629]">{attom.parcel.yearBuilt || 'N/A'}</div>
               </div>
-            </div>
-          </div>
-        </section>
-
-        <section className="dashboard-panel rounded-[32px] p-6">
-          <div className="text-[10px] font-black uppercase tracking-[0.24em] text-white/45">Parcel data</div>
-          <h2 className="mt-2 font-outfit text-2xl font-black text-white">ATTOM parcel profile</h2>
-          <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2">
-            {[
-              ['ATTOM ID', attom.parcel.attomId || 'Unavailable'],
-              ['APN', attom.parcel.apn || 'Unavailable'],
-              ['Property Use', attom.parcel.propertyUse || 'Unavailable'],
-              ['Year Built', attom.parcel.yearBuilt ? String(attom.parcel.yearBuilt) : 'Unavailable'],
-              ['Lot Number', attom.parcel.lotNumber || 'Unavailable'],
-              ['Lot Size', attom.parcel.lotSizeSqft ? `${attom.parcel.lotSizeSqft.toLocaleString()} sqft` : 'Unavailable'],
-              ['Latitude', attom.parcel.latitude ? String(attom.parcel.latitude) : 'Unavailable'],
-              ['Longitude', attom.parcel.longitude ? String(attom.parcel.longitude) : 'Unavailable'],
-            ].map(([label, value]) => (
-              <div key={label} className="dashboard-subpanel rounded-[24px] p-4">
-                <div className="text-[11px] uppercase tracking-[0.18em] text-white/40">{label}</div>
-                <div className="mt-2 text-sm font-semibold text-white">{value}</div>
+              <div className="dashboard-subpanel rounded-2xl p-5">
+                <div className="text-[10px] font-black uppercase tracking-[0.24em] text-[#64748b]/60 mb-2">Property Use</div>
+                <div className="text-sm font-bold text-[#0f1629]">{attom.parcel.propertyUse || 'N/A'}</div>
               </div>
-            ))}
-          </div>
-        </section>
-      </div>
-
-      <div className="grid grid-cols-1 gap-6 xl:grid-cols-[1fr_1fr]">
-        <section className="dashboard-panel rounded-[32px] p-6">
-          <div className="text-[10px] font-black uppercase tracking-[0.24em] text-white/45">Assessed value</div>
-          <h2 className="mt-2 font-outfit text-2xl font-black text-white">Assessment snapshot</h2>
-          <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2">
-            {[
-              ['Assessed Total', formatCurrency(attom.assessedValue.assessedTotal)],
-              ['Market Total', formatCurrency(attom.assessedValue.marketTotal)],
-              ['Tax Amount', formatCurrency(attom.assessedValue.taxAmount)],
-              ['Assessor Year', attom.assessedValue.assessorYear ? String(attom.assessedValue.assessorYear) : 'Unavailable'],
-              ['Tax Year', attom.assessedValue.taxYear ? String(attom.assessedValue.taxYear) : 'Unavailable'],
-            ].map(([label, value]) => (
-              <div key={label} className="dashboard-subpanel rounded-[24px] p-4">
-                <div className="text-[11px] uppercase tracking-[0.18em] text-white/40">{label}</div>
-                <div className="mt-2 text-lg font-semibold text-white">{value}</div>
+              <div className="dashboard-subpanel rounded-2xl p-5">
+                <div className="text-[10px] font-black uppercase tracking-[0.24em] text-[#64748b]/60 mb-2">Assessed Value</div>
+                <div className="text-sm font-bold text-[#0f1629]">{formatCurrency(attom.assessedValue.assessedTotal)}</div>
               </div>
-            ))}
-          </div>
-        </section>
-
-        <section className="dashboard-panel rounded-[32px] p-6">
-          <div className="text-[10px] font-black uppercase tracking-[0.24em] text-white/45">Risk signals</div>
-          <h2 className="mt-2 font-outfit text-2xl font-black text-white">Flood, fire, and environmental context</h2>
-          <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <div className="dashboard-subpanel rounded-[24px] p-4">
-              <div className="flex items-center gap-2 text-[11px] uppercase tracking-[0.18em] text-white/40"><Waves size={14} /> Flood Risk</div>
-              <div className="mt-2 text-lg font-semibold text-white">{formatRisk(attom.risk.flood)}</div>
-              <p className="mt-2 text-xs leading-5 text-white/50">ATTOM did not return a flood-specific index for this parcel if this shows unavailable.</p>
-            </div>
-            <div className="dashboard-subpanel rounded-[24px] p-4">
-              <div className="flex items-center gap-2 text-[11px] uppercase tracking-[0.18em] text-white/40"><Wind size={14} /> Fire Risk</div>
-              <div className="mt-2 text-lg font-semibold text-white">{formatRisk(attom.risk.fire)}</div>
-              <p className="mt-2 text-xs leading-5 text-white/50">ATTOM community data does not expose a fire index for every geography.</p>
-            </div>
-          </div>
-          <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
-            <div className="dashboard-subpanel rounded-[24px] p-4">
-              <div className="text-[11px] uppercase tracking-[0.18em] text-white/40">Environmental Risk</div>
-              <div className="mt-3 space-y-2 text-sm text-white/80">
-                {attom.risk.environmental.map((item) => (
-                  <div key={item.label} className="flex items-center justify-between gap-4 border-b border-white/6 pb-2 last:border-0 last:pb-0">
-                    <span>{item.label}</span>
-                    <span className="font-semibold text-white">{formatRisk(item.value)}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-            <div className="dashboard-subpanel rounded-[24px] p-4">
-              <div className="text-[11px] uppercase tracking-[0.18em] text-white/40">Natural Disaster Index</div>
-              <div className="mt-3 space-y-2 text-sm text-white/80">
-                {attom.risk.naturalDisasters.map((item) => (
-                  <div key={item.label} className="flex items-center justify-between gap-4 border-b border-white/6 pb-2 last:border-0 last:pb-0">
-                    <span>{item.label}</span>
-                    <span className="font-semibold text-white">{formatRisk(item.value)}</span>
-                  </div>
-                ))}
+              <div className="dashboard-subpanel rounded-2xl p-5">
+                <div className="text-[10px] font-black uppercase tracking-[0.24em] text-[#64748b]/60 mb-2">Market Value</div>
+                <div className="text-sm font-bold text-[#0f1629]">{formatCurrency(attom.assessedValue.marketTotal)}</div>
               </div>
             </div>
           </div>
         </section>
       </div>
 
-      <div className="grid grid-cols-1 gap-6 xl:grid-cols-[1fr_1fr]">
-        <section className="dashboard-panel rounded-[32px] p-6">
-          <div className="text-[10px] font-black uppercase tracking-[0.24em] text-white/45">Tax history</div>
-          <h2 className="mt-2 font-outfit text-2xl font-black text-white">Assessment and tax records</h2>
-          <div className="mt-5 overflow-x-auto">
-            <table className="min-w-full text-left text-sm text-white/80">
+      {/* TABLES SECTION */}
+      <div className="grid grid-cols-1 gap-8">
+        <section className="fintech-card p-8 md:p-10">
+          <div className="platform-eyebrow-muted mb-4">History</div>
+          <h2 className="font-outfit text-3xl font-black text-[#0f1629] mb-8">Recorded Deed Transfers</h2>
+          <div className="overflow-x-auto">
+            <table className="w-full text-left">
               <thead>
-                <tr className="border-b border-white/10 text-[11px] uppercase tracking-[0.18em] text-white/40">
-                  <th className="pb-3 pr-4">Assessor Year</th>
-                  <th className="pb-3 pr-4">Tax Year</th>
-                  <th className="pb-3 pr-4">Tax Amount</th>
-                  <th className="pb-3 pr-4">Assessed Total</th>
-                  <th className="pb-3 pr-4">Market Total</th>
+                <tr className="border-b border-[#eef0f3] text-[10px] font-black uppercase tracking-[0.24em] text-[#64748b]/60">
+                  <th className="pb-4 pr-6">Date</th>
+                  <th className="pb-4 pr-6">Buyer</th>
+                  <th className="pb-4 pr-6">Seller</th>
+                  <th className="pb-4 pr-6">Deed Type</th>
+                  <th className="pb-4">Amount</th>
                 </tr>
               </thead>
-              <tbody>
-                {attom.taxHistory.map((row, index) => (
-                  <tr key={`${row.assessorYear}-${index}`} className="border-b border-white/6 last:border-0">
-                    <td className="py-3 pr-4">{row.assessorYear || 'Unavailable'}</td>
-                    <td className="py-3 pr-4">{row.taxYear || 'Unavailable'}</td>
-                    <td className="py-3 pr-4">{formatCurrency(row.taxAmount)}</td>
-                    <td className="py-3 pr-4">{formatCurrency(row.assessedTotal)}</td>
-                    <td className="py-3 pr-4">{formatCurrency(row.marketTotal)}</td>
+              <tbody className="divide-y divide-[#f8f9fb]">
+                {attom.deedHistory.map((row, i) => (
+                  <tr key={i} className="group hover:bg-[#f8f9fb]/50 transition-colors">
+                    <td className="py-5 pr-6 text-sm font-bold text-[#0f1629]">{formatDate(row.transferDate)}</td>
+                    <td className="py-5 pr-6 text-sm font-medium text-[#64748b]">{row.buyerName || '—'}</td>
+                    <td className="py-5 pr-6 text-sm font-medium text-[#64748b]">{row.sellerName || '—'}</td>
+                    <td className="py-5 pr-6 text-[11px] font-black uppercase tracking-wider text-[#b8942f]">{row.saleType || row.deedType || '—'}</td>
+                    <td className="py-5 text-sm font-black text-[#0f1629]">{formatCurrency(row.saleAmount)}</td>
                   </tr>
                 ))}
               </tbody>
@@ -523,28 +431,30 @@ export default function PropertyDetailsView({ bundle, analysisResult }: Property
           </div>
         </section>
 
-        <section className="dashboard-panel rounded-[32px] p-6">
-          <div className="text-[10px] font-black uppercase tracking-[0.24em] text-white/45">Deed history</div>
-          <h2 className="mt-2 font-outfit text-2xl font-black text-white">Recorded transfer events</h2>
-          <div className="mt-5 overflow-x-auto">
-            <table className="min-w-full text-left text-sm text-white/80">
+        <section className="fintech-card p-8 md:p-10">
+          <div className="platform-eyebrow-muted mb-4">Tax Records</div>
+          <h2 className="font-outfit text-3xl font-black text-[#0f1629] mb-8">Annual Assessment History</h2>
+          <div className="overflow-x-auto">
+            <table className="w-full text-left">
               <thead>
-                <tr className="border-b border-white/10 text-[11px] uppercase tracking-[0.18em] text-white/40">
-                  <th className="pb-3 pr-4">Transfer Date</th>
-                  <th className="pb-3 pr-4">Buyer</th>
-                  <th className="pb-3 pr-4">Seller</th>
-                  <th className="pb-3 pr-4">Sale Type</th>
-                  <th className="pb-3 pr-4">Sale Amount</th>
+                <tr className="border-b border-[#eef0f3] text-[10px] font-black uppercase tracking-[0.24em] text-[#64748b]/60">
+                  <th className="pb-4 pr-6">Year</th>
+                  <th className="pb-4 pr-6">Tax Amount</th>
+                  <th className="pb-4 pr-6">Assessed Total</th>
+                  <th className="pb-4 pr-6">Market Total</th>
+                  <th className="pb-4">Status</th>
                 </tr>
               </thead>
-              <tbody>
-                {attom.deedHistory.map((row, index) => (
-                  <tr key={`${row.transferDate}-${index}`} className="border-b border-white/6 last:border-0">
-                    <td className="py-3 pr-4">{formatDate(row.transferDate)}</td>
-                    <td className="py-3 pr-4">{row.buyerName || 'Unavailable'}</td>
-                    <td className="py-3 pr-4">{row.sellerName || 'Unavailable'}</td>
-                    <td className="py-3 pr-4">{row.saleType || row.deedType || 'Unavailable'}</td>
-                    <td className="py-3 pr-4">{formatCurrency(row.saleAmount)}</td>
+              <tbody className="divide-y divide-[#f8f9fb]">
+                {attom.taxHistory.map((row, i) => (
+                  <tr key={i} className="group hover:bg-[#f8f9fb]/50 transition-colors">
+                    <td className="py-5 pr-6 text-sm font-bold text-[#0f1629]">{row.taxYear || row.assessorYear}</td>
+                    <td className="py-5 pr-6 text-sm font-black text-amber-700">{formatCurrency(row.taxAmount)}</td>
+                    <td className="py-5 pr-6 text-sm font-medium text-[#64748b]">{formatCurrency(row.assessedTotal)}</td>
+                    <td className="py-5 pr-6 text-sm font-medium text-[#64748b]">{formatCurrency(row.marketTotal)}</td>
+                    <td className="py-5">
+                      <span className="rounded-full bg-[#0d9668]/05 px-2.5 py-1 text-[9px] font-black uppercase tracking-widest text-[#0d9668]">Confirmed</span>
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -552,6 +462,28 @@ export default function PropertyDetailsView({ bundle, analysisResult }: Property
           </div>
         </section>
       </div>
+
+      {/* PROOF & STORAGE */}
+      <section className="fintech-card p-8 bg-[#f8f9fb]/50 border-none shadow-none">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+          <div className="space-y-1">
+            <div className="text-[10px] font-black uppercase tracking-[0.24em] text-[#64748b]/60">Analysis Provenance</div>
+            <div className="text-sm font-bold text-[#0f1629]">Generated with {analysisResult.record.provider}</div>
+          </div>
+          <div className="flex flex-wrap gap-6">
+            <div>
+              <div className="text-[9px] font-black uppercase tracking-[0.2em] text-[#64748b]/50">Storage Root</div>
+              <div className="text-[11px] font-mono text-[#b8942f] mt-1">{truncateMiddle(analysisResult.record.storageRoot, 15)}</div>
+            </div>
+            {analysisResult.record.computeProof && (
+              <div>
+                <div className="text-[9px] font-black uppercase tracking-[0.2em] text-[#64748b]/50">Compute ID</div>
+                <div className="text-[11px] font-mono text-[#0d9668] mt-1">{truncateMiddle(analysisResult.record.computeProof.responseId, 15)}</div>
+              </div>
+            )}
+          </div>
+        </div>
+      </section>
     </div>
   );
 }

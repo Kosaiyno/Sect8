@@ -245,7 +245,7 @@ export async function advancePropertyDetailsSession(sessionId: string, sessionRo
 
       const bundle = await getPropertyDetailBundle(normalizeListingId(session.listingId), session.listingsRoot);
       if (!bundle) {
-        throw new Error('Property details bundle could not be built.');
+        throw new Error('ATTOM marked this address as vacant land or a non-house parcel, so Sect8 excluded it from agent analysis.');
       }
 
       session.bundle = bundle;

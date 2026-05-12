@@ -59,36 +59,36 @@ export default function AgentChatBubble({
   ];
 
   return (
-    <div className="platform-panel platform-panel-highlight overflow-hidden rounded-[30px] p-0 shadow-[0_30px_90px_rgba(0,0,0,0.36)]">
+    <div className="platform-panel platform-panel-highlight overflow-hidden rounded-[30px] p-0 shadow-[0_20px_50px_rgba(0,0,0,0.1)]">
       <div className="grid grid-cols-1 xl:grid-cols-[1.2fr_0.8fr]">
-        <div className="border-b border-white/8 p-6 xl:border-b-0 xl:border-r">
+        <div className="border-b border-gray-100 p-6 xl:border-b-0 xl:border-r">
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div>
               <div className="platform-eyebrow">AI Analyst Console</div>
-              <h3 className="mt-2 font-outfit text-2xl font-black text-white">0G-powered Section 8 investment guidance</h3>
-              <p className="mt-2 max-w-2xl text-sm leading-6 text-white/62">
+              <h3 className="mt-2 font-outfit text-2xl font-black text-[#0f1629]">0G-powered Section 8 investment guidance</h3>
+              <p className="mt-2 max-w-2xl text-sm leading-6 text-[#64748b]">
                 This is the agent voice of the platform. It should feel like an acquisitions analyst that understands Section 8 cashflow, remembers prior scans, and speaks from your 0G-backed memory.
               </p>
             </div>
 
             <div className="flex flex-wrap gap-2">
-              <span className="platform-chip border-cyan-300/15 bg-cyan-300/10 text-cyan-100">
+              <span className="platform-chip border-cyan-100 bg-cyan-50 text-cyan-700">
                 <Sparkles size={14} />
                 0G Compute Live
               </span>
-              <span className="platform-chip border-white/10 bg-white/5 text-white/70">
+              <span className="platform-chip border-gray-200 bg-gray-50 text-[#64748b]">
                 <Database size={14} />
                 Memory Synced
               </span>
             </div>
           </div>
 
-          <div className="mt-6 rounded-[26px] border border-white/8 bg-[#0b1117] p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.03)]">
-            <div className="flex items-center gap-3 text-[11px] font-black uppercase tracking-[0.22em] text-white/40">
+          <div className="mt-6 rounded-[26px] border border-gray-100 bg-gray-50/50 p-5">
+            <div className="flex items-center gap-3 text-[11px] font-black uppercase tracking-[0.22em] text-[#64748b]/60">
               <BrainCircuit size={14} />
               Current Briefing
             </div>
-            <div className="mt-4 min-h-[144px] text-[15px] leading-7 text-white/88">
+            <div className="mt-4 min-h-[144px] text-[15px] leading-7 text-[#0f1629]">
               {loading ? 'Running portfolio reasoning against your current memory and market context...' : (message || 'No briefing yet. Use a quick prompt or ask the agent manually.')}
             </div>
           </div>
@@ -101,7 +101,7 @@ export default function AgentChatBubble({
                   setDraft(prompt);
                   void askAgent(prompt);
                 }}
-                className="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm text-white/72 transition hover:border-cyan-300/20 hover:text-white"
+                className="rounded-full border border-gray-200 bg-gray-50/50 px-4 py-2 text-sm text-[#64748b] transition hover:border-[#b8942f]/40 hover:text-[#0f1629]"
               >
                 {prompt}
               </button>
@@ -111,13 +111,13 @@ export default function AgentChatBubble({
 
         <div className="p-6">
           <div className="platform-eyebrow">Prompt Agent</div>
-          <div className="mt-4 rounded-[26px] border border-white/8 bg-white/[0.03] p-4">
-            <label className="text-[11px] font-black uppercase tracking-[0.22em] text-white/40">Ask for a new brief</label>
+          <div className="mt-4 rounded-[26px] border border-gray-100 bg-gray-50/30 p-4">
+            <label className="text-[11px] font-black uppercase tracking-[0.22em] text-[#64748b]/60">Ask for a new brief</label>
             <textarea
               value={draft}
               onChange={(event) => setDraft(event.target.value)}
               rows={5}
-              className="mt-3 w-full resize-none rounded-[22px] border border-white/10 bg-[#0d1015] px-4 py-3 text-sm leading-6 text-white outline-hidden transition focus:border-cyan-300/20"
+              className="mt-3 w-full resize-none rounded-[22px] border border-gray-200 bg-white px-4 py-3 text-sm leading-6 text-[#0f1629] outline-hidden transition focus:border-[#b8942f]/30"
               placeholder="Ask about yields, Section 8 pricing, acquisition priorities, or neighborhood strategy."
             />
             <button
@@ -131,18 +131,18 @@ export default function AgentChatBubble({
           </div>
 
           <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-1">
-            <div className="rounded-[24px] border border-white/8 bg-white/[0.03] p-4">
-              <div className="flex items-center gap-2 text-[11px] font-black uppercase tracking-[0.22em] text-white/40">
+            <div className="rounded-[24px] border border-gray-100 bg-gray-50/30 p-4">
+              <div className="flex items-center gap-2 text-[11px] font-black uppercase tracking-[0.22em] text-[#64748b]/60">
                 <Wand2 size={14} />
                 What this agent does
               </div>
-              <p className="mt-3 text-sm leading-6 text-white/64">
+              <p className="mt-3 text-sm leading-6 text-[#64748b]">
                 Converts live scans and remembered context into operator-ready Section 8 acquisition guidance.
               </p>
             </div>
-            <div className="rounded-[24px] border border-white/8 bg-white/[0.03] p-4">
-              <div className="text-[11px] font-black uppercase tracking-[0.22em] text-white/40">Memory root</div>
-              <div className="mt-3 break-all font-mono text-xs text-cyan-100/90">
+            <div className="rounded-[24px] border border-gray-100 bg-gray-50/30 p-4">
+              <div className="text-[11px] font-black uppercase tracking-[0.22em] text-[#64748b]/60">Memory root</div>
+              <div className="mt-3 break-all font-mono text-xs text-cyan-700">
                 {agent?.memory?.memoryRoot || 'Awaiting first memory write'}
               </div>
             </div>

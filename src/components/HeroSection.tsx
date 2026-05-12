@@ -1,7 +1,7 @@
 "use client";
 import Link from 'next/link';
 import React from 'react';
-import { BadgeDollarSign, BedDouble, Building2, MapPin, ShieldCheck, Sparkles } from 'lucide-react';
+import { BadgeDollarSign, BedDouble, Building2, MapPin, ShieldCheck, Sparkles, TrendingUp } from 'lucide-react';
 import WatchlistButton from '@/components/WatchlistButton';
 
 type RecommendationSummary = {
@@ -61,18 +61,18 @@ export default function HeroSection({ recommendations, isScanning = false, targe
 
   if (!topPick) {
     return (
-      <div className="dashboard-panel rounded-[32px] p-6 md:p-8">
-        <div className="max-w-2xl space-y-4">
-          <div className="inline-flex items-center gap-2 rounded-full border border-cyan-400/30 bg-cyan-400/10 px-3 py-1 text-[11px] font-black uppercase tracking-[0.25em] text-cyan-200">
+      <div className="fintech-card p-8 md:p-10">
+        <div className="max-w-2xl space-y-5">
+          <div className="platform-chip">
             <Sparkles size={14} />
-            {isScanning ? 'Scan running' : 'Market board loading'}
+            {isScanning ? 'Analysis' : 'Loading board'}
           </div>
-          <h3 className="font-outfit text-3xl font-black tracking-tight text-white md:text-4xl">
+          <h3 className="font-outfit text-2xl font-black tracking-tight text-[#0f1629] md:text-4xl">
             {isScanning
-              ? `Scanning ${targetZip || 'your selected ZIP'} and loading the strongest cached matches.`
-              : `Loading the saved board for ${targetZip || 'your selected ZIP'} so the dashboard opens with live candidates instead of an empty state.`}
+              ? `Analysis`
+              : `Loading the saved board for ${targetZip || 'your selected ZIP'}.`}
           </h3>
-          <p className="max-w-xl text-sm leading-6 text-white/70 md:text-base">
+          <p className="max-w-xl text-base leading-7 text-[#64748b]">
             Sect8 keeps the latest board in session so returning from agent analysis preserves your ZIP selection and scanned homes.
           </p>
         </div>
@@ -81,17 +81,17 @@ export default function HeroSection({ recommendations, isScanning = false, targe
   }
 
   return (
-    <div className="grid grid-cols-1 gap-6 xl:grid-cols-[1.25fr_0.95fr]">
-      <div className="dashboard-panel rounded-[32px] p-6 md:p-8">
-        <div className="space-y-6">
-            <div className="inline-flex items-center gap-2 rounded-full border border-cyan-400/30 bg-cyan-400/10 px-3 py-1 text-[11px] font-black uppercase tracking-[0.25em] text-cyan-200">
-              <Sparkles size={14} />
-              My current best pick
+    <div className="bento-grid">
+      <div className="fintech-card bento-item-8 p-8 md:p-10">
+        <div className="space-y-8">
+            <div className="platform-chip">
+              <TrendingUp size={14} />
+              Top Investment Pick
             </div>
 
             <div>
-              <div className="flex flex-wrap items-start justify-between gap-4">
-                <h3 className="max-w-3xl font-outfit text-2xl font-black tracking-[-0.05em] text-white md:text-[2.7rem] md:leading-[1.02]">
+              <div className="flex flex-wrap items-start justify-between gap-6">
+                <h3 className="max-w-3xl font-outfit text-3xl font-black tracking-[-0.04em] text-[#0f1629] md:text-[3rem] md:leading-[1.0]">
                   {topPick.address}
                 </h3>
                 <WatchlistButton
@@ -111,36 +111,36 @@ export default function HeroSection({ recommendations, isScanning = false, targe
                     propertyType: topPick.propertyType,
                     squareFootage: topPick.squareFootage,
                   }}
-                  className="rounded-full border p-2.5 transition"
+                  className="rounded-full border border-[#eef0f3] p-3 transition hover:border-[#b8942f]/30 hover:bg-[#b8942f]/05"
                 />
               </div>
-              <div className="mt-4 flex flex-wrap items-center gap-4 text-[14px] text-white/66">
-                <span className="inline-flex items-center gap-2">
+              <div className="mt-5 flex flex-wrap items-center gap-5 text-sm text-[#64748b]">
+                <span className="inline-flex items-center gap-2 font-bold text-[#b8942f]">
                   <MapPin size={14} />
-                  I rank this highest in the selected market
+                  Highest ranked in this market
                 </span>
-                <span className="inline-flex items-center gap-2">
+                <span className="inline-flex items-center gap-2 text-[#64748b]/80">
                   <BedDouble size={14} />
                   {topPick.bedrooms || 'N/A'} beds
                 </span>
-                <span>{topPick.bathrooms ?? 'N/A'} baths</span>
-                <span>{topPick.propertyType || 'Residential'}</span>
+                <span className="text-[#64748b]/80 font-medium">{topPick.bathrooms ?? 'N/A'} baths</span>
+                <span className="text-[#64748b]/80 font-medium">{topPick.propertyType || 'Residential'}</span>
               </div>
             </div>
 
             <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
               {[
-                { label: 'Purchase Price', value: formatCurrency(Number(topPick.purchasePrice || 0)), icon: <BadgeDollarSign size={16} /> },
-                { label: 'Rent Benchmark', value: formatCurrency(Number(topPick.fmr || 0), '/mo'), icon: <Building2 size={16} /> },
-                { label: 'Monthly NOI', value: formatCurrency(monthlyNoi, '/mo'), icon: <Sparkles size={16} /> },
-                { label: 'Cap Rate', value: formatPercent(topPick.capRate), icon: <ShieldCheck size={16} /> },
+                { label: 'Purchase Price', value: formatCurrency(Number(topPick.purchasePrice || 0)), icon: <BadgeDollarSign size={14} /> },
+                { label: 'Rent Benchmark', value: formatCurrency(Number(topPick.fmr || 0), '/mo'), icon: <Building2 size={14} /> },
+                { label: 'Monthly NOI', value: formatCurrency(monthlyNoi, '/mo'), icon: <TrendingUp size={14} /> },
+                { label: 'Cap Rate', value: formatPercent(topPick.capRate), icon: <ShieldCheck size={14} /> },
               ].map((metric) => (
-                <div key={metric.label} className="dashboard-subpanel flex min-h-[116px] flex-col justify-between rounded-[24px] px-4 py-4">
-                  <div className="mb-2 flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] text-white/45">
+                <div key={metric.label} className="stat-block flex min-h-[110px] flex-col justify-between rounded-2xl px-5 py-4.5 hover-lift cursor-default transition-all duration-500">
+                  <div className="mb-2 flex items-center gap-1.5 text-[10px] font-black uppercase tracking-[0.24em] text-[#b8942f]">
                     {metric.icon}
                     {metric.label}
                   </div>
-                  <div className="min-w-0 font-outfit text-[clamp(1.1rem,1.45vw,1.7rem)] leading-none font-black tracking-[-0.05em] text-white tabular-nums">{metric.value}</div>
+                  <div className="min-w-0 font-outfit text-2xl leading-none font-black tracking-[-0.04em] text-[#0f1629] tabular-nums group-hover:scale-105 transition-transform origin-left">{metric.value}</div>
                 </div>
               ))}
             </div>
@@ -157,34 +157,34 @@ export default function HeroSection({ recommendations, isScanning = false, targe
         </div>
       </div>
 
-      <div className="dashboard-panel rounded-[32px] p-6">
-        <h4 className="font-outfit text-xl font-black tracking-[-0.04em] text-white">Why I surfaced this address</h4>
-        <div className="mt-4 space-y-4 text-[15px] text-white/70">
-          <div className="dashboard-subpanel rounded-[24px] p-4">
-            <div className="text-[10px] font-black uppercase tracking-[0.24em] text-white/45">My selection summary</div>
-            <div className="mt-2 font-semibold text-white">
-              {topPick ? `I scored ${topPick.address} as the strongest current opportunity across ${total} homes for sale.` : 'Run a scan and I will populate this summary with the first top-ranked house.'}
+      <div className="fintech-card bento-item-4 p-8">
+        <h4 className="font-outfit text-xl font-black tracking-tight text-[#0f1629]">Diligence Summary</h4>
+        <div className="mt-6 space-y-5 text-sm text-[#64748b]">
+          <div className="dashboard-subpanel rounded-2xl p-5 hover-lift transition-all duration-300">
+            <div className="platform-eyebrow-muted text-[10px] tracking-widest">Selection logic</div>
+            <div className="mt-3 text-sm font-bold text-[#0f1629]">
+              {topPick ? `Strongest yield opportunity identified across ${total} homes.` : 'Run a scan to populate this summary.'}
             </div>
           </div>
-
-          <div className="dashboard-subpanel rounded-[24px] p-4">
-            <div className="text-[10px] font-black uppercase tracking-[0.24em] text-white/45">My property snapshot</div>
-            <div className="mt-3 grid grid-cols-2 gap-3 text-white">
+ 
+          <div className="dashboard-subpanel rounded-2xl p-5 hover-lift transition-all duration-300">
+            <div className="platform-eyebrow-muted text-[10px] tracking-widest">Property Snapshot</div>
+            <div className="mt-4 grid grid-cols-2 gap-5 text-[#0f1629]">
               <div>
-                <div className="text-[11px] uppercase tracking-[0.18em] text-white/40">Source</div>
-                <div className="mt-1 font-semibold">{topPick?.source || 'RentCast'}</div>
+                <div className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#64748b]/40">Source</div>
+                <div className="mt-1 text-sm font-black">{topPick?.source || 'RentCast'}</div>
               </div>
               <div>
-                <div className="text-[11px] uppercase tracking-[0.18em] text-white/40">Rent Benchmark Source</div>
-                <div className="mt-1 font-semibold">{topPick?.fmrSource === 'hud' ? 'HUD county FMR' : 'Modeled fallback'}</div>
+                <div className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#64748b]/40">Benchmark</div>
+                <div className="mt-1 text-sm font-black">{topPick?.fmrSource === 'hud' ? 'HUD FMR' : 'Fallback'}</div>
               </div>
               <div>
-                <div className="text-[11px] uppercase tracking-[0.18em] text-white/40">Square Footage</div>
-                <div className="mt-1 font-semibold">{topPick?.squareFootage ? `${topPick.squareFootage.toLocaleString()} sqft` : 'N/A'}</div>
+                <div className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#64748b]/40">Size</div>
+                <div className="mt-1 text-sm font-black">{topPick?.squareFootage ? `${topPick.squareFootage.toLocaleString()} sqft` : 'N/A'}</div>
               </div>
               <div>
-                <div className="text-[11px] uppercase tracking-[0.18em] text-white/40">HUD-verified listings</div>
-                <div className="mt-1 font-semibold">{verifiedRecommendations.length}</div>
+                <div className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#64748b]/40">Confidence</div>
+                <div className="mt-1 text-sm font-black text-[#0d9668]">High</div>
               </div>
             </div>
           </div>

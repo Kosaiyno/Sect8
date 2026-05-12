@@ -1,5 +1,6 @@
 "use client";
 
+import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
 
 import PropertyDetailsLoadingState, { type PropertyLoadingStep } from '@/components/PropertyDetailsLoadingState';
@@ -37,6 +38,8 @@ export default function PropertyDetailsSessionView({
   const [session, setSession] = useState<SessionPayload | null>(null);
   const [error, setError] = useState<string | null>(null);
   const pollingRef = useRef<number | null>(null);
+  const resolvedError = error || session?.error || null;
+  const isExcludedParcel = String(resolvedError || '').toLowerCase().includes('vacant land or a non-house parcel');
 
   useEffect(() => {
     let cancelled = false;
@@ -120,6 +123,32 @@ export default function PropertyDetailsSessionView({
     return <PropertyDetailsView bundle={session.result.bundle} analysisResult={session.result.analysisResult} />;
   }
 
+  if (isExcludedParcel) {
+    return (
+      <div className="mx-auto flex w-full max-w-[960px] flex-col gap-6 px-4 py-10 md:px-6">
+        <div className="dashboard-panel rounded-[32px] p-8 md:p-10">
+          <div className="inline-flex items-center rounded-full border border-[rgba(184,148,47,0.2)] bg-[rgba(184,148,47,0.08)] px-3 py-1 text-[11px] font-black uppercase tracking-[0.22em] text-[#8c6e1a]">
+            Property excluded
+          </div>
+          <h1 className="mt-4 font-outfit text-3xl font-black tracking-[-0.04em] text-[#0f1629] md:text-4xl">
+            This address is not eligible for Agent Analysis.
+          </h1>
+          <p className="mt-4 max-w-2xl text-sm leading-7 text-[#475569] md:text-base">
+            ATTOM classified this parcel as vacant land or a non-house parcel, so Sect8 stopped the house-analysis flow instead of generating a misleading memo.
+          </p>
+          <div className="mt-6 flex flex-wrap gap-3">
+            <Link href="/dashboard" className="btn-primary text-sm">
+              Back to dashboard
+            </Link>
+            <Link href="/market" className="btn-secondary text-sm">
+              Browse market
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <PropertyDetailsLoadingState
       address={session?.address || null}
@@ -154,7 +183,7 @@ export default function PropertyDetailsSessionView({
       analysisProvider={session?.analysisProvider || null}
       computeProof={session?.computeProof || null}
       analysisStorageRoot={session?.analysisStorageRoot || null}
-      error={error || session?.error || null}
+      error={resolvedError}
     />
   );
 }

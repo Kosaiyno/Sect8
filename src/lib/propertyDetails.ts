@@ -194,6 +194,17 @@ function splitAddress(address: string) {
   return { address1, address2 };
 }
 
+function isExcludedParcelUse(propertyUse: unknown) {
+  const normalized = String(propertyUse || '').trim().toLowerCase();
+  if (!normalized) {
+    return false;
+  }
+
+  return normalized.includes('vacant')
+    || normalized.includes('land')
+    || normalized.includes('lot');
+}
+
 async function fetchAttomJson<T>(url: string) {
   const apiKey = process.env.ATTOM_API_KEY?.trim();
   if (!apiKey) {
@@ -273,6 +284,10 @@ export async function getPropertyDetailBundle(id: string, listingsRoot?: string 
 
   const { address1, address2 } = splitAddress(String(listing.address || ''));
   if (cachedAttom) {
+    if (isExcludedParcelUse(cachedAttom.parcel.propertyUse)) {
+      return null;
+    }
+
     return {
       listing,
       housingAuthority,
@@ -384,6 +399,10 @@ export async function getPropertyDetailBundle(id: string, listingsRoot?: string 
         ],
       },
     };
+
+  if (isExcludedParcelUse(attom.parcel.propertyUse)) {
+    return null;
+  }
 
   try {
     listing.attomRoot = await writeAttomSnapshot(String(listing.id), String(listing.address || ''), attom);

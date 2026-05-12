@@ -102,6 +102,7 @@ export default function Dashboard() {
   });
   const [scanNotice, setScanNotice] = useState<string | null>(null);
   const [isScanning, setIsScanning] = useState(false);
+  const [hasScanError, setHasScanError] = useState(false);
   const hydratedRef = useRef(false);
   const initialBoardLoadTriggeredRef = useRef(false);
   const visibleRecommendations = recommendations.filter((recommendation) => !isExcludedListingLike(recommendation));
@@ -256,6 +257,102 @@ export default function Dashboard() {
     restoreAgent();
   }, [address]);
 
+  const runScan = async (options?: { zipOverride?: string; silent?: boolean }) => {
+    if (!agent || !address) return;
+    const normalizedZip = (options?.zipOverride || selectedZip).trim();
+    if (!normalizedZip) {
+      if (!options?.silent) {
+        setScanNotice('Select a ZIP market before running a search.');
+      }
+      return;
+    }
+
+    const nextAgent = {
+      ...agent,
+      status: 'scanning',
+      preferences: {
+        ...agent.preferences,
+        zipCode: normalizedZip,
+      },
+    } as DashboardAgent;
+
+    setAgent(nextAgent);
+    setSelectedZip(normalizedZip);
+    localStorage.setItem(getAgentStorageKey(address), JSON.stringify(nextAgent));
+
+    try {
+      setIsScanning(true);
+      setUsingFallback(false);
+      if (!options?.silent) {
+        setScanNotice(null);
+      }
+      const res = await fetch('/api/agents/search', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ zipCode: normalizedZip, owner: address, recordRoot: agent.recordRoot || null })
+      });
+      const json = await res.json();
+      if (!json.success) throw new Error(json.error || 'Scan failed');
+      setRecommendations(json.recommendations || []);
+      const activeAgent = {
+        ...nextAgent,
+        status: 'active',
+      } as DashboardAgent;
+      setAgent(activeAgent);
+      localStorage.setItem(getAgentStorageKey(address), JSON.stringify(activeAgent));
+      if (!json.recommendations?.length) {
+        setScanNotice(`No saved for-sale homes are cached for ZIP ${normalizedZip}. Seed that market once, then future ZIP searches will stay local.`);
+      } else {
+        setScanNotice(null);
+      }
+    } catch (error) {
+      console.error('Scan failed', error);
+      setAgent((current) => current ? { ...current, status: 'active' } : current);
+      setScanNotice(`Failed`);
+      setHasScanError(true);
+    } finally {
+      setIsScanning(false);
+    }
+  };
+
+  const runFilterSearch = async () => {
+    try {
+      setIsScanning(true);
+      setHasScanError(false);
+      setAgent((current) => current ? { ...current, status: 'scanning' } : current);
+      setUsingFallback(false);
+      setScanNotice(null);
+      const res = await fetch('/api/agents/search', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ filters: filterSearch, owner: address, recordRoot: agent.recordRoot || null }),
+      });
+      const json = await res.json();
+      if (!json.success) {
+        throw new Error(json.error || 'Filter search failed');
+      }
+
+      setRecommendations(Array.isArray(json.recommendations) ? json.recommendations : []);
+      if (!json.recommendations?.length) {
+        setScanNotice('No cached sale listings match the selected filters. Change a filter or run a ZIP search to expand the available markets.');
+      } else {
+        setScanNotice(null);
+      }
+    } catch (error) {
+      console.error('Filter search failed', error);
+      setScanNotice(`Failed`);
+      setHasScanError(true);
+    } finally {
+      setIsScanning(false);
+      setAgent((current) => current ? { ...current, status: 'active' } : current);
+    }
+  };
+
+  const updateFilterSearch = (field: keyof typeof filterSearch, value: string | string[]) => {
+    setFilterSearch((current) => ({ ...current, [field]: value }));
+  };
+
+
   useEffect(() => {
     if (!checked || !agent || isScanning || recommendations.length > 0 || !selectedZip || initialBoardLoadTriggeredRef.current) {
       return;
@@ -308,98 +405,6 @@ export default function Dashboard() {
     );
   }
 
-  const runScan = async (options?: { zipOverride?: string; silent?: boolean }) => {
-    if (!agent || !address) return;
-    const normalizedZip = (options?.zipOverride || selectedZip).trim();
-    if (!normalizedZip) {
-      if (!options?.silent) {
-        setScanNotice('Select a ZIP market before running a search.');
-      }
-      return;
-    }
-
-    const nextAgent = {
-      ...agent,
-      status: 'scanning',
-      preferences: {
-        ...agent.preferences,
-        zipCode: normalizedZip,
-      },
-    } as DashboardAgent;
-
-    setAgent(nextAgent);
-    setSelectedZip(normalizedZip);
-    localStorage.setItem(getAgentStorageKey(address), JSON.stringify(nextAgent));
-
-    try {
-      setIsScanning(true);
-      setUsingFallback(false);
-      if (!options?.silent) {
-        setScanNotice(null);
-      }
-      const res = await fetch('/api/agents/search', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ zipCode: normalizedZip, owner: address, recordRoot: agent.recordRoot || null })
-      });
-      const json = await res.json();
-      if (!json.success) throw new Error(json.error || 'Scan failed');
-      setRecommendations(json.recommendations || []);
-      const activeAgent = {
-        ...nextAgent,
-        status: 'active',
-      } as DashboardAgent;
-      setAgent(activeAgent);
-      localStorage.setItem(getAgentStorageKey(address), JSON.stringify(activeAgent));
-      if (!json.recommendations?.length) {
-        setScanNotice(`No saved for-sale homes are cached for ZIP ${normalizedZip}. Seed that market once, then future ZIP searches will stay local.`);
-      } else {
-        setScanNotice(null);
-      }
-    } catch (error) {
-      console.error('Scan failed', error);
-      setAgent((current) => current ? { ...current, status: 'active' } : current);
-      setScanNotice(`Scan failed: ${String(error)}`);
-    } finally {
-      setIsScanning(false);
-    }
-  };
-
-  const runFilterSearch = async () => {
-    try {
-      setIsScanning(true);
-      setAgent((current) => current ? { ...current, status: 'scanning' } : current);
-      setUsingFallback(false);
-      setScanNotice(null);
-      const res = await fetch('/api/agents/search', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ filters: filterSearch, owner: address, recordRoot: agent.recordRoot || null }),
-      });
-      const json = await res.json();
-      if (!json.success) {
-        throw new Error(json.error || 'Filter search failed');
-      }
-
-      setRecommendations(Array.isArray(json.recommendations) ? json.recommendations : []);
-      if (!json.recommendations?.length) {
-        setScanNotice('No cached sale listings match the selected filters. Change a filter or run a ZIP search to expand the available markets.');
-      } else {
-        setScanNotice(null);
-      }
-    } catch (error) {
-      console.error('Filter search failed', error);
-      setScanNotice(`Filter search failed: ${String(error)}`);
-    } finally {
-      setIsScanning(false);
-      setAgent((current) => current ? { ...current, status: 'active' } : current);
-    }
-  };
-
-  const updateFilterSearch = (field: keyof typeof filterSearch, value: string | string[]) => {
-    setFilterSearch((current) => ({ ...current, [field]: value }));
-  };
-
   const togglePropertyType = (propertyType: string) => {
     setFilterSearch((current) => ({
       ...current,
@@ -408,6 +413,7 @@ export default function Dashboard() {
         : [...current.propertyTypes, propertyType],
     }));
   };
+
 
   return (
     <div className="flex flex-col gap-6 animate-fade-in pb-6">
@@ -424,42 +430,43 @@ export default function Dashboard() {
         onTogglePropertyType={togglePropertyType}
         onRunFilterSearch={runFilterSearch}
         isWorking={isScanning}
+        hasError={hasScanError}
       />
 
       {usingFallback && (
-        <div className="rounded-[24px] border border-amber-300/20 bg-amber-400/10 p-4 text-sm text-amber-100 shadow-[0_20px_60px_rgba(0,0,0,0.2)]">
-          <div className="text-[10px] font-black uppercase tracking-[0.22em]">Fallback Data</div>
-          <div className="mt-2 leading-6">I could not reach live RentCast listings, so I temporarily switched to enriched mock estimates to keep the board usable.</div>
+        <div className="rounded-[32px] border border-amber-300/20 bg-amber-400/05 p-6 text-sm text-amber-900 shadow-sm backdrop-blur-md">
+          <div className="text-[10px] font-black uppercase tracking-[0.24em] text-amber-600">Fallback Data</div>
+          <div className="mt-2.5 leading-7 font-medium">I could not reach live RentCast listings, so I temporarily switched to enriched mock estimates to keep the board usable.</div>
         </div>
       )}
 
       {scanNotice && !usingFallback && (
-        <div className="rounded-[24px] border border-cyan-300/20 bg-cyan-400/10 p-4 text-sm text-cyan-50 shadow-[0_20px_60px_rgba(0,0,0,0.2)]">
-          <div className="text-[10px] font-black uppercase tracking-[0.22em]">Scan Result</div>
-          <div className="mt-2 leading-6">{scanNotice}</div>
+        <div className="rounded-[32px] border border-cyan-300/20 bg-cyan-400/05 p-6 text-sm text-cyan-900 shadow-sm backdrop-blur-md">
+          <div className="text-[10px] font-black uppercase tracking-[0.24em] text-cyan-600">Scan Notice</div>
+          <div className="mt-2.5 leading-7 font-medium">{scanNotice}</div>
         </div>
       )}
 
       {visibleRecommendations.length > 0 && visibleRecommendations.some((recommendation) => recommendation.fmrSource !== 'hud') && (
-        <div className="rounded-[24px] border border-amber-300/20 bg-amber-400/10 p-4 text-sm text-amber-50 shadow-[0_20px_60px_rgba(0,0,0,0.2)]">
-          <div className="text-[10px] font-black uppercase tracking-[0.22em]">HUD Verification</div>
-          <div className="mt-2 leading-6">Some listings have real sale prices but no verified HUD benchmark. For those rows, I hide rent benchmark, monthly NOI, and cap rate instead of inventing estimates.</div>
+        <div className="rounded-[32px] border border-amber-300/20 bg-amber-400/05 p-6 text-sm text-amber-900 shadow-sm backdrop-blur-md">
+          <div className="text-[10px] font-black uppercase tracking-[0.24em] text-amber-600">HUD Verification</div>
+          <div className="mt-2.5 leading-7 font-medium">Some listings have real sale prices but no verified HUD benchmark. For those rows, I hide rent benchmark, monthly NOI, and cap rate instead of inventing estimates.</div>
         </div>
       )}
 
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
+      <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
         {[
           { label: "Target ZIP", value: String(selectedZip || agent.preferences?.zipCode || "N/A"), icon: <Database size={16} /> },
           { label: "Matches Found", value: visibleRecommendations.length.toString(), icon: <TrendingUp size={16} /> },
-          { label: "Verified Analyses", value: String(agent.memory?.recentAnalyses?.length || 0), icon: <ShieldCheck size={16} /> },
-          { label: "Reliability", value: "99.9%", icon: <CheckCircle2 size={16} /> }
+          { label: "Analyses", value: String(agent.memory?.recentAnalyses?.length || 0), icon: <ShieldCheck size={16} /> },
+          { label: "Status", value: "Verified", icon: <CheckCircle2 size={16} /> }
         ].map((stat, i) => (
-          <div key={i} className="dashboard-panel rounded-[26px] p-6 transition-colors hover:border-cyan-300/20">
-            <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] text-white/45">
+          <div key={i} className="fintech-card p-6 transition-all hover-lift">
+            <div className="flex items-center gap-2.5 text-[10px] font-black uppercase tracking-[0.24em] text-[#b8942f]">
               {stat.icon}
               {stat.label}
             </div>
-            <div className="mt-3 font-outfit text-[2rem] font-black tracking-[-0.05em] text-white">{stat.value}</div>
+            <div className="mt-3 font-outfit text-2xl font-black tracking-[-0.05em] text-[#0f1629] md:text-3xl">{stat.value}</div>
           </div>
         ))}
       </div>

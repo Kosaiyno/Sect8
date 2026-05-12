@@ -66,12 +66,29 @@ async function toRecommendation(listing: ListingRecord, defaultZip: string) {
   };
 }
 
-async function getCachedRecommendations() {
+async function getCachedRecommendations(requestedZip?: string, filters: any = {}) {
   const cache = readRentcastCache();
   const deduped = new Map<string, CachedRecommendation>();
 
-  for (const entry of Object.values(cache)) {
-    const recommendations = await Promise.all((entry.listings || []).map((listing) => toRecommendation(listing, entry.zipCode)));
+  const targetEntries = requestedZip 
+    ? Object.values(cache).filter(entry => entry.zipCode === requestedZip)
+    : Object.values(cache);
+
+  for (const entry of targetEntries) {
+    // Filter raw listings BEFORE expensive toRecommendation call
+    const filteredRaw = (entry.listings || []).filter(listing => {
+      const bedrooms = Number(listing.bedrooms || 0);
+      const matchesBedrooms = !filters.minBedrooms || filters.minBedrooms === 'any' || bedrooms >= Number(filters.minBedrooms);
+      const price = Number(listing.purchasePrice || listing.price || listing.listPrice || 0);
+      const matchesPrice = !filters.maxPrice || price <= Number(filters.maxPrice);
+      const propertyType = normalizePropertyType(listing.propertyType);
+      const types = Array.isArray(filters.propertyTypes) ? filters.propertyTypes : [];
+      const matchesTypes = types.length === 0 || types.includes(propertyType);
+      
+      return matchesBedrooms && matchesPrice && matchesTypes;
+    });
+
+    const recommendations = await Promise.all(filteredRaw.map((listing) => toRecommendation(listing, entry.zipCode)));
 
     for (const recommendation of recommendations) {
       if (!recommendation) {
@@ -150,7 +167,7 @@ export async function POST(req: Request) {
   const recordRoot = typeof body.recordRoot === 'string' ? body.recordRoot.trim() : '';
   const filters = body.filters || {};
   const rooted = await getLatestSnapshotRecommendations(req, owner, recordRoot || null);
-  const baseRecommendations = rooted.recommendations.length ? rooted.recommendations : await getCachedRecommendations();
+  const baseRecommendations = rooted.recommendations.length ? rooted.recommendations : await getCachedRecommendations(requestedZip, filters);
   const recommendations = baseRecommendations.filter((recommendation) => {
     const matchesZip = !requestedZip || String(recommendation?.zip || '') === requestedZip;
     const address = String(recommendation?.address || '');

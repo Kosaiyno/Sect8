@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
-import { Bath, BedDouble, Heart, MapPin } from 'lucide-react';
+import { Bath, BedDouble, Heart, MapPin, Sparkles, TrendingUp, ShieldCheck } from 'lucide-react';
 import { useAccount } from 'wagmi';
 import WatchlistButton from '@/components/WatchlistButton';
 import { getWatchlistUpdatedEventName, readWatchlist, type WatchlistItem } from '@/lib/watchlist';
@@ -47,91 +47,95 @@ export default function WatchlistPage() {
   }, [address]);
 
   return (
-    <div className="flex flex-col gap-8 animate-fade-in">
-      <section className="dashboard-panel rounded-[32px] p-6 md:p-8">
-        <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
-          <div className="max-w-3xl">
-            <div className="inline-flex items-center gap-2 rounded-full border border-rose-300/20 bg-rose-300/10 px-3 py-1 text-[10px] font-black uppercase tracking-[0.22em] text-rose-100">
-              <Heart size={13} fill="currentColor" />
+    <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-10 px-6 py-10 animate-fade-in">
+      {/* Watchlist Header */}
+      <section className="fintech-card p-10 md:p-14">
+        <div className="flex flex-col gap-10 lg:flex-row lg:items-start lg:justify-between">
+          <div className="max-w-4xl space-y-6">
+            <div className="platform-chip">
+              <Heart size={14} fill="currentColor" />
               Watchlist
             </div>
-            <h1 className="mt-4 font-outfit text-4xl font-black tracking-[-0.05em] text-white md:text-5xl">Saved homes you want to revisit fast.</h1>
-            <p className="mt-3 max-w-2xl text-base text-white/65 md:text-lg">
+            <h1 className="font-outfit text-4xl font-black tracking-[-0.05em] text-[#0f1629] md:text-6xl md:leading-[1.1]">
+              Saved homes you want to revisit fast.
+            </h1>
+            <p className="max-w-2xl text-xl font-medium leading-relaxed text-[#64748b]">
               Keep your shortlist here so you can jump straight back into a property dossier without rescanning the board.
             </p>
           </div>
-          <div className="dashboard-subpanel rounded-[24px] px-5 py-4 text-right">
-            <div className="text-[10px] font-black uppercase tracking-[0.22em] text-white/42">Saved addresses</div>
-            <div className="mt-2 font-outfit text-4xl font-black text-white">{items.length}</div>
+          <div className="fintech-card min-w-[240px] p-8 text-center shadow-xl border-b-8 border-b-[#b8942f]">
+            <div className="text-[10px] font-black uppercase tracking-[0.24em] text-[#b8942f]">Saved addresses</div>
+            <div className="mt-2 font-outfit text-6xl font-black text-[#0f1629]">{items.length}</div>
           </div>
         </div>
       </section>
 
       {items.length ? (
-        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 2xl:grid-cols-3">
+        <div className="grid grid-cols-1 gap-8 md:grid-cols-2 2xl:grid-cols-3">
           {items.map((item) => {
             const location = getLocationParts(item.address);
-            const monthlyNoi = Math.round(Number(item.netOperating || 0) / 12);
             const hasVerifiedHud = item.fmrSource === 'hud';
 
             return (
-              <div key={item.id} className="dashboard-panel market-card relative rounded-[28px] p-5">
-                <div className="market-card-accent absolute inset-x-6 top-0 h-px bg-gradient-to-r from-cyan-300/0 via-cyan-300/70 to-cyan-300/0" />
-                <div className="flex items-start justify-between gap-4 text-white">
-                  <div>
-                    <div className="line-clamp-1 font-outfit text-[1.35rem] font-black tracking-[-0.04em]">{location.street || item.address}</div>
-                    <div className="mt-1 flex items-center gap-2 text-sm text-white/55">
-                      <MapPin size={14} />
-                      <span>{[location.city, location.state, location.zip || item.zip].filter(Boolean).join(', ')}</span>
-                    </div>
-                  </div>
+              <div key={item.id} className="fintech-card p-8 group transition-all duration-500 hover-lift relative overflow-hidden">
+                <div className="absolute top-0 right-0 p-4">
                   <WatchlistButton
                     item={item}
-                    className="rounded-full border p-2 transition"
+                    className="rounded-full border border-[#eef0f3] bg-white p-2.5 transition shadow-sm hover:border-[#b8942f]/30"
                   />
                 </div>
 
-                <div className="mt-4 flex flex-wrap items-center gap-2 text-white">
-                  <span className="rounded-full border border-white/15 bg-white/10 px-3 py-1 text-[10px] font-black uppercase tracking-[0.22em]">
-                    {getPropertyType(item)}
-                  </span>
-                  <span className="rounded-full border border-cyan-300/15 bg-cyan-300/10 px-3 py-1 text-[10px] font-black uppercase tracking-[0.22em] text-cyan-100">
-                    Saved
-                  </span>
-                </div>
-
-                <div className="dashboard-subpanel mt-4 rounded-[24px] p-4 text-white">
-                  <div className="text-[10px] font-black uppercase tracking-[0.22em] text-white/40">Listed Price</div>
-                  <div className="mt-2 font-outfit text-[2rem] font-black leading-none tracking-[-0.05em]">{formatNumber(item.purchasePrice)}</div>
-                </div>
-
-                <div className="dashboard-subpanel mt-4 grid grid-cols-3 gap-3 rounded-[24px] p-3 text-sm">
+                <div className="space-y-6">
                   <div>
-                    <div className="text-[10px] font-black uppercase tracking-[0.22em] text-white/40">Beds</div>
-                    <div className="mt-2 flex items-center gap-2 font-semibold text-white"><BedDouble size={14} /> {item.bedrooms || 'N/A'}</div>
+                    <h3 className="line-clamp-1 text-2xl font-black tracking-tight text-[#0f1629] group-hover:text-[#b8942f] transition-colors">
+                      {location.street || item.address}
+                    </h3>
+                    <div className="mt-2 flex items-center gap-2 text-sm font-medium text-[#64748b]">
+                      <MapPin size={16} className="text-[#b8942f]" />
+                      <span>{[location.city, location.state, location.zip || item.zip].filter(Boolean).join(', ')}</span>
+                    </div>
                   </div>
-                  <div>
-                    <div className="text-[10px] font-black uppercase tracking-[0.22em] text-white/40">Baths</div>
-                    <div className="mt-2 flex items-center gap-2 font-semibold text-white"><Bath size={14} /> {item.bathrooms ?? 'N/A'}</div>
-                  </div>
-                  <div>
-                    <div className="text-[10px] font-black uppercase tracking-[0.22em] text-white/40">Cap Rate</div>
-                    <div className="mt-2 font-semibold text-white">{hasVerifiedHud && item.capRate !== null && item.capRate !== undefined ? `${Number(item.capRate).toFixed(1)}%` : 'Hidden'}</div>
-                  </div>
-                </div>
 
-                <div className="mt-4 grid grid-cols-2 gap-3 text-sm text-white">
-                  <div>
-                    <div className="text-[10px] font-black uppercase tracking-[0.22em] text-white/40">Monthly NOI</div>
-                    <div className="mt-1 font-bold text-emerald-300">{hasVerifiedHud ? formatNumber(monthlyNoi, '/mo') : 'Hidden'}</div>
+                  <div className="flex flex-wrap items-center gap-2.5">
+                    <span className="platform-chip text-[9px] font-black uppercase tracking-widest py-1 bg-[#f8f9fb] text-[#64748b] border-gray-100">
+                      {getPropertyType(item)}
+                    </span>
+                    <span className="platform-chip text-[9px] font-black uppercase tracking-widest py-1 bg-[#b8942f]/05 text-[#b8942f] border-[#b8942f]/10">
+                      Pinned
+                    </span>
                   </div>
-                  <div className="text-left md:text-right">
-                    <div className="text-[10px] font-black uppercase tracking-[0.22em] text-white/40">Rent Benchmark</div>
-                    <div className="mt-1 font-bold text-cyan-200">{hasVerifiedHud ? formatNumber(item.fmr, '/mo') : 'Hidden'}</div>
-                  </div>
-                </div>
 
-                <div className="mt-4 flex gap-2">
+                  <div className="stat-block rounded-[24px] p-6">
+                    <div className="text-[10px] font-black uppercase tracking-[0.24em] text-[#b8942f] mb-2">Acquisition Price</div>
+                    <div className="font-outfit text-3xl font-black leading-none text-[#0f1629] tracking-tight">{formatNumber(item.purchasePrice)}</div>
+                  </div>
+
+                  <div className="grid grid-cols-3 gap-3">
+                    <div className="stat-block flex flex-col items-center justify-center rounded-2xl py-4">
+                      <div className="text-[9px] font-black uppercase tracking-widest text-[#64748b]/50 mb-1">Beds</div>
+                      <div className="flex items-center gap-1.5 font-bold text-[#0f1629]"><BedDouble size={14} className="text-[#b8942f]" /> {item.bedrooms || '—'}</div>
+                    </div>
+                    <div className="stat-block flex flex-col items-center justify-center rounded-2xl py-4">
+                      <div className="text-[9px] font-black uppercase tracking-widest text-[#64748b]/50 mb-1">Baths</div>
+                      <div className="flex items-center gap-1.5 font-bold text-[#0f1629]"><Bath size={14} className="text-[#b8942f]" /> {item.bathrooms ?? '—'}</div>
+                    </div>
+                    <div className="stat-block flex flex-col items-center justify-center rounded-2xl py-4">
+                      <div className="text-[9px] font-black uppercase tracking-widest text-[#64748b]/50 mb-1">ROI</div>
+                      <div className="font-bold text-[#0d9668]">{hasVerifiedHud && item.capRate !== null ? `${Number(item.capRate).toFixed(1)}%` : '—'}</div>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-6 pt-2">
+                    <div>
+                      <div className="text-[9px] font-black uppercase tracking-widest text-[#64748b]/50 mb-2">Monthly NOI</div>
+                      <div className="text-sm font-bold text-[#0d9668]">{hasVerifiedHud ? formatNumber(item.netOperating ? Number(item.netOperating)/12 : 0, '/mo') : 'Analyzing...'}</div>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-[9px] font-black uppercase tracking-widest text-[#64748b]/50 mb-2">FMR Benchmark</div>
+                      <div className="text-sm font-bold text-[#b8942f]">{hasVerifiedHud ? formatNumber(item.fmr, '/mo') : 'Calculating...'}</div>
+                    </div>
+                  </div>
+
                   <Link
                     href={{
                       pathname: `/dashboard/properties/${encodeURIComponent(item.id)}`,
@@ -140,10 +144,10 @@ export default function WatchlistPage() {
                         ...(item.analysisRoot ? { analysisRoot: item.analysisRoot } : {}),
                       },
                     }}
-                    prefetch
-                    className="btn-primary flex-1 text-center text-sm"
+                    className="btn-primary w-full text-center py-4 text-base font-bold flex items-center justify-center gap-2 group/btn transition-all"
                   >
-                    Open Analysis
+                    <ShieldCheck size={18} className="group-hover/btn:scale-110 transition-transform" />
+                    Open Underwriting Dossier
                   </Link>
                 </div>
               </div>
@@ -151,15 +155,24 @@ export default function WatchlistPage() {
           })}
         </div>
       ) : (
-        <div className="dashboard-panel rounded-[32px] p-12 text-center">
-          <div className="font-outfit text-3xl font-black text-white">{isConnected ? 'Your watchlist is empty' : 'Connect your wallet to load your watchlist'}</div>
-          <p className="mt-3 text-white/60">{isConnected ? 'Tap the heart on a home card or on the details page to keep it here.' : 'Watchlist entries are now scoped per wallet, so this page only shows the connected address.'}</p>
-          <div className="mt-6 flex justify-center gap-3">
-            <Link href="/dashboard" prefetch className="btn-primary text-sm">Open dashboard</Link>
-            <Link href="/market" prefetch className="rounded-full border border-white/10 bg-white/5 px-5 py-3 text-sm font-semibold text-white transition hover:bg-white/10">
-              Browse market
-            </Link>
+        <div className="fintech-card p-24 text-center flex flex-col items-center justify-center space-y-8">
+          <div className="h-24 w-24 rounded-full bg-[#f8f9fb] flex items-center justify-center mb-2">
+            <Sparkles size={40} className="text-[#b8942f]" />
           </div>
+          <div className="space-y-4">
+            <div className="font-outfit text-4xl font-black text-[#0f1629]">{isConnected ? 'Your shortlist is clear' : 'Connect Wallet'}</div>
+            <p className="max-w-md text-lg text-[#64748b] font-medium leading-8">
+              {isConnected 
+                ? 'Institutional procurement requires a focused pipeline. Save properties from the market feed to start your private underwriting.'
+                : 'Asset tracking is scoped to your secure wallet identity. Connect to restore your sourcing pipeline.'}
+            </p>
+          </div>
+          {isConnected && (
+            <div className="flex gap-4">
+              <Link href="/dashboard" className="btn-primary px-8 py-4">Dashboard</Link>
+              <Link href="/market" className="btn-secondary px-8 py-4">Market Feed</Link>
+            </div>
+          )}
         </div>
       )}
     </div>
