@@ -24,6 +24,18 @@ export class Section8Agent {
 
   // Simulate 0G Compute: Analyzing a property
   public analyzeProperty(property: Property): Recommendation {
+    const { isExcludedListingRecord, isExcludedPropertyType } = require("@/lib/realDataService");
+    if (isExcludedListingRecord(property) || isExcludedPropertyType(property.propertyType)) {
+      return {
+        ...property,
+        effectiveRent: 0,
+        cashflow: 0,
+        roi: 0,
+        reasoning: "Analysis aborted: This listing is classified as land, lot, or vacant parcel and is not eligible for Section 8 investment analysis.",
+        timestamp: Date.now(),
+        verifiableProof: `0g-proof-aborted-land-${Math.random().toString(36).substring(7)}`
+      };
+    }
     const estimatedRent = Number(property.estimatedRent ?? 0);
     const section8Cap = Number(property.section8Cap ?? estimatedRent);
     const locationScore = Number(property.locationScore ?? 0);

@@ -1,4 +1,7 @@
+
 "use client";
+
+import { filterExcludedListings } from '@/lib/listingExclusionClient';
 
 import { useEffect, useRef, useState } from "react";
 import { Recommendation } from "@/types";
@@ -332,7 +335,8 @@ export default function Dashboard() {
         throw new Error(json.error || 'Filter search failed');
       }
 
-      setRecommendations(Array.isArray(json.recommendations) ? json.recommendations : []);
+      // Filter out land/lot/vacant listings from recommendations
+      setRecommendations(Array.isArray(json.recommendations) ? filterExcludedListings(json.recommendations) : []);
       if (!json.recommendations?.length) {
         setScanNotice('No cached sale listings match the selected filters. Change a filter or run a ZIP search to expand the available markets.');
       } else {

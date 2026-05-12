@@ -1,4 +1,7 @@
+
 "use client";
+
+import { filterExcludedListings } from '@/lib/listingExclusionClient';
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
@@ -33,7 +36,8 @@ export default function MarketPage() {
     try {
       const json = await fetchMarketListings(zip);
       if (json.success && Array.isArray(json.listings)) {
-        setProperties(json.listings);
+        // Filter out land/lot/vacant listings from market
+        setProperties(filterExcludedListings(json.listings));
         setDataSource(json.source || 'none');
       }
     } catch (e) {

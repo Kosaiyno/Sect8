@@ -138,16 +138,16 @@ export default function AgentDashboard({
   return (
     <div className="dashboard-panel rounded-[32px] p-6 text-left md:p-8">
       <div className="platform-eyebrow">Agent activation</div>
-      <h2 className="mt-3 font-outfit text-3xl font-black tracking-[-0.05em] text-white">Create my on-chain Sect8 agent</h2>
-      <p className="mt-3 max-w-2xl text-sm leading-7 text-white/68">
+      <h2 className="mt-3 font-outfit text-3xl font-black tracking-[-0.05em] text-[#0f1629]">Create my on-chain Sect8 agent</h2>
+      <p className="mt-3 max-w-2xl text-sm leading-7 text-[#64748b]">
         When you activate me, I create the Sect8 agent against the contract path, attach a first memory root, and prepare the 0G-backed workflow I use for scans, analysis, and storage.
       </p>
 
-      <div className="agent-marquee mt-6 rounded-[26px] border border-white/8 bg-white/[0.03] p-5">
+      <div className="agent-marquee mt-6 rounded-[26px] border border-gray-100 bg-[#f8f9fb] p-5">
         <div className="grid gap-4 md:grid-cols-2">
           <div className="dashboard-subpanel rounded-[22px] p-4">
-            <div className="text-[10px] font-black uppercase tracking-[0.22em] text-white/42">Defaults I start with</div>
-            <div className="mt-3 space-y-2 text-sm text-white/78">
+            <div className="text-[10px] font-black uppercase tracking-[0.22em] text-[#8c6e1a]">Defaults I start with</div>
+            <div className="mt-3 space-y-2 text-sm text-[#475569]">
               <div>ZIP: {DEFAULT_PREFERENCES.zipCode}</div>
               <div>Bedrooms: {DEFAULT_PREFERENCES.minBedrooms}+</div>
               <div>Max price: ${DEFAULT_PREFERENCES.maxPrice.toLocaleString()}</div>
@@ -155,8 +155,8 @@ export default function AgentDashboard({
             </div>
           </div>
           <div className="dashboard-subpanel rounded-[22px] p-4">
-            <div className="text-[10px] font-black uppercase tracking-[0.22em] text-white/42">What I will do next</div>
-            <div className="mt-3 space-y-2 text-sm text-white/78">
+            <div className="text-[10px] font-black uppercase tracking-[0.22em] text-[#8c6e1a]">What I will do next</div>
+            <div className="mt-3 space-y-2 text-sm text-[#475569]">
               <div>I bind your wallet to agent state.</div>
               <div>I prepare memory syncing through 0G storage.</div>
               <div>I open the acquisition dashboard so you can direct the first scan.</div>
@@ -169,7 +169,7 @@ export default function AgentDashboard({
         {loading ? 'Creating My Agent...' : 'Create My Agent'}
       </button>
 
-      {activationPhase && <div className="mt-4 text-sm text-cyan-100">{activationPhase}</div>}
+      {activationPhase && <div className="mt-4 text-sm text-[#0d9668]">{activationPhase}</div>}
 
       {error && <div className="mt-4 text-sm text-red-300">{error}</div>}
     </div>
