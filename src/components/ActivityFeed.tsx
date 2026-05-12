@@ -21,13 +21,13 @@ export default function ActivityFeed({ agent }: { agent: ActivityAgent }) {
   const items = history.slice(-20).reverse();
 
   return (
-    <div className="dashboard-panel rounded-[30px] p-6">
-      <div className="flex items-start justify-between gap-4">
+    <div className="dashboard-panel rounded-[24px] p-5 sm:rounded-[30px] sm:p-6">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <div className="platform-eyebrow">Activity Feed</div>
-          <h4 className="mt-2 font-outfit text-2xl font-black text-[#0f1629]">Platform actions and agent events</h4>
+          <h4 className="mt-2 font-outfit text-xl font-black text-[#0f1629] sm:text-2xl">Platform actions and agent events</h4>
         </div>
-        <div className="platform-chip border-gray-100 bg-gray-50/50 text-[#64748b]">
+        <div className="platform-chip w-fit border-gray-100 bg-gray-50/50 text-[#64748b]">
           <Activity size={14} />
           {items.length} events
         </div>
@@ -37,8 +37,8 @@ export default function ActivityFeed({ agent }: { agent: ActivityAgent }) {
         {items.length ? items.map((item, index) => {
           const meta = inferType(String(item));
           return (
-            <div key={`${item}-${index}`} className="dashboard-subpanel flex gap-4 rounded-[24px] p-4">
-              <div className={`platform-chip h-fit ${meta.tone}`}>
+            <div key={`${item}-${index}`} className="dashboard-subpanel flex flex-col gap-3 rounded-[20px] p-4 sm:flex-row sm:gap-4 sm:rounded-[24px]">
+              <div className={`platform-chip h-fit w-fit ${meta.tone}`}>
                 {meta.icon}
                 {meta.label}
               </div>

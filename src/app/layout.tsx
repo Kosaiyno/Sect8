@@ -26,6 +26,13 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const navLinks = [
+    { label: 'Home', href: '/' },
+    { label: 'Dashboard', href: '/dashboard' },
+    { label: 'Market', href: '/market' },
+    { label: 'Watchlist', href: '/watchlist' },
+  ];
+
   return (
     <html lang="en" className="scroll-smooth">
       <body className={`${inter.variable} ${outfit.variable} antialiased min-h-screen flex flex-col bg-[#f8f9fb] text-[#0f1629]`}>
@@ -34,62 +41,92 @@ export default function RootLayout({
           <div className="platform-bg" aria-hidden />
 
           {/* ─── HEADER ─── */}
-          <header className="fixed left-0 right-0 top-0 z-50 px-4 pt-4 sm:px-8 sm:pt-6">
+          <header className="fixed left-0 right-0 top-0 z-50 px-3 pt-3 sm:px-6 sm:pt-5 lg:px-8 lg:pt-6">
             <div className="mx-auto max-w-[1440px]">
-              <div className="flex h-[72px] items-center justify-between rounded-[24px] border border-white/40 bg-white/70 px-6 shadow-[0_8px_32px_rgba(0,0,0,0.04)] backdrop-blur-2xl transition-all hover:shadow-[0_8px_32px_rgba(0,0,0,0.08)] sm:px-8">
-                {/* Logo */}
-                <Link href="/" className="flex items-center gap-2 group">
-                  <div className="flex items-center justify-center transition-all group-hover:scale-105">
-                    <Image
-                      src="/sect8%20logo.png?v=3"
-                      alt="Sect8"
-                      width={76}
-                      height={76}
-                      className="object-contain"
-                      unoptimized
-                      priority
-                    />
+              <div className="rounded-[20px] border border-white/40 bg-white/70 px-4 py-3 shadow-[0_8px_32px_rgba(0,0,0,0.04)] backdrop-blur-2xl transition-all hover:shadow-[0_8px_32px_rgba(0,0,0,0.08)] sm:rounded-[24px] sm:px-6 sm:py-4 lg:px-8">
+                <div className="hidden lg:flex lg:h-[72px] lg:items-center lg:justify-between">
+                  <Link href="/" className="flex items-center gap-2 group">
+                    <div className="flex items-center justify-center transition-all group-hover:scale-105">
+                      <Image
+                        src="/sect8%20logo.png?v=3"
+                        alt="Sect8"
+                        width={76}
+                        height={76}
+                        className="object-contain"
+                        unoptimized
+                        priority
+                      />
+                    </div>
+                    <div className="font-sora text-[2.3rem] font-extrabold tracking-tight text-[#0f1629] leading-none" style={{letterSpacing: '-0.04em'}}>Sect8</div>
+                  </Link>
+
+                  <nav className="flex items-center gap-2 p-1 rounded-full bg-[#f8f9fb]/50 border border-gray-100">
+                    {navLinks.map((link) => (
+                      <Link 
+                        key={link.label} 
+                        href={link.href} 
+                        prefetch 
+                        className="rounded-full px-5 py-2 text-[13px] font-black uppercase tracking-wider text-[#64748b] transition-all hover:text-[#0f1629] hover:bg-white hover:shadow-sm"
+                      >
+                        {link.label}
+                      </Link>
+                    ))}
+                  </nav>
+
+                  <div className="flex items-center gap-4">
+                    <div className="h-8 w-px bg-gray-200 hidden sm:block" />
+                    <ConnectButton />
                   </div>
-                  <div className="font-sora text-[2.3rem] font-extrabold tracking-tight text-[#0f1629] leading-none" style={{letterSpacing: '-0.04em'}}>Sect8</div>
-                </Link>
+                </div>
 
-                {/* Nav */}
-                <nav className="hidden lg:flex items-center gap-2 p-1 rounded-full bg-[#f8f9fb]/50 border border-gray-100">
-                  {[
-                    { label: 'Home', href: '/' },
-                    { label: 'Dashboard', href: '/dashboard' },
-                    { label: 'Market', href: '/market' },
-                    { label: 'Watchlist', href: '/watchlist' }
-                  ].map((link) => (
-                    <Link 
-                      key={link.label} 
-                      href={link.href} 
-                      prefetch 
-                      className="rounded-full px-5 py-2 text-[13px] font-black uppercase tracking-wider text-[#64748b] transition-all hover:text-[#0f1629] hover:bg-white hover:shadow-sm"
-                    >
-                      {link.label}
+                <div className="flex flex-col gap-3 lg:hidden">
+                  <div className="flex items-center justify-between gap-3">
+                    <Link href="/" className="flex min-w-0 items-center gap-2 group">
+                      <div className="flex items-center justify-center transition-all group-hover:scale-105">
+                        <Image
+                          src="/sect8%20logo.png?v=3"
+                          alt="Sect8"
+                          width={48}
+                          height={48}
+                          className="object-contain"
+                          unoptimized
+                          priority
+                        />
+                      </div>
+                      <div className="truncate font-sora text-[1.85rem] font-extrabold tracking-tight text-[#0f1629] leading-none" style={{letterSpacing: '-0.04em'}}>Sect8</div>
                     </Link>
-                  ))}
-                </nav>
 
-                {/* Wallet */}
-                <div className="flex items-center gap-4">
-                  <div className="h-8 w-px bg-gray-200 hidden sm:block" />
-                  <ConnectButton />
+                    <div className="shrink-0">
+                      <ConnectButton />
+                    </div>
+                  </div>
+
+                  <nav className="no-scrollbar flex items-center gap-2 overflow-x-auto pb-1">
+                    {navLinks.map((link) => (
+                      <Link
+                        key={link.label}
+                        href={link.href}
+                        prefetch
+                        className="shrink-0 rounded-full border border-gray-100 bg-[#f8f9fb] px-4 py-2 text-[11px] font-black uppercase tracking-[0.18em] text-[#64748b] transition-all hover:border-[#b8942f]/20 hover:bg-white hover:text-[#0f1629]"
+                      >
+                        {link.label}
+                      </Link>
+                    ))}
+                  </nav>
                 </div>
               </div>
             </div>
           </header>
 
           {/* ─── MAIN ─── */}
-          <main className="relative z-10 flex-1 w-full max-w-[1440px] mx-auto px-4 pb-20 pt-28 sm:px-8">
+          <main className="relative z-10 flex-1 w-full max-w-[1440px] mx-auto px-4 pb-16 pt-36 sm:px-6 sm:pb-20 sm:pt-32 lg:px-8 lg:pt-28">
             {children}
           </main>
 
           {/* ─── FOOTER ─── */}
           <footer className="relative z-10 bg-white border-t border-gray-100">
-            <div className="mx-auto max-w-[1440px] px-8 py-16 lg:py-20">
-              <div className="grid grid-cols-1 gap-16 lg:grid-cols-12">
+            <div className="mx-auto max-w-[1440px] px-4 py-12 sm:px-6 sm:py-14 lg:px-8 lg:py-20">
+              <div className="grid grid-cols-1 gap-12 lg:grid-cols-12 lg:gap-16">
                 {/* Brand */}
                 <div className="lg:col-span-4 space-y-6">
                   <Link href="/" className="flex items-center gap-3 group">
@@ -110,7 +147,7 @@ export default function RootLayout({
 
                 {/* Links */}
                 <div className="lg:col-span-8">
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-12">
+                  <div className="grid grid-cols-1 gap-10 sm:grid-cols-2 md:grid-cols-3 md:gap-12">
                     <div>
                       <div className="mb-6 text-[10px] font-black uppercase tracking-[0.24em] text-[#b8942f]">Platform</div>
                       <div className="flex flex-col gap-4 text-[15px] font-bold text-[#64748b]">
@@ -132,7 +169,7 @@ export default function RootLayout({
                 </div>
               </div>
 
-              <div className="mt-20 pt-8 border-t border-gray-100 flex flex-col md:flex-row justify-between gap-6">
+              <div className="mt-12 pt-6 border-t border-gray-100 flex flex-col md:flex-row justify-between gap-4 md:mt-20 md:gap-6 md:pt-8">
                 <div className="text-sm font-medium text-[#94a3b8]">
                   © 2026 Sect8. Institutional real estate intelligence.
                 </div>

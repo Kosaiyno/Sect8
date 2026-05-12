@@ -163,7 +163,7 @@ export default function PropertyDetailsView({ bundle, analysisResult }: Property
   }
 
   return (
-    <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-8 px-6 py-10 text-[#0f1629]">
+    <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-6 px-4 py-6 text-[#0f1629] sm:px-6 sm:py-8 lg:gap-8 lg:py-10">
       <div className="flex flex-wrap items-center justify-between gap-6">
         <Link href="/dashboard" className="inline-flex items-center gap-2.5 rounded-full border border-[#eef0f3] bg-white px-5 py-2.5 text-sm font-bold text-[#0f1629] transition-all hover:bg-gray-50 hover:border-[#b8942f]/20 shadow-sm">
           <ArrowLeft size={18} />
@@ -180,7 +180,7 @@ export default function PropertyDetailsView({ bundle, analysisResult }: Property
       </div>
 
       {/* HERO SECTION */}
-      <section className="fintech-card p-8 md:p-12">
+      <section className="fintech-card p-6 sm:p-8 md:p-12">
         <div className="space-y-10">
           <div className="platform-chip">
             <ShieldCheck size={14} />
@@ -189,8 +189,8 @@ export default function PropertyDetailsView({ bundle, analysisResult }: Property
 
           <div className="grid gap-10 lg:grid-cols-[1fr_auto]">
             <div>
-              <h1 className="font-outfit text-4xl font-black tracking-[-0.05em] text-[#0f1629] md:text-6xl md:leading-[1.0]">{listing.address}</h1>
-              <div className="mt-6 flex flex-wrap items-center gap-6 text-[15px] text-[#64748b] font-medium">
+              <h1 className="font-outfit text-3xl sm:text-4xl md:text-6xl font-black tracking-[-0.05em] text-[#0f1629] md:leading-[1.0]">{listing.address}</h1>
+              <div className="mt-5 sm:mt-6 flex flex-wrap items-center gap-3 sm:gap-6 text-sm sm:text-[15px] text-[#64748b] font-medium">
                 <span className="inline-flex items-center gap-2 text-[#b8942f] font-bold"><MapPin size={16} /> {listing.zip || 'Unknown ZIP'}</span>
                 <span className="h-1 w-1 rounded-full bg-gray-300" />
                 <span>{listing.bedrooms || 'N/A'} beds</span>
@@ -204,7 +204,7 @@ export default function PropertyDetailsView({ bundle, analysisResult }: Property
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-6">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
             {[
               { label: 'Purchase Price', value: formatCurrency(listing.purchasePrice), icon: <BadgeDollarSign size={16} /> },
               { label: rentMetricLabel, value: formatCurrency(listing.fmr, '/mo'), icon: <Home size={16} /> },
@@ -213,9 +213,9 @@ export default function PropertyDetailsView({ bundle, analysisResult }: Property
               { label: 'Cap Rate', value: formatPercent(listing.capRate), icon: <ShieldCheck size={16} /> },
               { label: 'ROI', value: formatPercent(listing.roi), icon: <ShieldCheck size={16} /> },
             ].map((metric) => (
-              <div key={metric.label} className="stat-block flex min-h-[120px] flex-col justify-between rounded-[28px] px-6 py-5 hover-lift">
+              <div key={metric.label} className="stat-block flex min-h-[120px] flex-col justify-between rounded-[28px] px-5 sm:px-6 py-5 hover-lift">
                 <div className="mb-2 flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.24em] text-[#b8942f]">{metric.icon}{metric.label}</div>
-                <div className="min-w-0 font-outfit text-2xl leading-none font-black tracking-[-0.05em] text-[#0f1629] tabular-nums">{metric.value}</div>
+                <div className="min-w-0 font-outfit text-xl sm:text-2xl leading-none font-black tracking-[-0.05em] text-[#0f1629] tabular-nums">{metric.value}</div>
               </div>
             ))}
           </div>
@@ -231,15 +231,15 @@ export default function PropertyDetailsView({ bundle, analysisResult }: Property
 
       {/* ANALYSIS BENTO */}
       <div className="bento-grid">
-        <section className="fintech-card bento-item-8 p-8 md:p-10 hover-lift">
+        <section className="fintech-card bento-item-8 p-6 sm:p-8 md:p-10 hover-lift">
           <div className="space-y-8">
             <div>
               <div className="platform-chip mb-6">
                 <Brain size={14} />
                 Agent Insights
               </div>
-              <h2 className="font-outfit text-3xl font-black tracking-[-0.05em] text-[#0f1629] md:text-5xl">{cleanPresentationText(analysis.headline)}</h2>
-              <p className="mt-6 text-base leading-8 text-[#64748b]">{cleanPresentationText(analysis.summary)}</p>
+              <h2 className="font-outfit text-2xl sm:text-3xl md:text-5xl font-black tracking-[-0.05em] text-[#0f1629]">{cleanPresentationText(analysis.headline)}</h2>
+              <p className="mt-5 sm:mt-6 text-sm sm:text-base leading-7 sm:leading-8 text-[#64748b]">{cleanPresentationText(analysis.summary)}</p>
             </div>
 
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -263,18 +263,18 @@ export default function PropertyDetailsView({ bundle, analysisResult }: Property
           </div>
         </section>
 
-        <section className="fintech-card bento-item-4 p-8 flex flex-col items-center justify-center text-center hover-lift">
+        <section className="fintech-card bento-item-4 p-6 sm:p-8 flex flex-col items-center justify-center text-center hover-lift">
           <div className="w-full space-y-8">
             <div className="platform-eyebrow-muted text-xs tracking-widest uppercase">Section 8 Score</div>
             <div className="relative inline-flex items-center justify-center">
               <div className="absolute inset-0 rounded-full bg-[#b8942f]/10 animate-ping" />
-              <div className="relative h-44 w-44 rounded-full border-[10px] border-[#f8f9fb] bg-white flex flex-col items-center justify-center shadow-2xl">
-                <div className="font-outfit text-6xl font-black text-[#b8942f]">{analysis.score}</div>
+              <div className="relative h-36 w-36 sm:h-44 sm:w-44 rounded-full border-[10px] border-[#f8f9fb] bg-white flex flex-col items-center justify-center shadow-2xl">
+                <div className="font-outfit text-5xl sm:text-6xl font-black text-[#b8942f]">{analysis.score}</div>
                 <div className="text-[10px] font-black uppercase tracking-widest text-[#64748b]/60 mt-1">Section 8 Rating</div>
               </div>
             </div>
             <div className="space-y-4">
-              <div className="text-2xl font-black text-[#0f1629]">{cleanPresentationText(analysis.verdict)}</div>
+              <div className="text-xl sm:text-2xl font-black text-[#0f1629]">{cleanPresentationText(analysis.verdict)}</div>
               <div className="platform-chip mx-auto">Confidence {analysis.confidence}%</div>
             </div>
           </div>
@@ -283,7 +283,7 @@ export default function PropertyDetailsView({ bundle, analysisResult }: Property
 
       {/* POSITIVE / WATCHOUTS / ACTIONS */}
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
-        <div className="fintech-card p-8 border-l-4 border-l-[#0d9668] hover-lift">
+        <div className="fintech-card p-6 sm:p-8 border-l-4 border-l-[#0d9668] hover-lift">
           <div className="text-[11px] font-black uppercase tracking-[0.24em] text-[#0d9668] mb-6">Positive signals</div>
           <ul className="space-y-4">
             {strengths.map((item) => (
@@ -294,7 +294,7 @@ export default function PropertyDetailsView({ bundle, analysisResult }: Property
             ))}
           </ul>
         </div>
-        <div className="fintech-card p-8 border-l-4 border-l-amber-500 hover-lift">
+        <div className="fintech-card p-6 sm:p-8 border-l-4 border-l-amber-500 hover-lift">
           <div className="text-[11px] font-black uppercase tracking-[0.24em] text-amber-600 mb-6">Watchouts</div>
           <ul className="space-y-4">
             {risks.map((item) => (
@@ -305,7 +305,7 @@ export default function PropertyDetailsView({ bundle, analysisResult }: Property
             ))}
           </ul>
         </div>
-        <div className="fintech-card p-8 border-l-4 border-l-[#b8942f] hover-lift">
+        <div className="fintech-card p-6 sm:p-8 border-l-4 border-l-[#b8942f] hover-lift">
           <div className="text-[11px] font-black uppercase tracking-[0.24em] text-[#b8942f] mb-6">Next actions</div>
           <div className="mb-4 text-[13px] text-[#b8942f] font-semibold">To see the listing, images, and more details, click the <span className='underline'>Zillow</span> button below.</div>
           <ul className="space-y-4 mb-8">
@@ -338,7 +338,7 @@ export default function PropertyDetailsView({ bundle, analysisResult }: Property
 
       {/* DATA DETAILS (ATTOM / HUD) */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        <section className="fintech-card p-8">
+        <section className="fintech-card p-6 sm:p-8">
           <div className="platform-eyebrow-muted mb-4">Voucher Verification</div>
           <h2 className="font-outfit text-2xl font-black text-[#0f1629] mb-6">Housing Authority</h2>
           {housingAuthority ? (
@@ -348,7 +348,7 @@ export default function PropertyDetailsView({ bundle, analysisResult }: Property
                 <div className="text-lg font-black text-[#0f1629]">{housingAuthority.entry.name}</div>
                 <div className="mt-2 text-sm font-medium text-[#64748b]">{housingAuthority.entry.programType}</div>
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="dashboard-subpanel rounded-2xl p-5">
                   <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.24em] text-[#64748b]/60 mb-2"><Phone size={12} /> Contact</div>
                   <div className="text-sm font-bold text-[#0f1629]">{housingAuthority.entry.phone || 'N/A'}</div>
@@ -370,7 +370,7 @@ export default function PropertyDetailsView({ bundle, analysisResult }: Property
           )}
         </section>
 
-        <section className="fintech-card p-8">
+        <section className="fintech-card p-6 sm:p-8">
           <div className="platform-eyebrow-muted mb-4">Ownership Records</div>
           <h2 className="font-outfit text-2xl font-black text-[#0f1629] mb-6">ATTOM Parcel Profile</h2>
           <div className="space-y-4">
@@ -379,7 +379,7 @@ export default function PropertyDetailsView({ bundle, analysisResult }: Property
               <div className="text-lg font-black text-[#0f1629]">{attom.ownership.ownerName || 'Unavailable'}</div>
               <div className="mt-2 text-sm font-medium text-[#64748b]">{attom.ownership.mailingAddress || 'No mailing address on file'}</div>
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="dashboard-subpanel rounded-2xl p-5">
                 <div className="text-[10px] font-black uppercase tracking-[0.24em] text-[#64748b]/60 mb-2">Year Built</div>
                 <div className="text-sm font-bold text-[#0f1629]">{attom.parcel.yearBuilt || 'N/A'}</div>
@@ -403,7 +403,7 @@ export default function PropertyDetailsView({ bundle, analysisResult }: Property
 
       {/* TABLES SECTION */}
       <div className="grid grid-cols-1 gap-8">
-        <section className="fintech-card p-8 md:p-10">
+        <section className="fintech-card p-6 sm:p-8 md:p-10">
           <div className="platform-eyebrow-muted mb-4">History</div>
           <h2 className="font-outfit text-3xl font-black text-[#0f1629] mb-8">Recorded Deed Transfers</h2>
           <div className="overflow-x-auto">
@@ -432,7 +432,7 @@ export default function PropertyDetailsView({ bundle, analysisResult }: Property
           </div>
         </section>
 
-        <section className="fintech-card p-8 md:p-10">
+        <section className="fintech-card p-6 sm:p-8 md:p-10">
           <div className="platform-eyebrow-muted mb-4">Tax Records</div>
           <h2 className="font-outfit text-3xl font-black text-[#0f1629] mb-8">Annual Assessment History</h2>
           <div className="overflow-x-auto">
@@ -465,7 +465,7 @@ export default function PropertyDetailsView({ bundle, analysisResult }: Property
       </div>
 
       {/* PROOF & STORAGE */}
-      <section className="fintech-card p-8 bg-[#f8f9fb]/50 border-none shadow-none">
+      <section className="fintech-card p-6 sm:p-8 bg-[#f8f9fb]/50 border-none shadow-none">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div className="space-y-1">
             <div className="text-[10px] font-black uppercase tracking-[0.24em] text-[#64748b]/60">Analysis Provenance</div>

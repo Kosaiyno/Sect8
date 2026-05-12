@@ -47,37 +47,37 @@ export default function WatchlistPage() {
   }, [address]);
 
   return (
-    <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-10 px-6 py-10 animate-fade-in">
+    <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-8 px-4 py-6 animate-fade-in sm:px-6 sm:py-8 lg:gap-10 lg:px-8 lg:py-10">
       {/* Watchlist Header */}
-      <section className="fintech-card p-10 md:p-14">
+      <section className="fintech-card p-6 sm:p-8 md:p-12 lg:p-14">
         <div className="flex flex-col gap-10 lg:flex-row lg:items-start lg:justify-between">
           <div className="max-w-4xl space-y-6">
             <div className="platform-chip">
               <Heart size={14} fill="currentColor" />
               Watchlist
             </div>
-            <h1 className="font-outfit text-4xl font-black tracking-[-0.05em] text-[#0f1629] md:text-6xl md:leading-[1.1]">
+            <h1 className="font-outfit text-3xl font-black tracking-[-0.05em] text-[#0f1629] sm:text-4xl md:text-6xl md:leading-[1.1]">
               Saved homes you want to revisit fast.
             </h1>
-            <p className="max-w-2xl text-xl font-medium leading-relaxed text-[#64748b]">
+            <p className="max-w-2xl text-base font-medium leading-relaxed text-[#64748b] sm:text-lg md:text-xl">
               Keep your shortlist here so you can jump straight back into a property dossier without rescanning the board.
             </p>
           </div>
-          <div className="fintech-card min-w-[240px] p-8 text-center shadow-xl border-b-8 border-b-[#b8942f]">
+          <div className="fintech-card w-full p-6 text-center shadow-xl border-b-8 border-b-[#b8942f] sm:max-w-[260px] sm:p-8">
             <div className="text-[10px] font-black uppercase tracking-[0.24em] text-[#b8942f]">Saved addresses</div>
-            <div className="mt-2 font-outfit text-6xl font-black text-[#0f1629]">{items.length}</div>
+            <div className="mt-2 font-outfit text-5xl font-black text-[#0f1629] sm:text-6xl">{items.length}</div>
           </div>
         </div>
       </section>
 
       {items.length ? (
-        <div className="grid grid-cols-1 gap-8 md:grid-cols-2 2xl:grid-cols-3">
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 2xl:grid-cols-3">
           {items.map((item) => {
             const location = getLocationParts(item.address);
             const hasVerifiedHud = item.fmrSource === 'hud';
 
             return (
-              <div key={item.id} className="fintech-card p-8 group transition-all duration-500 hover-lift relative overflow-hidden">
+              <div key={item.id} className="fintech-card p-6 group transition-all duration-500 hover-lift relative overflow-hidden sm:p-8">
                 <div className="absolute top-0 right-0 p-4">
                   <WatchlistButton
                     item={item}
@@ -86,11 +86,11 @@ export default function WatchlistPage() {
                 </div>
 
                 <div className="space-y-6">
-                  <div>
-                    <h3 className="line-clamp-1 text-2xl font-black tracking-tight text-[#0f1629] group-hover:text-[#b8942f] transition-colors">
+                  <div className="pr-12">
+                    <h3 className="line-clamp-2 text-xl font-black tracking-tight text-[#0f1629] group-hover:text-[#b8942f] transition-colors sm:line-clamp-1 sm:text-2xl">
                       {location.street || item.address}
                     </h3>
-                    <div className="mt-2 flex items-center gap-2 text-sm font-medium text-[#64748b]">
+                    <div className="mt-2 flex items-start gap-2 text-sm font-medium text-[#64748b]">
                       <MapPin size={16} className="text-[#b8942f]" />
                       <span>{[location.city, location.state, location.zip || item.zip].filter(Boolean).join(', ')}</span>
                     </div>
@@ -107,11 +107,11 @@ export default function WatchlistPage() {
 
                   <div className="stat-block rounded-[24px] p-6">
                     <div className="text-[10px] font-black uppercase tracking-[0.24em] text-[#b8942f] mb-2">Acquisition Price</div>
-                    <div className="font-outfit text-3xl font-black leading-none text-[#0f1629] tracking-tight">{formatNumber(item.purchasePrice)}</div>
+                    <div className="font-outfit text-2xl font-black leading-none text-[#0f1629] tracking-tight sm:text-3xl">{formatNumber(item.purchasePrice)}</div>
                   </div>
 
-                  <div className="grid grid-cols-3 gap-3">
-                    <div className="stat-block flex flex-col items-center justify-center rounded-2xl py-4">
+                  <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+                    <div className="stat-block col-span-2 flex flex-col items-center justify-center rounded-2xl py-4 sm:col-span-1">
                       <div className="text-[9px] font-black uppercase tracking-widest text-[#64748b]/50 mb-1">Beds</div>
                       <div className="flex items-center gap-1.5 font-bold text-[#0f1629]"><BedDouble size={14} className="text-[#b8942f]" /> {item.bedrooms || '—'}</div>
                     </div>
@@ -125,12 +125,12 @@ export default function WatchlistPage() {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-6 pt-2">
+                  <div className="grid grid-cols-1 gap-4 pt-2 sm:grid-cols-2 sm:gap-6">
                     <div>
                       <div className="text-[9px] font-black uppercase tracking-widest text-[#64748b]/50 mb-2">Monthly NOI</div>
                       <div className="text-sm font-bold text-[#0d9668]">{hasVerifiedHud ? formatNumber(item.netOperating ? Number(item.netOperating)/12 : 0, '/mo') : 'Analyzing...'}</div>
                     </div>
-                    <div className="text-right">
+                    <div className="sm:text-right">
                       <div className="text-[9px] font-black uppercase tracking-widest text-[#64748b]/50 mb-2">FMR Benchmark</div>
                       <div className="text-sm font-bold text-[#b8942f]">{hasVerifiedHud ? formatNumber(item.fmr, '/mo') : 'Calculating...'}</div>
                     </div>
@@ -155,20 +155,20 @@ export default function WatchlistPage() {
           })}
         </div>
       ) : (
-        <div className="fintech-card p-24 text-center flex flex-col items-center justify-center space-y-8">
+        <div className="fintech-card p-10 text-center flex flex-col items-center justify-center space-y-8 sm:p-16 lg:p-24">
           <div className="h-24 w-24 rounded-full bg-[#f8f9fb] flex items-center justify-center mb-2">
             <Sparkles size={40} className="text-[#b8942f]" />
           </div>
           <div className="space-y-4">
-            <div className="font-outfit text-4xl font-black text-[#0f1629]">{isConnected ? 'Your shortlist is clear' : 'Connect Wallet'}</div>
-            <p className="max-w-md text-lg text-[#64748b] font-medium leading-8">
+            <div className="font-outfit text-3xl font-black text-[#0f1629] sm:text-4xl">{isConnected ? 'Your shortlist is clear' : 'Connect Wallet'}</div>
+            <p className="max-w-md text-base text-[#64748b] font-medium leading-8 sm:text-lg">
               {isConnected 
                 ? 'Institutional procurement requires a focused pipeline. Save properties from the market feed to start your private underwriting.'
                 : 'Asset tracking is scoped to your secure wallet identity. Connect to restore your sourcing pipeline.'}
             </p>
           </div>
           {isConnected && (
-            <div className="flex gap-4">
+            <div className="flex w-full flex-col gap-4 sm:w-auto sm:flex-row">
               <Link href="/dashboard" className="btn-primary px-8 py-4">Dashboard</Link>
               <Link href="/market" className="btn-secondary px-8 py-4">Market Feed</Link>
             </div>

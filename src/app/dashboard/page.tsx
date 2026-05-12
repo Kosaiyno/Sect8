@@ -433,39 +433,39 @@ export default function Dashboard() {
       />
 
       {usingFallback && (
-        <div className="rounded-[32px] border border-amber-300/20 bg-amber-400/05 p-6 text-sm text-amber-900 shadow-sm backdrop-blur-md">
+        <div className="rounded-[28px] border border-amber-300/20 bg-amber-400/05 p-4 text-sm text-amber-900 shadow-sm backdrop-blur-md sm:rounded-[32px] sm:p-6">
           <div className="text-[10px] font-black uppercase tracking-[0.24em] text-amber-600">Fallback Data</div>
           <div className="mt-2.5 leading-7 font-medium">I could not reach live RentCast listings, so I temporarily switched to enriched mock estimates to keep the board usable.</div>
         </div>
       )}
 
       {scanNotice && !usingFallback && (
-        <div className="rounded-[32px] border border-cyan-300/20 bg-cyan-400/05 p-6 text-sm text-cyan-900 shadow-sm backdrop-blur-md">
+        <div className="rounded-[28px] border border-cyan-300/20 bg-cyan-400/05 p-4 text-sm text-cyan-900 shadow-sm backdrop-blur-md sm:rounded-[32px] sm:p-6">
           <div className="text-[10px] font-black uppercase tracking-[0.24em] text-cyan-600">Scan Notice</div>
           <div className="mt-2.5 leading-7 font-medium">{scanNotice}</div>
         </div>
       )}
 
       {visibleRecommendations.length > 0 && visibleRecommendations.some((recommendation) => recommendation.fmrSource !== 'hud') && (
-        <div className="rounded-[32px] border border-amber-300/20 bg-amber-400/05 p-6 text-sm text-amber-900 shadow-sm backdrop-blur-md">
+        <div className="rounded-[28px] border border-amber-300/20 bg-amber-400/05 p-4 text-sm text-amber-900 shadow-sm backdrop-blur-md sm:rounded-[32px] sm:p-6">
           <div className="text-[10px] font-black uppercase tracking-[0.24em] text-amber-600">HUD Verification</div>
           <div className="mt-2.5 leading-7 font-medium">Some listings have real sale prices but no verified HUD benchmark. For those rows, I hide rent benchmark, monthly NOI, and cap rate instead of inventing estimates.</div>
         </div>
       )}
 
-      <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-4">
         {[
           { label: "Target ZIP", value: String(selectedZip || agent.preferences?.zipCode || "N/A"), icon: <Database size={16} /> },
           { label: "Matches Found", value: visibleRecommendations.length.toString(), icon: <TrendingUp size={16} /> },
           { label: "Analyses", value: String(agent.memory?.recentAnalyses?.length || 0), icon: <ShieldCheck size={16} /> },
           { label: "Status", value: "Verified", icon: <CheckCircle2 size={16} /> }
         ].map((stat, i) => (
-          <div key={i} className="fintech-card p-6 transition-all hover-lift">
+          <div key={i} className="fintech-card p-5 transition-all hover-lift sm:p-6">
             <div className="flex items-center gap-2.5 text-[10px] font-black uppercase tracking-[0.24em] text-[#b8942f]">
               {stat.icon}
               {stat.label}
             </div>
-            <div className="mt-3 font-outfit text-2xl font-black tracking-[-0.05em] text-[#0f1629] md:text-3xl">{stat.value}</div>
+            <div className="mt-3 font-outfit text-xl font-black tracking-[-0.05em] text-[#0f1629] sm:text-2xl md:text-3xl">{stat.value}</div>
           </div>
         ))}
       </div>

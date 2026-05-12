@@ -73,16 +73,16 @@ export default function MemoryPanel({ agent }: MemoryPanelProps) {
   const recentActions = agent.memory?.recentAnalyses || [];
 
   return (
-    <div className="dashboard-panel rounded-[30px] p-6">
-      <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
+    <div className="dashboard-panel rounded-[24px] p-5 sm:rounded-[30px] sm:p-6">
+      <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
         <div>
           <div className="platform-eyebrow">Agent Memory</div>
-          <h4 className="mt-2 font-outfit text-2xl font-black text-white">What I just did</h4>
+          <h4 className="mt-2 font-outfit text-xl font-black text-white sm:text-2xl">What I just did</h4>
           <p className="mt-2 max-w-2xl text-sm leading-6 text-white/62">
             This is my verified analysis log. I only show properties where this wallet's agent actually ran 0G Compute and stored the result.
           </p>
         </div>
-        <div className="platform-chip border-cyan-300/15 bg-cyan-300/10 text-cyan-100">
+        <div className="platform-chip w-fit border-cyan-300/15 bg-cyan-300/10 text-cyan-100">
           <ShieldCheck size={14} />
           0G Memory Active
         </div>
@@ -97,7 +97,7 @@ export default function MemoryPanel({ agent }: MemoryPanelProps) {
           <div className="mt-4 space-y-4 text-sm">
             <div>
               <div className="text-white/45">I am targeting ZIP</div>
-              <div className="mt-1 text-lg font-black text-white">{prefs.zipCode || 'Not set'}</div>
+              <div className="mt-1 text-base font-black text-white sm:text-lg">{prefs.zipCode || 'Not set'}</div>
             </div>
             <div>
               <div className="text-white/45">I am running strategy</div>
@@ -110,14 +110,14 @@ export default function MemoryPanel({ agent }: MemoryPanelProps) {
           </div>
         </div>
 
-        <div className="dashboard-subpanel rounded-[26px] p-5 lg:col-span-2">
+        <div className="dashboard-subpanel rounded-[24px] p-4 sm:rounded-[26px] sm:p-5 lg:col-span-2">
           <div className="flex items-center gap-2 text-[11px] font-black uppercase tracking-[0.22em] text-white/40">
             <Sparkles size={14} />
             My recent property analyses
           </div>
           <div className="mt-4 space-y-3">
             {recentActions.length ? recentActions.map((item) => (
-              <div key={item.id} className="rounded-[22px] border border-white/8 bg-[#0e1217] px-4 py-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.03)]">
+              <div key={item.id} className="rounded-[20px] border border-white/8 bg-[#0e1217] px-4 py-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.03)] sm:rounded-[22px]">
                 <div className="text-sm font-bold text-white">{`I ran 0G Compute on ${item.address}`}</div>
                 <div className="mt-2 text-sm leading-6 text-white/78">
                   {`Generated ${formatDateTime(item.generatedAt)}. I scored it ${Math.round(Number(item.score || 0))}/100, read the purchase price at ${formatCurrency(item.purchasePrice)}, projected cash flow at ${formatCurrency(item.cashflow, '/mo')}, and cap rate at ${formatPercent(item.capRate)}.`}
@@ -134,7 +134,7 @@ export default function MemoryPanel({ agent }: MemoryPanelProps) {
       </div>
 
       <div className="mt-4 grid grid-cols-1 gap-4 xl:grid-cols-[1.1fr_0.9fr]">
-        <div className="dashboard-subpanel rounded-[26px] p-5">
+        <div className="dashboard-subpanel rounded-[24px] p-4 sm:rounded-[26px] sm:p-5">
           <div className="flex items-center gap-2 text-[11px] font-black uppercase tracking-[0.22em] text-white/40">
             <FileSearch size={14} />
             My recent updates
@@ -150,7 +150,7 @@ export default function MemoryPanel({ agent }: MemoryPanelProps) {
           </div>
         </div>
 
-        <div className="dashboard-subpanel rounded-[26px] p-5">
+        <div className="dashboard-subpanel rounded-[24px] p-4 sm:rounded-[26px] sm:p-5">
           <div className="flex items-center gap-2 text-[11px] font-black uppercase tracking-[0.22em] text-white/40">
             <BrainCircuit size={14} />
             Patterns I have learned

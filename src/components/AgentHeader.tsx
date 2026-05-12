@@ -70,22 +70,22 @@ export default function AgentHeader({
       : (isWorking ? 'bg-amber-400/10 text-amber-700 border-amber-400/20' : 'bg-gray-100 text-[#64748b] border-gray-200');
 
   return (
-    <div className="fintech-card p-6 md:p-10">
-      <div className="flex flex-col gap-8 xl:flex-row xl:items-start xl:justify-between">
+    <div className="fintech-card p-4 sm:p-6 md:p-8 xl:p-10">
+      <div className="flex flex-col gap-6 xl:flex-row xl:items-start xl:justify-between">
         {/* AGENT IDENTITY */}
         <div className="min-w-0 space-y-6 xl:max-w-[580px]">
-          <div className="flex flex-col md:flex-row md:items-center gap-6">
-            <div className="relative h-32 w-32 shrink-0">
-              <Image src="/sect8%20logo.png?v=3" alt="Sect8" fill className="object-contain" sizes="128px" unoptimized priority />
+          <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:gap-6">
+            <div className="relative h-20 w-20 shrink-0 sm:h-24 sm:w-24 md:h-28 md:w-28 lg:h-32 lg:w-32">
+              <Image src="/sect8%20logo.png?v=3" alt="Sect8" fill className="object-contain" sizes="(max-width: 640px) 80px, (max-width: 768px) 96px, (max-width: 1024px) 112px, 128px" unoptimized priority />
             </div>
-            <div>
+            <div className="min-w-0">
               <div className="flex flex-wrap items-center gap-3">
-                <h2 className="font-outfit text-3xl font-black tracking-[-0.04em] text-[#0f1629] md:text-4xl">{`Agent ${displayId}`}</h2>
+                <h2 className="font-outfit text-2xl font-black tracking-[-0.04em] text-[#0f1629] sm:text-3xl md:text-4xl">{`Agent ${displayId}`}</h2>
                 <span className={`rounded-full border px-3 py-1 text-[10px] font-black uppercase tracking-[0.24em] ${statusTone}`}>
                   {isWorking ? 'Scanning' : hasError ? 'Failed' : (agent.status || 'active')}
                 </span>
               </div>
-              <div className="mt-3 max-w-xl text-base leading-7 text-[#64748b]">
+              <div className="mt-3 max-w-xl text-sm leading-7 text-[#64748b] sm:text-base">
                 Your institutional acquisition desk. I rank homes, store memory on 0G, and produce investment dossiers.
               </div>
             </div>
@@ -110,17 +110,17 @@ export default function AgentHeader({
         </div>
 
         {/* SEARCH CONSOLE */}
-        <div className="fintech-card w-full max-w-2xl overflow-hidden p-6 xl:min-w-[480px]">
-          <div className="mb-6 flex items-center justify-between">
+        <div className="fintech-card w-full max-w-2xl overflow-hidden p-4 sm:p-6 xl:min-w-[460px]">
+          <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-center gap-2.5 text-[10px] font-black uppercase tracking-[0.26em] text-[#b8942f]">
               <Search size={14} />
               Search Console
             </div>
-            <div className="flex rounded-xl bg-[#f8f9fb] p-1 shadow-inner">
-              <button onClick={() => onChangeSearchMode('zip')} className={`rounded-lg px-4 py-2 text-xs font-black uppercase tracking-wider transition ${searchMode === 'zip' ? 'bg-white text-[#b8942f] shadow-sm' : 'text-[#64748b] hover:text-[#0f1629]'}`}>
+            <div className="flex w-full rounded-xl bg-[#f8f9fb] p-1 shadow-inner sm:w-auto">
+              <button onClick={() => onChangeSearchMode('zip')} className={`flex-1 rounded-lg px-4 py-2 text-xs font-black uppercase tracking-wider transition sm:flex-none ${searchMode === 'zip' ? 'bg-white text-[#b8942f] shadow-sm' : 'text-[#64748b] hover:text-[#0f1629]'}`}>
                 ZIP
               </button>
-              <button onClick={() => onChangeSearchMode('filter')} className={`rounded-lg px-4 py-2 text-xs font-black uppercase tracking-wider transition ${searchMode === 'filter' ? 'bg-white text-[#b8942f] shadow-sm' : 'text-[#64748b] hover:text-[#0f1629]'}`}>
+              <button onClick={() => onChangeSearchMode('filter')} className={`flex-1 rounded-lg px-4 py-2 text-xs font-black uppercase tracking-wider transition sm:flex-none ${searchMode === 'filter' ? 'bg-white text-[#b8942f] shadow-sm' : 'text-[#64748b] hover:text-[#0f1629]'}`}>
                 Filter
               </button>
             </div>
@@ -148,7 +148,7 @@ export default function AgentHeader({
             </div>
           ) : (
             <div className="space-y-5 animate-in fade-in slide-in-from-bottom-2 duration-300">
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div>
                   <label className="mb-2 block text-[10px] font-black uppercase tracking-[0.24em] text-[#64748b]/60">City</label>
                   <input value={filterSearch.city} onChange={(event) => onChangeFilterSearch('city', event.target.value)} placeholder="Detroit" className="dashboard-field w-full rounded-2xl px-5 py-3.5 text-sm font-bold outline-hidden" />
@@ -158,7 +158,7 @@ export default function AgentHeader({
                   <input value={filterSearch.state} onChange={(event) => onChangeFilterSearch('state', event.target.value.toUpperCase())} placeholder="MI" className="dashboard-field w-full rounded-2xl px-5 py-3.5 text-sm font-bold outline-hidden" />
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div>
                   <label className="mb-2 block text-[10px] font-black uppercase tracking-[0.24em] text-[#64748b]/60">Bedrooms</label>
                   <select value={filterSearch.minBedrooms} onChange={(event) => onChangeFilterSearch('minBedrooms', event.target.value)} className="dashboard-field w-full rounded-2xl px-5 py-3.5 text-sm font-bold outline-hidden">

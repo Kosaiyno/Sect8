@@ -23,7 +23,7 @@ export default function Home() {
   }, []);
 
   return (
-    <div className="flex flex-col gap-32 pb-24">
+    <div className="flex flex-col gap-20 pb-20 md:gap-32 md:pb-24">
       {/* ─── HERO SECTION ─── */}
       <section className="animate-fade-in">
         <div className="hero-full-width group">
@@ -36,7 +36,7 @@ export default function Home() {
             priority
           />
 
-          <div className="relative z-20 mx-auto w-full max-w-[1440px] px-8 py-20 md:py-32">
+          <div className="relative z-20 mx-auto w-full max-w-[1440px] px-4 py-16 sm:px-6 md:py-24 lg:px-8 lg:py-32">
             <div className="max-w-4xl space-y-8 animate-fade-in">
               <div className="platform-chip bg-white/15 text-white border-white/25 backdrop-blur-md shadow-lg">
                 <Activity size={14} className="text-[#b8942f]" />
@@ -49,23 +49,23 @@ export default function Home() {
                 before you buy.
               </h1>
 
-              <p className="max-w-3xl text-lg font-medium leading-8 text-gray-300 md:text-xl">
+              <p className="max-w-3xl text-base font-medium leading-8 text-gray-300 sm:text-lg md:text-xl">
                 Sect8 is an AI Section 8 acquisition platform built for investors buying rental property. It scans purchasable homes, evaluates Section 8 fit, projects cash flow, cap rate, and ROI, and compiles each address into a decision-ready dossier. The property analysis runs on 0G compute, with memory and analysis roots persisted through the 0G stack.
               </p>
 
               <div className="flex flex-col gap-4 pt-6 sm:flex-row">
-                <Link href="/dashboard" className="btn-primary flex items-center justify-center gap-4 group px-12 py-5 text-lg shadow-[0_0_60px_rgba(184,148,47,0.3)]">
+                <Link href="/dashboard" className="btn-primary flex items-center justify-center gap-4 group px-8 py-4 text-base shadow-[0_0_60px_rgba(184,148,47,0.3)] sm:px-12 sm:py-5 sm:text-lg">
                   Open Dashboard
                   <ArrowRight size={22} className="transition-transform group-hover:translate-x-1" />
                 </Link>
-                <Link href="/market" className="btn-secondary bg-white/10 border-white/20 text-white hover:bg-white/20 px-12 py-5 text-lg backdrop-blur-md">
+                <Link href="/market" className="btn-secondary bg-white/10 border-white/20 text-white hover:bg-white/20 px-8 py-4 text-base backdrop-blur-md sm:px-12 sm:py-5 sm:text-lg">
                   Browse Market
                 </Link>
               </div>
             </div>
 
             {/* Bottom Hero Metrics */}
-            <div className="mt-20 grid grid-cols-1 gap-12 border-t border-white/10 pt-16 md:grid-cols-3">
+            <div className="mt-14 grid grid-cols-1 gap-8 border-t border-white/10 pt-10 sm:pt-12 md:mt-20 md:grid-cols-3 md:gap-12 md:pt-16">
               {[
                 { label: 'Agent scope', value: 'Real homes for sale', desc: 'Live inventory', icon: <Building2 size={18} /> },
                 { label: 'Agent output', value: 'Cash flow, cap rate, ROI', desc: 'Full underwriting', icon: <TrendingUp size={18} /> },
@@ -85,16 +85,16 @@ export default function Home() {
       </section>
 
       {/* ─── POWERED BY SECTION ─── */}
-      <section className="mt-16 space-y-12 overflow-hidden">
-        <div className="mx-auto max-w-[1440px] px-8 text-center">
+      <section className="mt-12 space-y-10 overflow-hidden md:mt-16 md:space-y-12">
+        <div className="mx-auto max-w-[1440px] px-4 text-center sm:px-6 lg:px-8">
           <div className="font-outfit text-2xl md:text-3xl font-black uppercase tracking-[0.35em] text-[#0f1629]/90">
             Powered by
           </div>
         </div>
 
-        <div className="bg-[#0f1629] py-20 border-y border-white/5">
+        <div className="bg-[#0f1629] py-14 sm:py-16 md:py-20 border-y border-white/5">
           <div className="marquee-container w-full">
-            <div className="animate-marquee flex items-center gap-32 pr-32">
+            <div className="animate-marquee flex items-center gap-20 pr-20 sm:gap-24 sm:pr-24 md:gap-32 md:pr-32">
               {[
                 { name: 'RentCast', src: '/rentcast%20logo.png', scale: 'w-56' },
                 { name: '0G Stack', src: '/0G-Logo-White.png', scale: 'w-44' },
@@ -127,14 +127,14 @@ export default function Home() {
         </div>
       </section>
 
-      <div className="mx-auto w-full max-w-[1440px] px-8 space-y-32">
+      <div className="mx-auto w-full max-w-[1440px] px-4 space-y-20 sm:px-6 md:space-y-24 lg:px-8 lg:space-y-32">
         {/* ─── LIVE WORKFLOW (STACKED) ─── */}
         <section className="reveal-on-scroll">
-          <div className="fintech-card p-10 md:p-14 overflow-hidden space-y-12">
-            <div className="flex items-center justify-between">
+          <div className="fintech-card p-6 sm:p-8 md:p-14 overflow-hidden space-y-8 md:space-y-12">
+            <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
               <div className="space-y-3">
                 <div className="platform-eyebrow">Live Workflow</div>
-                <h2 className="font-outfit text-4xl md:text-5xl font-black tracking-tighter text-[#0f1629]">
+                <h2 className="font-outfit text-3xl sm:text-4xl md:text-5xl font-black tracking-tighter text-[#0f1629]">
                   From listing to <span className="text-[#b8942f]">investment memo</span>
                 </h2>
               </div>
@@ -143,18 +143,18 @@ export default function Home() {
               </div>
             </div>
 
-            <div className="grid gap-6 md:grid-cols-2">
+            <div className="grid gap-4 sm:gap-6 md:grid-cols-2">
               {[
                 { num: "1", text: "Listing pulled with purchase price and sale context." },
                 { num: "2", text: "0G compute runs the agent analysis for the property." },
                 { num: "3", text: "Projected cash flow, cap rate, and ROI calculated." },
                 { num: "4", text: "Property dossier compiled with ATTOM and housing-authority detail." }
               ].map((step) => (
-                <div key={step.num} className="dashboard-subpanel group flex items-start gap-6 rounded-[32px] p-8 hover-lift border-gray-100/50 bg-gray-50/30">
+                <div key={step.num} className="dashboard-subpanel group flex items-start gap-4 sm:gap-6 rounded-[28px] sm:rounded-[32px] p-5 sm:p-8 hover-lift border-gray-100/50 bg-gray-50/30">
                   <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-white font-outfit text-xl font-black text-[#b8942f] shadow-sm border border-gray-100 group-hover:bg-[#b8942f] group-hover:text-white transition-all duration-500">
                     {step.num}
                   </span>
-                  <div className="text-[17px] font-bold leading-relaxed text-[#64748b] group-hover:text-[#0f1629] transition-colors">
+                  <div className="text-base sm:text-[17px] font-bold leading-relaxed text-[#64748b] group-hover:text-[#0f1629] transition-colors">
                     {step.text}
                   </div>
                 </div>
@@ -165,24 +165,24 @@ export default function Home() {
 
         {/* ─── ANALYSIS & PERSISTENCE ─── */}
         <section className="reveal-on-scroll grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="fintech-card p-10 hover-lift">
+          <div className="fintech-card p-6 sm:p-8 md:p-10 hover-lift">
             <div className="h-14 w-14 rounded-2xl bg-[#b8942f]/10 flex items-center justify-center text-[#b8942f] mb-8">
               <TrendingUp size={28} />
             </div>
             <div className="platform-eyebrow mb-4">Analysis</div>
             <h3 className="font-outfit text-3xl font-black mb-4">Projected economics</h3>
-            <p className="text-lg leading-relaxed text-[#64748b] font-medium">
+            <p className="text-base sm:text-lg leading-relaxed text-[#64748b] font-medium">
               Sect8 does not stop at the list price. It analyzes the operating view investors actually need to screen a Section 8 acquisition.
             </p>
           </div>
 
-          <div className="fintech-card p-10 hover-lift">
+          <div className="fintech-card p-6 sm:p-8 md:p-10 hover-lift">
             <div className="h-14 w-14 rounded-2xl bg-[#0d9668]/10 flex items-center justify-center text-[#0d9668] mb-8">
               <Database size={28} />
             </div>
             <div className="platform-eyebrow mb-4" style={{ color: '#0d9668' }}>Persistence</div>
             <h3 className="font-outfit text-3xl font-black mb-4">0G-backed state</h3>
-            <p className="text-lg leading-relaxed text-[#64748b] font-medium">
+            <p className="text-base sm:text-lg leading-relaxed text-[#64748b] font-medium">
               The workflow keeps memory, analysis roots, and agent state attached so research does not disappear between sessions.
             </p>
           </div>
@@ -196,7 +196,7 @@ export default function Home() {
             { num: "03", title: "Verify", desc: "Parcel records, ownership context, ATTOM detail, HUD benchmarks, and housing-authority contacts are compiled into one decision flow.", icon: <PhoneCall size={22} />, color: "#b8942f" },
             { num: "04", title: "Store", desc: "Analysis state, memory roots, and agent workflow context are persisted through the 0G stack so the desk can resume with state.", icon: <Database size={22} />, color: "#b8942f" }
           ].map((step) => (
-            <div key={step.num} className="fintech-card p-10 hover-lift flex flex-col items-start gap-8">
+            <div key={step.num} className="fintech-card p-6 sm:p-8 md:p-10 hover-lift flex flex-col items-start gap-6 md:gap-8">
               <div className="flex w-full items-center justify-between">
                 <span className="font-outfit text-4xl font-black text-[#b8942f]/20 tracking-tighter">{step.num}</span>
                 <div className="h-12 w-12 rounded-xl bg-gray-50 border border-gray-100 flex items-center justify-center text-[#b8942f] shadow-sm">
@@ -215,11 +215,11 @@ export default function Home() {
         <section className="reveal-on-scroll text-center space-y-16">
           <div className="max-w-4xl mx-auto space-y-6">
             <div className="platform-eyebrow">Why Sect8</div>
-            <h2 className="font-outfit text-5xl md:text-7xl font-black tracking-tighter text-[#0f1629] leading-none">
+            <h2 className="font-outfit text-4xl sm:text-5xl md:text-7xl font-black tracking-tighter text-[#0f1629] leading-none">
               Everything needed to screen <br />
               <span className="text-[#b8942f]">Section 8 acquisitions professionally.</span>
             </h2>
-            <p className="text-xl text-[#64748b] font-medium max-w-3xl mx-auto">
+            <p className="text-base sm:text-lg md:text-xl text-[#64748b] font-medium max-w-3xl mx-auto">
               The platform is designed to make the first decision cleaner: whether a property deserves attention, deeper diligence, and capital.
             </p>
           </div>
@@ -233,7 +233,7 @@ export default function Home() {
               { title: "0G-backed analysis", desc: "Property-level agent analysis runs through the 0G compute path, with storage roots attached to the result pipeline." },
               { title: "0G chain agent minting", desc: "Sect8 creates each user agent through the wallet on 0G Mainnet so the identity starts on the 0G chain." }
             ].map((feature) => (
-              <div key={feature.title} className="fintech-card p-10 hover-lift">
+              <div key={feature.title} className="fintech-card p-6 sm:p-8 md:p-10 hover-lift">
                 <h3 className="font-outfit text-2xl font-black text-[#0f1629] mb-4">{feature.title}</h3>
                 <p className="text-base text-[#64748b] font-medium leading-relaxed">{feature.desc}</p>
               </div>
@@ -243,18 +243,18 @@ export default function Home() {
 
         {/* ─── 0G STACK ─── */}
         <section className="reveal-on-scroll">
-          <div className="fintech-card p-12 md:p-20 relative overflow-hidden border-2 border-gray-100 shadow-2xl">
+          <div className="fintech-card p-6 sm:p-8 md:p-14 lg:p-20 relative overflow-hidden border-2 border-gray-100 shadow-2xl">
             <div className="absolute inset-0 opacity-5 bg-[radial-gradient(circle_at_30%_30%,#b8942f_0%,transparent_50%)]" />
-            <div className="relative z-10 space-y-16">
+            <div className="relative z-10 space-y-10 md:space-y-16">
               <div className="max-w-3xl space-y-6">
                 <div className="platform-chip bg-[#b8942f]/10 border-[#b8942f]/20 text-[#b8942f]">
                   <Globe size={14} /> 0G Stack
                 </div>
-                <h2 className="font-outfit text-5xl md:text-7xl font-black text-[#0f1629] leading-[1.0] tracking-tighter">
+                <h2 className="font-outfit text-4xl sm:text-5xl md:text-7xl font-black text-[#0f1629] leading-[1.0] tracking-tighter">
                   Built on the 0G stack, <br />
                   <span className="text-[#b8942f]">with real compute, storage, and chain usage.</span>
                 </h2>
-                <p className="text-xl text-[#64748b] font-medium leading-relaxed max-w-2xl">
+                <p className="text-base sm:text-lg md:text-xl text-[#64748b] font-medium leading-relaxed max-w-2xl">
                   Sect8 uses 0G compute for property analysis generation, 0G storage for memory and analysis persistence, and the Sect8 agent contract path on 0G Mainnet to create each user agent.
                 </p>
               </div>
@@ -265,11 +265,11 @@ export default function Home() {
                   { title: '0G Storage', desc: 'Persists agent memory, listing snapshots, and analysis roots used across the product.', icon: <Database size={24} /> },
                   { title: '0G Mainnet minting', desc: 'Creates the Sect8 agent through the wallet on 0G Mainnet so every user starts with a chain-backed agent identity.', icon: <Zap size={24} /> },
                 ].map((item) => (
-                  <div key={item.title} className="bg-[#f8f9fb] border border-gray-100 rounded-3xl p-10 hover:bg-white hover:border-[#b8942f]/30 hover:shadow-xl transition-all group">
+                  <div key={item.title} className="bg-[#f8f9fb] border border-gray-100 rounded-3xl p-6 sm:p-8 md:p-10 hover:bg-white hover:border-[#b8942f]/30 hover:shadow-xl transition-all group">
                     <div className="h-14 w-14 rounded-2xl bg-[#b8942f]/10 flex items-center justify-center text-[#b8942f] mb-8 group-hover:scale-110 transition-transform">
                       {item.icon}
                     </div>
-                    <div className="text-2xl font-black text-[#0f1629] mb-4">{item.title}</div>
+                    <div className="text-xl sm:text-2xl font-black text-[#0f1629] mb-4">{item.title}</div>
                     <div className="text-base text-[#64748b] font-medium leading-relaxed">{item.desc}</div>
                   </div>
                 ))}
@@ -280,14 +280,14 @@ export default function Home() {
 
         {/* ─── PLATFORM SIGNALS ─── */}
         <section className="reveal-on-scroll">
-          <div className="fintech-card p-12 md:p-20 grid grid-cols-1 lg:grid-cols-12 gap-16 items-center">
+          <div className="fintech-card p-6 sm:p-8 md:p-12 lg:p-20 grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-16 items-center">
             <div className="lg:col-span-6 space-y-8">
               <div className="platform-eyebrow">Platform Signals</div>
-              <h2 className="font-outfit text-5xl font-black text-[#0f1629] leading-[1.0] tracking-tighter">
+              <h2 className="font-outfit text-4xl sm:text-5xl font-black text-[#0f1629] leading-[1.0] tracking-tighter">
                 Built for serious <br />
                 <span className="text-[#b8942f]">Section 8 acquisition work.</span>
               </h2>
-              <p className="text-xl text-[#64748b] font-medium leading-relaxed">
+              <p className="text-base sm:text-lg md:text-xl text-[#64748b] font-medium leading-relaxed">
                 The product is centered on real inventory, disciplined analysis, verification context, and a stateful workflow that does not lose the deal history.
               </p>
             </div>
@@ -298,9 +298,9 @@ export default function Home() {
                 "PHA and ATTOM verification context",
                 "Stateful 0G-backed workflow"
               ].map((signal) => (
-                <div key={signal} className="flex items-center gap-4 p-6 rounded-3xl bg-gray-50 border border-gray-100 hover-lift transition-all">
+                <div key={signal} className="flex items-center gap-4 p-5 sm:p-6 rounded-3xl bg-gray-50 border border-gray-100 hover-lift transition-all">
                   <CheckCircle2 className="text-[#0d9668]" size={24} />
-                  <span className="text-lg font-bold text-[#0f1629]">{signal}</span>
+                  <span className="text-base sm:text-lg font-bold text-[#0f1629]">{signal}</span>
                 </div>
               ))}
             </div>
@@ -311,10 +311,10 @@ export default function Home() {
         <section className="reveal-on-scroll max-w-4xl mx-auto space-y-16">
           <div className="text-center space-y-6">
             <div className="platform-eyebrow">FAQ</div>
-            <h2 className="font-outfit text-5xl font-black text-[#0f1629] tracking-tighter">
+            <h2 className="font-outfit text-4xl sm:text-5xl font-black text-[#0f1629] tracking-tighter">
               Questions about the <span className="text-[#b8942f]">Sect8 workflow.</span>
             </h2>
-            <p className="text-lg text-[#64748b] font-medium">
+            <p className="text-base sm:text-lg text-[#64748b] font-medium">
               The product is built around a specific use case: scanning purchasable homes and deciding which Section 8 deals deserve attention.
             </p>
           </div>
@@ -327,11 +327,11 @@ export default function Home() {
               { q: "Is this just a market browser?", a: "No. The market page is intentionally lighter, but the core product is the analysis workflow: ranking homes, analyzing Section 8 fit, and producing a property dossier with the economics and verification context attached." }
             ].map((faq) => (
               <details key={faq.q} className="group fintech-card border-gray-100/50">
-                <summary className="flex cursor-pointer items-center justify-between p-8 list-none">
-                  <span className="text-xl font-bold text-[#0f1629]">{faq.q}</span>
+                <summary className="flex cursor-pointer items-center justify-between p-5 sm:p-8 list-none">
+                  <span className="text-lg sm:text-xl font-bold text-[#0f1629] pr-4">{faq.q}</span>
                   <ChevronDown className="text-gray-400 group-open:rotate-180 transition-transform" />
                 </summary>
-                <div className="px-8 pb-8 text-base text-[#64748b] font-medium leading-relaxed border-t border-gray-50 pt-6">
+                <div className="px-5 sm:px-8 pb-5 sm:pb-8 text-sm sm:text-base text-[#64748b] font-medium leading-relaxed border-t border-gray-50 pt-4 sm:pt-6">
                   {faq.a}
                 </div>
               </details>
@@ -341,23 +341,23 @@ export default function Home() {
 
         {/* ─── FINAL CTA ─── */}
         <section className="reveal-on-scroll">
-          <div className="fintech-card rounded-[64px] p-20 md:p-32 text-center relative overflow-hidden bg-white shadow-2xl border-2 border-gray-100">
+          <div className="fintech-card rounded-[32px] sm:rounded-[48px] md:rounded-[64px] p-8 sm:p-12 md:p-20 lg:p-32 text-center relative overflow-hidden bg-white shadow-2xl border-2 border-gray-100">
             <div className="absolute inset-0 opacity-5 bg-[radial-gradient(circle_at_center,#b8942f_0%,transparent_70%)]" />
-            <div className="relative z-10 space-y-12">
+            <div className="relative z-10 space-y-8 sm:space-y-10 md:space-y-12">
               <div className="platform-eyebrow text-[#b8942f]">Start Here</div>
-              <h2 className="font-outfit text-5xl font-black tracking-[-0.05em] text-[#0f1629] md:text-8xl md:leading-[1.0]">
+              <h2 className="font-outfit text-4xl sm:text-5xl md:text-7xl lg:text-8xl font-black tracking-[-0.05em] text-[#0f1629] md:leading-[1.0]">
                 Open the dashboard, <br />
                 <span className="text-[#b8942f]">scan a market, and review the deals.</span>
               </h2>
-              <p className="mx-auto max-w-3xl text-xl leading-9 text-[#0f1629] font-bold">
+              <p className="mx-auto max-w-3xl text-base sm:text-lg md:text-xl leading-8 md:leading-9 text-[#0f1629] font-bold">
                 The main workflow begins inside the dashboard, where Sect8 ranks homes, runs agent analysis on 0G compute, stores memory, and opens the full property dossier.
               </p>
-              <div className="flex flex-col justify-center gap-6 sm:flex-row pt-8">
-                <Link href="/dashboard" className="btn-primary flex items-center justify-center gap-4 group px-14 py-6 text-xl shadow-[0_20px_40px_rgba(184,148,47,0.2)]">
+              <div className="flex flex-col justify-center gap-4 sm:gap-6 sm:flex-row pt-4 sm:pt-8">
+                <Link href="/dashboard" className="btn-primary flex items-center justify-center gap-4 group px-8 sm:px-12 lg:px-14 py-4 sm:py-5 lg:py-6 text-base sm:text-lg lg:text-xl shadow-[0_20px_40px_rgba(184,148,47,0.2)]">
                   Open Dashboard
                   <ArrowRight size={26} className="transition-transform group-hover:translate-x-1" />
                 </Link>
-                <Link href="/market" className="btn-secondary bg-[#f8f9fb] border-gray-200 text-[#0f1629] hover:bg-white px-14 py-6 text-xl">
+                <Link href="/market" className="btn-secondary bg-[#f8f9fb] border-gray-200 text-[#0f1629] hover:bg-white px-8 sm:px-12 lg:px-14 py-4 sm:py-5 lg:py-6 text-base sm:text-lg lg:text-xl">
                   Explore Market Feed
                 </Link>
               </div>

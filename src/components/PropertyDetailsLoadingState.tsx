@@ -75,8 +75,8 @@ export default function PropertyDetailsLoadingState({
   error,
 }: PropertyDetailsLoadingStateProps) {
   return (
-    <div className="mx-auto flex w-full max-w-[1320px] flex-col gap-6 px-4 py-8 text-[#0f1629] md:px-6 xl:px-8">
-      <section className="rounded-[34px] border border-gray-200 bg-gray-50 p-6 md:p-8 shadow-[0_8px_32px_rgba(0,0,0,0.06)]">
+    <div className="mx-auto flex w-full max-w-[1320px] flex-col gap-6 px-4 py-6 text-[#0f1629] sm:py-8 md:px-6 xl:px-8">
+      <section className="rounded-[28px] border border-gray-200 bg-gray-50 p-5 shadow-[0_8px_32px_rgba(0,0,0,0.06)] sm:rounded-[34px] sm:p-6 md:p-8">
         <div className="flex flex-col gap-8 xl:flex-row xl:items-start xl:justify-between">
           <div className="max-w-3xl space-y-5">
             <div className="inline-flex items-center gap-2 rounded-full border border-[#b8942f]/30 bg-[#b8942f]/10 px-3 py-1 text-[11px] font-black uppercase tracking-[0.25em] text-[#b8942f]">
@@ -85,7 +85,7 @@ export default function PropertyDetailsLoadingState({
             </div>
 
             <div>
-              <h1 className="font-outfit text-3xl font-black tracking-tight text-[#0f1629] md:text-[3.1rem] md:leading-[1.02]">{title}</h1>
+              <h1 className="font-outfit text-[2rem] font-black tracking-tight text-[#0f1629] sm:text-3xl md:text-[3.1rem] md:leading-[1.02]">{title}</h1>
               <p className="mt-4 max-w-2xl text-sm leading-7 text-[#64748b] md:text-base">{description}</p>
               <div className="mt-4 flex flex-wrap items-center gap-3 text-sm text-[#64748b]">
                 {address ? (
@@ -103,7 +103,7 @@ export default function PropertyDetailsLoadingState({
 
             <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
               {steps.map((step, index) => (
-                <div key={step.key} className="rounded-[22px] border border-gray-200 bg-white p-4 shadow-[inset_0_1px_0_rgba(0,0,0,0.04)]">
+                <div key={step.key} className="rounded-[20px] border border-gray-200 bg-white p-4 shadow-[inset_0_1px_0_rgba(0,0,0,0.04)] sm:rounded-[22px]">
                   <div className="flex items-center justify-between gap-3">
                     <div className={`inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] ${step.status === 'completed' ? 'text-emerald-700' : step.status === 'failed' ? 'text-rose-700' : step.status === 'active' ? 'text-[#b8942f]' : 'text-[#64748b]'}`}> 
                       {renderStepIcon(step.status)}
@@ -111,7 +111,7 @@ export default function PropertyDetailsLoadingState({
                     </div>
                     <div className={step.status === 'active' ? 'agent-step-dot' : 'h-2.5 w-2.5 rounded-full bg-gray-200'} aria-hidden="true" />
                   </div>
-                  <div className="mt-4 font-outfit text-xl font-black text-[#0f1629]">{step.title}</div>
+                  <div className="mt-4 font-outfit text-lg font-black text-[#0f1629] sm:text-xl">{step.title}</div>
                   <p className="mt-3 text-sm leading-6 text-[#64748b]">{step.detail}</p>
                 </div>
               ))}
@@ -119,18 +119,18 @@ export default function PropertyDetailsLoadingState({
           </div>
 
           <div className="min-w-0 xl:w-[380px]">
-            <div className="rounded-[30px] border border-cyan-300/18 bg-[#0a1017] p-5 shadow-[0_26px_80px_rgba(0,0,0,0.45)]">
+            <div className="rounded-[24px] border border-cyan-300/18 bg-[#0a1017] p-4 shadow-[0_26px_80px_rgba(0,0,0,0.45)] sm:rounded-[30px] sm:p-5">
               <div className="flex items-center justify-between gap-3 text-cyan-100">
                 <div>
                   <div className="text-[10px] font-black uppercase tracking-[0.24em] text-cyan-100/60">Live status</div>
-                  <div className="mt-2 font-outfit text-2xl font-black text-white">Agent analysis</div>
+                  <div className="mt-2 font-outfit text-xl font-black text-white sm:text-2xl">Agent analysis</div>
                 </div>
                 <div className={`rounded-full border px-3 py-1 text-[10px] font-black uppercase tracking-[0.22em] ${error ? 'border-rose-300/20 bg-rose-300/10 text-rose-100' : 'border-cyan-300/20 bg-cyan-300/10 text-cyan-100'}`}>
                   {error ? 'Failed' : statusLabel}
                 </div>
               </div>
 
-              <div className="agent-terminal mt-5 space-y-3 rounded-[24px] border border-white/8 bg-[#05080d] p-4 font-mono text-[12px] leading-6 text-cyan-100/90">
+              <div className="agent-terminal mt-5 space-y-3 rounded-[20px] border border-white/8 bg-[#05080d] p-4 font-mono text-[12px] leading-6 text-cyan-100/90 sm:rounded-[24px]">
                 <div className="flex items-center gap-2 text-[11px] text-white/45">
                   <Sparkles size={12} />
                   /agent/analysis/live
@@ -141,7 +141,7 @@ export default function PropertyDetailsLoadingState({
                 {!error ? <div className="agent-terminal-line">Streaming live analysis state<span className="agent-typing" /></div> : null}
               </div>
 
-              <div className="mt-5 rounded-[24px] border border-white/8 bg-white/[0.03] p-4 text-sm text-white/72">
+              <div className="mt-5 rounded-[20px] border border-white/8 bg-white/[0.03] p-4 text-sm text-white/72 sm:rounded-[24px]">
                 <div className="text-[10px] font-black uppercase tracking-[0.22em] text-white/42">0G execution proof</div>
                 <div className="mt-3 space-y-2">
                   <div className="flex items-start justify-between gap-3">
@@ -150,19 +150,19 @@ export default function PropertyDetailsLoadingState({
                   </div>
                   <div className="flex items-start justify-between gap-3">
                     <span className="text-white/45">Provider</span>
-                    <span className="max-w-[190px] break-all text-right font-mono text-[12px] text-cyan-100">{truncateMiddle(computeProof?.providerAddress)}</span>
+                    <span className="max-w-[160px] break-all text-right font-mono text-[12px] text-cyan-100 sm:max-w-[190px]">{truncateMiddle(computeProof?.providerAddress)}</span>
                   </div>
                   <div className="flex items-start justify-between gap-3">
                     <span className="text-white/45">Endpoint</span>
-                    <span className="max-w-[190px] break-all text-right font-mono text-[12px] text-white/85">{computeProof?.endpoint || 'Pending'}</span>
+                    <span className="max-w-[160px] break-all text-right font-mono text-[12px] text-white/85 sm:max-w-[190px]">{computeProof?.endpoint || 'Pending'}</span>
                   </div>
                   <div className="flex items-start justify-between gap-3">
                     <span className="text-white/45">Model</span>
-                    <span className="max-w-[190px] break-all text-right font-mono text-[12px] text-white/85">{computeProof?.model || 'Pending'}</span>
+                    <span className="max-w-[160px] break-all text-right font-mono text-[12px] text-white/85 sm:max-w-[190px]">{computeProof?.model || 'Pending'}</span>
                   </div>
                   <div className="flex items-start justify-between gap-3">
                     <span className="text-white/45">Response ID</span>
-                    <span className="max-w-[190px] break-all text-right font-mono text-[12px] text-emerald-100">{truncateMiddle(computeProof?.responseId)}</span>
+                    <span className="max-w-[160px] break-all text-right font-mono text-[12px] text-emerald-100 sm:max-w-[190px]">{truncateMiddle(computeProof?.responseId)}</span>
                   </div>
                   <div className="flex items-start justify-between gap-3">
                     <span className="text-white/45">HTTP</span>
@@ -170,7 +170,7 @@ export default function PropertyDetailsLoadingState({
                   </div>
                   <div className="flex items-start justify-between gap-3">
                     <span className="text-white/45">Storage root</span>
-                    <span className="max-w-[190px] break-all text-right font-mono text-[12px] text-emerald-100">{truncateMiddle(analysisStorageRoot)}</span>
+                    <span className="max-w-[160px] break-all text-right font-mono text-[12px] text-emerald-100 sm:max-w-[190px]">{truncateMiddle(analysisStorageRoot)}</span>
                   </div>
                   {computeProof?.responsePreview ? (
                     <div className="rounded-[18px] border border-cyan-300/10 bg-cyan-300/[0.05] p-3 text-[12px] leading-6 text-cyan-50/88">

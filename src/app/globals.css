@@ -54,6 +54,7 @@ body {
   color: var(--foreground);
   font-family: var(--font-sans);
   letter-spacing: -0.01em;
+  overflow-x: hidden;
 }
 
 a {
@@ -244,6 +245,15 @@ body::before {
   letter-spacing: 0.18em;
   text-transform: uppercase;
   color: var(--gold);
+}
+
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
 }
 
 /* ============================================
@@ -757,6 +767,51 @@ w3m-footer {
 #_rk_coolMode, .-base-acc-sdk-dialog-container, .-base-acc-sdk-css-reset, .-base-acc-sdk-dialog-backdrop {
   display: none !important;
   pointer-events: none !important;
+}
+
+@media (max-width: 767px) {
+  :root {
+    --radius: 24px;
+  }
+
+  body::before {
+    opacity: 0.25;
+  }
+
+  .fintech-card,
+  .dashboard-panel,
+  .landing-soft-panel,
+  .modal-card,
+  .platform-panel {
+    border-radius: 24px;
+  }
+
+  .platform-chip {
+    gap: 0.4rem;
+    padding: 0.45rem 0.8rem;
+    font-size: 10px;
+    letter-spacing: 0.14em;
+  }
+
+  .btn-primary,
+  .btn-secondary,
+  .btn-gold-outline {
+    padding: 0.82rem 1.25rem;
+  }
+
+  .bento-grid {
+    gap: 1rem;
+  }
+
+  .hero-full-width {
+    min-height: 68vh;
+    border-radius: 32px;
+  }
+
+  .hover-lift:hover {
+    transform: none;
+    box-shadow: inherit;
+  }
 }
 
 /* Scroll Reveal Utilities */

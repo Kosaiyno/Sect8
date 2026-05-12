@@ -61,7 +61,7 @@ export default function HeroSection({ recommendations, isScanning = false, targe
 
   if (!topPick) {
     return (
-      <div className="fintech-card p-8 md:p-10">
+      <div className="fintech-card p-6 sm:p-8 md:p-10">
         <div className="max-w-2xl space-y-5">
           <div className="platform-chip">
             <Sparkles size={14} />
@@ -82,7 +82,7 @@ export default function HeroSection({ recommendations, isScanning = false, targe
 
   return (
     <div className="bento-grid">
-      <div className="fintech-card bento-item-8 p-8 md:p-10">
+      <div className="fintech-card bento-item-8 p-6 sm:p-8 md:p-10">
         <div className="space-y-8">
             <div className="platform-chip">
               <TrendingUp size={14} />
@@ -90,8 +90,8 @@ export default function HeroSection({ recommendations, isScanning = false, targe
             </div>
 
             <div>
-              <div className="flex flex-wrap items-start justify-between gap-6">
-                <h3 className="max-w-3xl font-outfit text-3xl font-black tracking-[-0.04em] text-[#0f1629] md:text-[3rem] md:leading-[1.0]">
+              <div className="flex flex-col items-start gap-4 sm:flex-row sm:items-start sm:justify-between sm:gap-6">
+                <h3 className="max-w-3xl font-outfit text-2xl font-black tracking-[-0.04em] text-[#0f1629] sm:text-3xl md:text-[3rem] md:leading-[1.0]">
                   {topPick.address}
                 </h3>
                 <WatchlistButton
@@ -114,7 +114,7 @@ export default function HeroSection({ recommendations, isScanning = false, targe
                   className="rounded-full border border-[#eef0f3] p-3 transition hover:border-[#b8942f]/30 hover:bg-[#b8942f]/05"
                 />
               </div>
-              <div className="mt-5 flex flex-wrap items-center gap-5 text-sm text-[#64748b]">
+              <div className="mt-5 flex flex-wrap items-center gap-3 text-sm text-[#64748b] sm:gap-5">
                 <span className="inline-flex items-center gap-2 font-bold text-[#b8942f]">
                   <MapPin size={14} />
                   Highest ranked in this market
@@ -128,19 +128,19 @@ export default function HeroSection({ recommendations, isScanning = false, targe
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
               {[
                 { label: 'Purchase Price', value: formatCurrency(Number(topPick.purchasePrice || 0)), icon: <BadgeDollarSign size={14} /> },
                 { label: 'Rent Benchmark', value: formatCurrency(Number(topPick.fmr || 0), '/mo'), icon: <Building2 size={14} /> },
                 { label: 'Monthly NOI', value: formatCurrency(monthlyNoi, '/mo'), icon: <TrendingUp size={14} /> },
                 { label: 'Cap Rate', value: formatPercent(topPick.capRate), icon: <ShieldCheck size={14} /> },
               ].map((metric) => (
-                <div key={metric.label} className="stat-block flex min-h-[110px] flex-col justify-between rounded-2xl px-5 py-4.5 hover-lift cursor-default transition-all duration-500">
+                <div key={metric.label} className="stat-block flex min-h-[110px] flex-col justify-between rounded-2xl px-4 py-4 hover-lift cursor-default transition-all duration-500 sm:px-5 sm:py-4.5">
                   <div className="mb-2 flex items-center gap-1.5 text-[10px] font-black uppercase tracking-[0.24em] text-[#b8942f]">
                     {metric.icon}
                     {metric.label}
                   </div>
-                  <div className="min-w-0 font-outfit text-2xl leading-none font-black tracking-[-0.04em] text-[#0f1629] tabular-nums group-hover:scale-105 transition-transform origin-left">{metric.value}</div>
+                  <div className="min-w-0 font-outfit text-xl leading-none font-black tracking-[-0.04em] text-[#0f1629] tabular-nums group-hover:scale-105 transition-transform origin-left sm:text-2xl">{metric.value}</div>
                 </div>
               ))}
             </div>
@@ -149,7 +149,7 @@ export default function HeroSection({ recommendations, isScanning = false, targe
               <Link
                 href={detailHref || `/dashboard/properties/${encodeURIComponent(topPick.id)}`}
                 prefetch
-                className="btn-primary min-w-[180px] text-center text-sm"
+                className="btn-primary w-full text-center text-sm sm:min-w-[180px] sm:w-auto"
               >
                 Agent Analysis
               </Link>
@@ -157,7 +157,7 @@ export default function HeroSection({ recommendations, isScanning = false, targe
         </div>
       </div>
 
-      <div className="fintech-card bento-item-4 p-8">
+      <div className="fintech-card bento-item-4 p-6 sm:p-8">
         <h4 className="font-outfit text-xl font-black tracking-tight text-[#0f1629]">Diligence Summary</h4>
         <div className="mt-6 space-y-5 text-sm text-[#64748b]">
           <div className="dashboard-subpanel rounded-2xl p-5 hover-lift transition-all duration-300">
@@ -169,7 +169,7 @@ export default function HeroSection({ recommendations, isScanning = false, targe
  
           <div className="dashboard-subpanel rounded-2xl p-5 hover-lift transition-all duration-300">
             <div className="platform-eyebrow-muted text-[10px] tracking-widest">Property Snapshot</div>
-            <div className="mt-4 grid grid-cols-2 gap-5 text-[#0f1629]">
+            <div className="mt-4 grid grid-cols-1 gap-4 text-[#0f1629] sm:grid-cols-2 sm:gap-5">
               <div>
                 <div className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#64748b]/40">Source</div>
                 <div className="mt-1 text-sm font-black">{topPick?.source || 'RentCast'}</div>

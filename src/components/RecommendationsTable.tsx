@@ -109,18 +109,18 @@ export default function RecommendationsTable({ recommendations }: Recommendation
 
   return (
     <div className="space-y-6">
-      <div className="fintech-card relative z-20 overflow-visible p-6 md:p-8">
+      <div className="fintech-card relative z-20 overflow-visible p-4 sm:p-6 md:p-8">
         <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
           <div>
             <div className="platform-eyebrow-muted">Recommendation Board</div>
-            <div className="mt-2 font-outfit text-3xl font-black tracking-[-0.04em] text-[#0f1629]">Showing {filteredRecommendations.length} of {saleRecommendations.length} active homes</div>
+            <div className="mt-2 font-outfit text-2xl font-black tracking-[-0.04em] text-[#0f1629] sm:text-3xl">Showing {filteredRecommendations.length} of {saleRecommendations.length} active homes</div>
           </div>
 
           <div ref={sortMenuRef} className="relative z-30 w-full lg:w-auto">
             <button
               type="button"
               onClick={() => setIsSortMenuOpen((current) => !current)}
-              className="dashboard-field flex w-full min-w-[220px] items-center justify-between rounded-xl px-4 py-3 text-left text-sm font-semibold text-[#0f1629] lg:w-auto"
+              className="dashboard-field flex w-full items-center justify-between rounded-xl px-4 py-3 text-left text-sm font-semibold text-[#0f1629] lg:min-w-[220px] lg:w-auto"
               aria-haspopup="listbox"
               aria-expanded={isSortMenuOpen}
             >
@@ -177,12 +177,12 @@ export default function RecommendationsTable({ recommendations }: Recommendation
             };
 
             return (
-              <div key={recommendation.id} className="fintech-card hover-lift group relative p-6">
+              <div key={recommendation.id} className="fintech-card hover-lift group relative p-5 sm:p-6">
                 <div className="absolute inset-x-8 top-0 h-px bg-gradient-to-r from-transparent via-[#b8942f]/30 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
                 <div className="flex items-start justify-between gap-4 text-[#0f1629]">
-                  <div>
-                    <div className="line-clamp-1 font-outfit text-[1.35rem] font-black tracking-[-0.04em]">{location.street || recommendation.address}</div>
-                    <div className="mt-1 flex items-center gap-2 text-sm text-[#64748b]">
+                  <div className="min-w-0 pr-2">
+                    <div className="line-clamp-2 font-outfit text-xl font-black tracking-[-0.04em] sm:line-clamp-1 sm:text-[1.35rem]">{location.street || recommendation.address}</div>
+                    <div className="mt-1 flex items-start gap-2 text-xs text-[#64748b] sm:text-sm">
                       <MapPin size={13} className="text-[#b8942f]/80" />
                       <span>{[location.city, location.state, location.zip || recommendation.zip].filter(Boolean).join(', ')}</span>
                     </div>
@@ -221,11 +221,11 @@ export default function RecommendationsTable({ recommendations }: Recommendation
 
                 <div className="stat-block mt-6 rounded-[24px] p-5 text-[#0f1629]">
                   <div className="text-[10px] font-black uppercase tracking-[0.24em] text-[#b8942f]">Listed Price</div>
-                  <div className="mt-2.5 font-outfit text-3xl font-black leading-none tracking-[-0.04em]">{formatNumber(recommendation.purchasePrice)}</div>
+                  <div className="mt-2.5 font-outfit text-2xl font-black leading-none tracking-[-0.04em] sm:text-3xl">{formatNumber(recommendation.purchasePrice)}</div>
                 </div>
 
-                <div className="mt-4 grid grid-cols-3 gap-3 text-sm">
-                  <div className="rounded-[20px] border border-[#eef0f3] bg-[#f8f9fb]/50 p-4">
+                <div className="mt-4 grid grid-cols-2 gap-3 text-sm sm:grid-cols-3">
+                  <div className="col-span-2 rounded-[20px] border border-[#eef0f3] bg-[#f8f9fb]/50 p-4 sm:col-span-1">
                     <div className="text-[9px] font-black uppercase tracking-[0.2em] text-[#64748b]/60">Beds</div>
                     <div className="mt-2 flex items-center gap-2 font-bold text-[#0f1629]"><BedDouble size={14} className="text-[#b8942f]/60" /> {recommendation.bedrooms || 'N/A'}</div>
                   </div>
@@ -239,14 +239,14 @@ export default function RecommendationsTable({ recommendations }: Recommendation
                   </div>
                 </div>
 
-                <div className="mt-5 grid grid-cols-2 gap-4 text-sm text-[#0f1629]">
+                <div className="mt-5 grid grid-cols-1 gap-4 text-sm text-[#0f1629] sm:grid-cols-2">
                   <div className="dashboard-subpanel rounded-2xl p-4">
                     <div className="text-[9px] font-black uppercase tracking-[0.24em] text-[#64748b]/50">Monthly NOI</div>
                     <div className="mt-1.5 font-black text-[#0d9668] text-base">{hasVerifiedHud ? formatNumber(monthlyNoi, '/mo') : 'Hidden'}</div>
                   </div>
-                  <div className="dashboard-subpanel rounded-2xl p-4">
-                    <div className="text-[9px] font-black uppercase tracking-[0.24em] text-[#64748b]/50 text-right">Voucher Support</div>
-                    <div className="mt-1.5 font-black text-[#b8942f] text-base text-right">{hasVerifiedHud ? formatNumber(recommendation.fmr, '/mo') : 'Hidden'}</div>
+                  <div className="dashboard-subpanel rounded-2xl p-4 sm:text-right">
+                    <div className="text-[9px] font-black uppercase tracking-[0.24em] text-[#64748b]/50 sm:text-right">Voucher Support</div>
+                    <div className="mt-1.5 font-black text-[#b8942f] text-base sm:text-right">{hasVerifiedHud ? formatNumber(recommendation.fmr, '/mo') : 'Hidden'}</div>
                   </div>
                 </div>
 
@@ -269,7 +269,7 @@ export default function RecommendationsTable({ recommendations }: Recommendation
           })}
         </div>
       ) : (
-        <div className="fintech-card rounded-[28px] p-12 text-center">
+        <div className="fintech-card rounded-[28px] p-8 text-center sm:p-12">
           <div className="font-outfit text-2xl font-black text-[#0f1629]">No matching homes found</div>
           <p className="mt-3 text-sm text-[#64748b]">Change the search inputs above to repopulate the board.</p>
         </div>
