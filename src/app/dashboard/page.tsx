@@ -413,11 +413,10 @@ export default function Dashboard() {
         : [...current.propertyTypes, propertyType],
     }));
   };
-          const res = await fetch('/api/agents/search', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ filters: filterSearch, owner: address, recordRoot: agent ? agent.recordRoot || null : null }),
-          });
+
+  return (
+    <div className="space-y-8 animate-fade-in">
+      <AgentHeader
         agent={agent}
         searchMode={searchMode}
         onChangeSearchMode={setSearchMode}
