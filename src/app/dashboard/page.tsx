@@ -289,7 +289,7 @@ export default function Dashboard() {
       const res = await fetch('/api/agents/search', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ zipCode: normalizedZip, owner: address, recordRoot: agent.recordRoot || null })
+        body: JSON.stringify({ zipCode: normalizedZip, owner: address, recordRoot: agent ? agent.recordRoot || null : null })
       });
       const json = await res.json();
       if (!json.success) throw new Error(json.error || 'Scan failed');
@@ -325,7 +325,7 @@ export default function Dashboard() {
       const res = await fetch('/api/agents/search', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ filters: filterSearch, owner: address, recordRoot: agent.recordRoot || null }),
+        body: JSON.stringify({ filters: filterSearch, owner: address, recordRoot: agent ? agent.recordRoot || null : null }),
       });
       const json = await res.json();
       if (!json.success) {
@@ -413,11 +413,11 @@ export default function Dashboard() {
         : [...current.propertyTypes, propertyType],
     }));
   };
-
-
-  return (
-    <div className="flex flex-col gap-6 animate-fade-in pb-6">
-      <AgentHeader
+          const res = await fetch('/api/agents/search', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ filters: filterSearch, owner: address, recordRoot: agent ? agent.recordRoot || null : null }),
+          });
         agent={agent}
         searchMode={searchMode}
         onChangeSearchMode={setSearchMode}
