@@ -27,62 +27,62 @@ export function CreateAgentModal({
   const [activationPhase, setActivationPhase] = useState<string | null>(null);
 
   return (
-    <div className="fixed inset-0 z-100 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-      <div className="glass-card w-full max-w-lg p-8 flex flex-col gap-8 animate-fade-in relative">
-        <button onClick={onClose} className="absolute top-6 right-6 text-muted hover:text-white">
-          <X size={24} />
+    <div className="fixed inset-0 z-100 flex items-center justify-center bg-black/60 backdrop-blur-sm p-2">
+      <div className="glass-card w-full max-w-lg p-4 flex flex-col gap-4 animate-fade-in relative">
+        <button onClick={onClose} className="absolute top-3 right-3 text-muted hover:text-white">
+          <X size={20} />
         </button>
 
-        <div className="space-y-2">
-          <h2 className="text-2xl font-outfit font-black">Configure My Acquisition Agent</h2>
-          <p className="text-muted text-sm">Set the first scan parameters I should use across 0G compute, storage, and agent state.</p>
+        <div className="space-y-1">
+          <h2 className="text-lg font-outfit font-black">Configure My Acquisition Agent</h2>
+          <p className="text-muted text-xs">Set the first scan parameters I should use across 0G compute, storage, and agent state.</p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="space-y-2">
-            <label className="text-xs font-bold uppercase text-muted flex items-center gap-1">
-              <Target size={14} /> Target ZIP Code
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <div className="space-y-1">
+            <label className="text-[11px] font-bold uppercase text-muted flex items-center gap-1">
+              <Target size={12} /> Target ZIP Code
             </label>
             <input 
               type="text" 
-              className="w-full bg-secondary border border-border rounded-xl px-4 py-3 focus:ring-2 focus:ring-primary outline-hidden"
+              className="w-full bg-secondary border border-border rounded-xl px-3 py-2 focus:ring-2 focus:ring-primary outline-hidden text-sm"
               value={prefs.zipCode}
               onChange={(e) => setPrefs({...prefs, zipCode: e.target.value})}
             />
           </div>
 
-          <div className="space-y-2">
-            <label className="text-xs font-bold uppercase text-muted flex items-center gap-1">
-              <Home size={14} /> Min Bedrooms
+          <div className="space-y-1">
+            <label className="text-[11px] font-bold uppercase text-muted flex items-center gap-1">
+              <Home size={12} /> Min Bedrooms
             </label>
             <input 
               type="number" 
-              className="w-full bg-secondary border border-border rounded-xl px-4 py-3 focus:ring-2 focus:ring-primary outline-hidden"
+              className="w-full bg-secondary border border-border rounded-xl px-3 py-2 focus:ring-2 focus:ring-primary outline-hidden text-sm"
               value={prefs.minBedrooms}
               onChange={(e) => setPrefs({...prefs, minBedrooms: parseInt(e.target.value)})}
             />
           </div>
 
-          <div className="space-y-2">
-            <label className="text-xs font-bold uppercase text-muted flex items-center gap-1">
-              <DollarSign size={14} /> Max Budget
+          <div className="space-y-1">
+            <label className="text-[11px] font-bold uppercase text-muted flex items-center gap-1">
+              <DollarSign size={12} /> Max Budget
             </label>
             <input 
               type="number" 
-              className="w-full bg-secondary border border-border rounded-xl px-4 py-3 focus:ring-2 focus:ring-primary outline-hidden"
+              className="w-full bg-secondary border border-border rounded-xl px-3 py-2 focus:ring-2 focus:ring-primary outline-hidden text-sm"
               value={prefs.maxPrice}
               onChange={(e) => setPrefs({...prefs, maxPrice: parseInt(e.target.value)})}
             />
           </div>
 
-          <div className="space-y-2">
-            <label className="text-xs font-bold uppercase text-muted flex items-center gap-1">
-              <Percent size={14} /> Target ROI (%)
+          <div className="space-y-1">
+            <label className="text-[11px] font-bold uppercase text-muted flex items-center gap-1">
+              <Percent size={12} /> Target ROI (%)
             </label>
             <input 
               type="number" 
               step="0.01"
-              className="w-full bg-secondary border border-border rounded-xl px-4 py-3 focus:ring-2 focus:ring-primary outline-hidden"
+              className="w-full bg-secondary border border-border rounded-xl px-3 py-2 focus:ring-2 focus:ring-primary outline-hidden text-sm"
               value={prefs.minRoi * 100}
               onChange={(e) => setPrefs({...prefs, minRoi: parseFloat(e.target.value) / 100})}
             />

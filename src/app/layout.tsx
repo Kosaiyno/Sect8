@@ -7,6 +7,7 @@ import Link from "next/link";
 import { Providers } from "@/components/Providers";
 import RouteWarmup from "@/components/RouteWarmup";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
+import MobileNavMenu from "@/components/MobileNavMenu";
 
 const inter = Manrope({ subsets: ["latin"], variable: "--font-inter" });
 const outfit = Sora({ subsets: ["latin"], variable: "--font-outfit" });
@@ -75,44 +76,43 @@ export default function RootLayout({
 
                   <div className="flex items-center gap-4">
                     <div className="h-8 w-px bg-gray-200 hidden sm:block" />
-                    <ConnectButton />
+                    <ConnectButton
+                      accountStatus={{ smallScreen: 'avatar', largeScreen: 'avatar' }}
+                      chainStatus={{ smallScreen: 'icon', largeScreen: 'icon' }}
+                      showBalance={false}
+                      label="Connect Wallet"
+                    />
                   </div>
                 </div>
 
-                <div className="flex flex-col gap-3 lg:hidden">
-                  <div className="flex items-center justify-between gap-3">
+                <div className="flex flex-col gap-2 lg:hidden">
+                  <div className="flex items-center justify-between gap-2 min-h-[48px] py-1">
                     <Link href="/" className="flex min-w-0 items-center gap-2 group">
                       <div className="flex items-center justify-center transition-all group-hover:scale-105">
                         <Image
                           src="/sect8%20logo.png?v=3"
                           alt="Sect8"
-                          width={48}
-                          height={48}
+                          width={28}
+                          height={28}
                           className="object-contain"
                           unoptimized
                           priority
                         />
                       </div>
-                      <div className="truncate font-sora text-[1.85rem] font-extrabold tracking-tight text-[#0f1629] leading-none" style={{letterSpacing: '-0.04em'}}>Sect8</div>
+                      <div className="truncate font-sora text-[1.05rem] font-extrabold tracking-tight text-[#0f1629] leading-none" style={{letterSpacing: '-0.04em'}}>Sect8</div>
                     </Link>
-
-                    <div className="shrink-0">
-                      <ConnectButton />
+                    <div className="flex items-center gap-1">
+                      <div className="shrink-0 scale-90">
+                        <ConnectButton
+                          accountStatus={{ smallScreen: 'avatar', largeScreen: 'avatar' }}
+                          chainStatus={{ smallScreen: 'icon', largeScreen: 'icon' }}
+                          showBalance={false}
+                          label="Connect Wallet"
+                        />
+                      </div>
+                      <MobileNavMenu />
                     </div>
                   </div>
-
-                  <nav className="no-scrollbar flex items-center gap-2 overflow-x-auto pb-1">
-                    {navLinks.map((link) => (
-                      <Link
-                        key={link.label}
-                        href={link.href}
-                        prefetch
-                        className="shrink-0 rounded-full border border-gray-100 bg-[#f8f9fb] px-4 py-2 text-[11px] font-black uppercase tracking-[0.18em] text-[#64748b] transition-all hover:border-[#b8942f]/20 hover:bg-white hover:text-[#0f1629]"
-                      >
-                        {link.label}
-                      </Link>
-                    ))}
-                  </nav>
                 </div>
               </div>
             </div>

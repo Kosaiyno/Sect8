@@ -419,7 +419,7 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="space-y-8 animate-fade-in">
+    <div className="space-y-5 animate-fade-in">
       <AgentHeader
         agent={agent}
         searchMode={searchMode}
@@ -457,24 +457,24 @@ export default function Dashboard() {
         </div>
       )}
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-4">
+      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 md:grid-cols-4">
         {[
           { label: "Target ZIP", value: String(selectedZip || agent.preferences?.zipCode || "N/A"), icon: <Database size={16} /> },
           { label: "Matches Found", value: visibleRecommendations.length.toString(), icon: <TrendingUp size={16} /> },
           { label: "Analyses", value: String(agent.memory?.recentAnalyses?.length || 0), icon: <ShieldCheck size={16} /> },
           { label: "Status", value: "Verified", icon: <CheckCircle2 size={16} /> }
         ].map((stat, i) => (
-          <div key={i} className="fintech-card p-5 transition-all hover-lift sm:p-6">
-            <div className="flex items-center gap-2.5 text-[10px] font-black uppercase tracking-[0.24em] text-[#b8942f]">
+          <div key={i} className="fintech-card p-3 transition-all hover-lift sm:p-4">
+            <div className="flex items-center gap-1.5 text-[9px] font-black uppercase tracking-[0.18em] text-[#b8942f]">
               {stat.icon}
               {stat.label}
             </div>
-            <div className="mt-3 font-outfit text-xl font-black tracking-[-0.05em] text-[#0f1629] sm:text-2xl md:text-3xl">{stat.value}</div>
+            <div className="mt-2 font-outfit text-base font-black tracking-[-0.03em] text-[#0f1629] sm:text-lg md:text-xl">{stat.value}</div>
           </div>
         ))}
       </div>
 
-      <div className="flex flex-col gap-6">
+      <div className="flex flex-col gap-3">
         <HeroSection recommendations={visibleRecommendations} isScanning={isScanning} targetZip={selectedZip || String(agent.preferences?.zipCode || '')} />
 
         <div className="min-h-[400px]">
