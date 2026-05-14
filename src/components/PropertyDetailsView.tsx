@@ -174,7 +174,7 @@ export default function PropertyDetailsView({ bundle, analysisResult }: Property
             item={watchlistItem}
             showLabel
             label="Watchlist"
-            className="inline-flex items-center gap-2.5 rounded-full border border-[#eef0f3] px-5 py-2.5 text-sm font-bold transition-all shadow-sm"
+            className="inline-flex items-center gap-2.5 rounded-full border-2 border-[#b8942f] bg-white px-5 py-2.5 text-sm font-bold text-[#b8942f] shadow-md focus:ring-2 focus:ring-[#b8942f]"
           />
         </div>
       </div>

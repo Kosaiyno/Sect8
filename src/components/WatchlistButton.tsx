@@ -17,8 +17,8 @@ type WatchlistButtonProps = {
 export default function WatchlistButton({
   item,
   className = '',
-  activeClassName = 'border-rose-300/30 bg-rose-300/15 text-rose-100',
-  inactiveClassName = 'border-white/10 bg-white/5 text-white/80 hover:text-white',
+  activeClassName = 'border-[#b8942f] bg-[#fffbea] text-[#b8942f]',
+  inactiveClassName = 'border-[#f3e7c4] bg-white text-[#b8942f] hover:bg-[#fffbea]',
   label = 'Watchlist',
   showLabel = false,
 }: WatchlistButtonProps) {
@@ -49,7 +49,7 @@ export default function WatchlistButton({
       onClick={() => setSaved(toggleWatchlist(item, address))}
       className={`${className} ${saved ? activeClassName : inactiveClassName}`.trim()}
     >
-      <Heart size={16} fill={saved ? 'currentColor' : 'none'} />
+      <Heart size={18} strokeWidth={2.2} fill={saved ? 'currentColor' : 'none'} className="transition-colors duration-200" />
       {showLabel ? <span>{saved ? 'Saved' : label}</span> : null}
     </button>
   );

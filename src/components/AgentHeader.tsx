@@ -86,7 +86,7 @@ export default function AgentHeader({
                 </span>
               </div>
               <div className="mt-3 max-w-xl text-sm leading-7 text-[#64748b] sm:text-base">
-                Your institutional acquisition desk. I rank homes, store memory on 0G, and produce investment dossiers.
+                Your institutional AI agent that analyses homes, stores memory on 0G, and produces investment dossiers for each of them.
               </div>
             </div>
           </div>

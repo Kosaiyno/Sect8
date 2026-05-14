@@ -51,8 +51,8 @@ export default function RootLayout({
                       <Image
                         src="/sect8%20logo.png?v=3"
                         alt="Sect8"
-                        width={76}
-                        height={76}
+                        width={96}
+                        height={96}
                         className="object-contain"
                         unoptimized
                         priority
@@ -92,8 +92,8 @@ export default function RootLayout({
                         <Image
                           src="/sect8%20logo.png?v=3"
                           alt="Sect8"
-                          width={28}
-                          height={28}
+                          width={38}
+                          height={38}
                           className="object-contain"
                           unoptimized
                           priority

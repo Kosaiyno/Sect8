@@ -111,7 +111,7 @@ export default function HeroSection({ recommendations, isScanning = false, targe
                     propertyType: topPick.propertyType,
                     squareFootage: topPick.squareFootage,
                   }}
-                  className="rounded-full border border-[#eef0f3] p-3 transition hover:border-[#b8942f]/30 hover:bg-[#b8942f]/05"
+                  className="rounded-full border-2 p-3 shadow-md focus:ring-2 focus:ring-red-500"
                 />
               </div>
               <div className="mt-5 flex flex-wrap items-center gap-3 text-sm text-[#64748b] sm:gap-5">

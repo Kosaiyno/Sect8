@@ -206,7 +206,7 @@ export default function RecommendationsTable({ recommendations }: Recommendation
                       squareFootage: recommendation.squareFootage,
                       url: recommendation.url,
                     }}
-                    className="rounded-full border border-[#eef0f3] p-3 transition hover:border-[#b8942f]/30 hover:bg-[#b8942f]/05"
+                    className="rounded-full border-2 p-3 shadow-md focus:ring-2 focus:ring-red-500"
                   />
                 </div>
 
