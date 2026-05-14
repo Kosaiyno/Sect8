@@ -13,7 +13,7 @@ if (!appBaseUrl) {
   throw new Error("Missing SECT8_APP_URL. Set it to the deployed Sect8 app base URL.");
 }
 
-const mcpApp = createMcpExpressApp();
+const mcpApp = createMcpExpressApp({ host: "0.0.0.0" });
 
 const memorySchema = z.object({
   agentId: z.string().optional(),
