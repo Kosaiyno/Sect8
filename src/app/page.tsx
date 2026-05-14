@@ -24,6 +24,7 @@ export default function Home() {
 
   return (
     <div className="flex flex-col gap-20 pb-20 md:gap-32 md:pb-24">
+
       {/* ─── HERO SECTION ─── */}
       <section className="animate-fade-in">
         <div className="hero-full-width group">
@@ -128,6 +129,7 @@ export default function Home() {
       </section>
 
       <div className="mx-auto w-full max-w-[1440px] px-4 space-y-20 sm:px-6 md:space-y-24 lg:px-8 lg:space-y-32">
+
         {/* ─── LIVE WORKFLOW (STACKED) ─── */}
         <section className="reveal-on-scroll">
           <div className="fintech-card p-6 sm:p-8 md:p-14 overflow-hidden space-y-8 md:space-y-12">
@@ -160,6 +162,43 @@ export default function Home() {
                 </div>
               ))}
             </div>
+          </div>
+        </section>
+
+        {/* ═══════════════════════════════════════
+            HOW IT WORKS (MOVED BELOW WORKFLOW)
+        ═══════════════════════════════════════ */}
+        <section className="reveal-on-scroll mt-24">
+          <div className="text-center mb-12">
+            <div className="platform-eyebrow">How It Works</div>
+            <h2 className="mt-6 font-outfit text-5xl font-black tracking-[-0.05em] text-[#0f1629] md:text-7xl">
+              Get started in four steps.
+            </h2>
+          </div>
+          <div className="grid gap-8 md:grid-cols-4">
+            {[
+              {
+                title: "Create or connect a wallet",
+                desc: "MetaMask and other EVM wallets are supported.",
+              },
+              {
+                title: "Get a small amount of 0G tokens from exchanges or bridge",
+                desc: "Less than $1 is enough for multiple actions.",
+              },
+              {
+                title: "Create your Sect8 investment agent",
+                desc: "Generate AI-powered Section 8 underwriting reports instantly.",
+              },
+              {
+                title: "Analyze deals with institutional-grade insights",
+                desc: "Cash flow, ROI, HUD FMR alignment, ownership records, risk flags, underwriting signals, and more.",
+              },
+            ].map((step, i) => (
+              <div key={step.title} className="fintech-card p-10 hover-lift group border-b-4 border-b-transparent hover:border-b-[#b8942f]">
+                <div className="font-outfit text-2xl font-black tracking-tight text-[#0f1629] mb-5">{step.title}</div>
+                <p className="text-base leading-8 text-[#64748b] font-medium">{step.desc}</p>
+              </div>
+            ))}
           </div>
         </section>
 
@@ -364,6 +403,7 @@ export default function Home() {
             </div>
           </div>
         </section>
+
       </div>
     </div>
   );

@@ -17,6 +17,41 @@ The core workflow is:
 
 Sect8 is intentionally narrow. It is not a generic chat bot or a general market browser. It is a Section 8 deal-finding and underwriting workflow anchored on 0G Compute, 0G Storage, and 0G Chain.
 
+## Hackathon Progress
+
+During the hackathon, Sect8 moved from a prototype into a product workflow backed by real external data and real 0G infrastructure.
+
+### What changed
+
+- Replaced fake or misleading property content with real-source data across the workflow.
+- Integrated RentCast for live for-sale inventory and cached listing restoration.
+- Integrated HUD Fair Market Rent data for voucher-oriented rent benchmarking.
+- Integrated ATTOM for parcel, ownership, tax, sale-history, and area-risk context.
+- Integrated ZIP and county resolution services so listings can be connected to local housing-authority and voucher context.
+- Added underwriting calculations for projected cash flow, cap rate, and ROI so the product evaluates deals instead of only browsing listings.
+- Integrated 0G Compute for structured property analysis generation.
+- Integrated 0G Storage for agent memory, listing snapshots, ATTOM snapshots, and persisted analysis roots.
+- Deployed the Sect8AgentManager contract on 0G Mainnet and wired the create-agent flow to the deployed contract.
+- Made onchain agent initialization part of the real user journey instead of leaving chain usage as a side deployment.
+- Required verified onchain activation before restoring an agent, including persisted token ID and activation transaction hash.
+- Improved memory recovery so verified analyses shown in the dashboard are backed by persisted storage roots.
+- Reworked property analysis into a staged agent-analysis session with clearer loading states and runtime proof output.
+- Tightened slow external-fetch behavior so the app fails fast instead of hanging on delayed providers.
+- Added stricter listing exclusion so land and vacant-lot inventory are filtered out of the dashboard and market instead of being scored as Section 8 opportunities.
+
+### Major website rebrand
+
+The product was also rebranded during the hackathon.
+
+- Replaced the earlier prototype presentation with a more institutional product identity across the landing page, dashboard, market feed, and analysis surfaces.
+- Updated the website copy to position Sect8 as a Section 8 acquisition and underwriting platform instead of a generic AI demo.
+- Reworked the property-analysis experience so the UI now emphasizes decision-ready underwriting, proof of infrastructure usage, and verifiable data context.
+- Removed misleading or empty interface sections and aligned the product presentation with the real workflow that now exists behind it.
+
+### Why this matters
+
+The result is not just a nicer interface. Sect8 now uses real listing data, real rent benchmarks, real property records, real 0G Compute, real 0G Storage, and real 0G Mainnet agent creation inside the actual investor workflow.
+
 ## System Architecture
 
 ### Technical Description
