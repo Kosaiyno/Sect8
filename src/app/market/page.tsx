@@ -51,8 +51,10 @@ export default function MarketPage() {
       try {
         const json = await fetchZipOptions();
         if (json.success && Array.isArray(json.zipOptions)) {
-          setZipOptions(json.zipOptions);
-          const initialZip = json.zipOptions[0]?.zipCode || "";
+          const allowed = new Set(['48201','48202','48204','48206','44105','44110','44120','38109','38127','38128']);
+          const filtered = json.zipOptions.filter((opt: { zipCode: string }) => allowed.has(opt.zipCode));
+          setZipOptions(filtered);
+          const initialZip = filtered[0]?.zipCode || "";
           setSelectedZip(initialZip);
           if (initialZip) await loadProperties(initialZip);
         }

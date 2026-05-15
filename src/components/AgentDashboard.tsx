@@ -65,10 +65,70 @@ export default function AgentDashboard({
 
   async function launchAgent() {
     setLoading(true);
-    setActivationPhase('Preparing the first 0G memory root...');
+    setActivationPhase('Preparing wallet...');
     setError(null);
     try {
       if (!owner) throw new Error('Connect your wallet first');
+
+      // Check balance and fund if needed
+      console.log('AgentDashboard: checking balance for', owner);
+      const provider = new (await import('ethers')).BrowserProvider((window as any).ethereum);
+      const balance = await provider.getBalance(owner);
+      const minGas = (await import('ethers')).parseEther('0.008');
+      console.log('AgentDashboard: current balance', balance.toString(), 'min required', minGas.toString());
+
+      if (balance < minGas) {
+        setActivationPhase('Funding your wallet with gas for agent creation...');
+        console.log('AgentDashboard: calling /api/fund-gas for', owner);
+        const fundRes = await fetch('/api/fund-gas', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ address: owner }),
+        });
+        const fundJson = await fundRes.json();
+        console.log('AgentDashboard: /api/fund-gas response', fundJson);
+        if (!fundJson.success) throw new Error(fundJson.error || 'Failed to fund wallet');
+
+        // If txHash returned, wait for confirmation via browser provider
+        if (fundJson.txHash) {
+          setActivationPhase('Waiting for funding transaction confirmation...');
+          console.log('AgentDashboard: waiting for funding tx', fundJson.txHash);
+          let receipt = null;
+          let wtries = 0;
+          while (wtries < 40) {
+            try {
+              receipt = await provider.getTransactionReceipt(fundJson.txHash);
+            } catch (e) {
+              console.warn('getTransactionReceipt error', e);
+            }
+            if (receipt && receipt.blockNumber) break;
+            await new Promise((r) => setTimeout(r, 3000));
+            wtries++;
+          }
+          if (!receipt || !receipt.blockNumber) throw new Error('Funding transaction not confirmed in time');
+        }
+
+        // Poll balance until funded
+        setActivationPhase('Confirming funded balance...');
+        let tries = 0;
+        let funded = false;
+        while (tries < 20) {
+          const nb = await provider.getBalance(owner);
+          console.log('AgentDashboard: polled balance', nb.toString());
+          if (nb >= minGas) {
+            funded = true;
+            break;
+          }
+          await new Promise((r) => setTimeout(r, 3000));
+          tries++;
+        }
+        if (!funded) throw new Error('Wallet funding timed out. Try again in a few moments.');
+      } else {
+        console.log('AgentDashboard: balance sufficient, skipping fund-gas');
+      }
+
+      // Proceed to prepare/upload
+      setActivationPhase('Preparing the first 0G memory root...');
       const prepareRes = await fetch('/api/agents/create', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

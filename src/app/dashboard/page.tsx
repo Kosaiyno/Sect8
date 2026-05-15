@@ -194,13 +194,15 @@ export default function Dashboard() {
         const response = await fetch(`/api/agents/search${ownerQuery}`);
         const json = await response.json();
         if (json.success && Array.isArray(json.zipOptions)) {
-          setZipOptions(json.zipOptions);
+          const allowed = new Set(['48201','48202','48204','48206','44105','44110','44120','38109','38127','38128']);
+          const filtered = json.zipOptions.filter((option: { zipCode: string }) => allowed.has(option.zipCode));
+          setZipOptions(filtered);
           setSelectedZip((current) => {
-            if (current && json.zipOptions.some((option: { zipCode: string }) => option.zipCode === current)) {
+            if (current && filtered.some((option: { zipCode: string }) => option.zipCode === current)) {
               return current;
             }
 
-            return json.zipOptions[0]?.zipCode || current || '';
+            return filtered[0]?.zipCode || current || '';
           });
         }
       } catch {

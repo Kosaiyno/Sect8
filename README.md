@@ -39,6 +39,8 @@ During the hackathon, Sect8 moved from a prototype into a product workflow backe
 - Tightened slow external-fetch behavior so the app fails fast instead of hanging on delayed providers.
 - Added stricter listing exclusion so land and vacant-lot inventory are filtered out of the dashboard and market instead of being scored as Section 8 opportunities.
 
+- Prioritized target markets: Detroit (MI), Cleveland (OH), and Memphis (TN) — focus areas chosen for historically higher Section 8 profitability and product validation.
+
 ### Major website rebrand
 
 The product was also rebranded during the hackathon.
@@ -205,6 +207,24 @@ What it does in Sect8:
 6. Sect8 computes underwriting inputs and sends the full property bundle to 0G Compute.
 7. The returned memo is normalized, stored to 0G Storage, and attached back to the property flow through a storage root.
 8. The Agent analysis UI shows both the final memo and the runtime proof artifacts for the compute and storage steps.
+
+## Listing images & external listing links
+
+The property details page surfaces listing images (when available) and convenient external links so users can review the live listing on third-party sites:
+
+- External listing links: the details page includes quick-search buttons (Zillow, Realtor.com, Redfin) that open a pre-filled search for the property address in a new tab. The UI explicitly invites users to click the Zillow button to view the live listing page, image gallery, listing agent contact details, and other third-party context.
+
+## Agent creation & funding flow (what changed)
+
+Users now create a wallet-linked Sect8 agent as a clear, guided flow in the app. The creation path has been hardened so the on-chain activation is reliable and repeatable:
+
+- The user connects a wallet and requests agent creation from the UI (Dashboard / Create Agent flows).
+- The frontend now verifies the user's native balance and, when below a minimum threshold, calls a server-side funding endpoint to top up the wallet with a small native amount so the user can sign the on-chain initialization transaction.
+- The server funding route sends a small native transfer and returns the funding transaction hash; the frontend waits for the funding transaction confirmation and polls the user's wallet balance before proceeding.
+- Once the wallet has enough native gas, the app prepares the initial agent memory object and uploads it to 0G Storage, then asks the user to sign the on-chain `initializeAgent` call to mint the wallet-linked Sect8 NFT and anchor the memory root on 0G Chain.
+- After on-chain confirmation, the app finalizes the agent record (persisting record roots and linking the on-chain tokenId and activation transaction hash) and resumes normal scanning and analysis flows.
+
+This flow guarantees that users always have sufficient gas to complete on-chain activation and that activations are backed by persisted 0G Storage roots and an on-chain proof.
 
 ## 0G Integration Proof
 

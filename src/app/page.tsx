@@ -165,69 +165,6 @@ export default function Home() {
             </div>
           </div>
         </section>
-
-        {/* ═══════════════════════════════════════
-            HOW IT WORKS (MOVED BELOW WORKFLOW)
-        ═══════════════════════════════════════ */}
-        <section className="reveal-on-scroll mt-14">
-          <div className="text-center mb-12">
-            <div className="platform-eyebrow">How It Works</div>
-            <h2 className="mt-4 font-outfit text-3xl font-black tracking-[-0.04em] text-[#0f1629] md:text-5xl">
-              Get started in four steps.
-            </h2>
-          </div>
-          <div className="grid gap-4 md:grid-cols-4">
-            {[
-              {
-                title: "Create or connect a wallet",
-                desc: "MetaMask and other EVM wallets are supported.",
-              },
-              {
-                title: "Get a small amount of 0G tokens from exchanges or bridge",
-                desc: "Less than $1 is enough for multiple actions.",
-              },
-              {
-                title: "Create your Sect8 investment agent",
-                desc: "Generate AI-powered Section 8 underwriting reports instantly.",
-              },
-              {
-                title: "Analyze deals with institutional-grade insights",
-                desc: "Cash flow, ROI, HUD FMR alignment, ownership records, risk flags, underwriting signals, and more.",
-              },
-            ].map((step, i) => (
-              <div key={step.title} className="fintech-card p-5 hover-lift group border-b-4 border-b-transparent hover:border-b-[#b8942f]">
-                <div className="font-outfit text-lg font-black tracking-tight text-[#0f1629] mb-3">{step.title}</div>
-                <p className="text-sm leading-6 text-[#64748b] font-medium">{step.desc}</p>
-              </div>
-            ))}
-          </div>
-        </section>
-
-        {/* ─── ANALYSIS & PERSISTENCE ─── */}
-        <section className="reveal-on-scroll grid grid-cols-1 md:grid-cols-2 gap-3">
-          <div className="fintech-card p-4 sm:p-6 md:p-8 hover-lift">
-            <div className="h-10 w-10 rounded-xl bg-[#b8942f]/10 flex items-center justify-center text-[#b8942f] mb-5">
-              <TrendingUp size={18} />
-            </div>
-            <div className="platform-eyebrow mb-2">Analysis</div>
-            <h3 className="font-outfit text-xl font-black mb-2">Projected economics</h3>
-            <p className="text-sm sm:text-base leading-snug text-[#64748b] font-medium">
-              Sect8 does not stop at the list price. It analyzes the operating view investors actually need to screen a Section 8 acquisition.
-            </p>
-          </div>
-
-          <div className="fintech-card p-4 sm:p-6 md:p-8 hover-lift">
-            <div className="h-10 w-10 rounded-xl bg-[#0d9668]/10 flex items-center justify-center text-[#0d9668] mb-5">
-              <Database size={18} />
-            </div>
-            <div className="platform-eyebrow mb-2" style={{ color: '#0d9668' }}>Persistence</div>
-            <h3 className="font-outfit text-xl font-black mb-2">0G-backed state</h3>
-            <p className="text-sm sm:text-base leading-snug text-[#64748b] font-medium">
-              The workflow keeps memory, analysis roots, and agent state attached so research does not disappear between sessions.
-            </p>
-          </div>
-        </section>
-
         {/* ─── WORKFLOW STEPS (01-04) ─── */}
         <section className="reveal-on-scroll grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
           {[
@@ -250,6 +187,46 @@ export default function Home() {
             </div>
           ))}
         </section>
+        {/* ═══════════════════════════════════════
+          HOW IT WORKS
+        ═══════════════════════════════════════ */}
+        <section className="reveal-on-scroll mt-14">
+          <div className="text-center mb-12">
+            <div className="platform-eyebrow">How It Works</div>
+            <h2 className="mt-4 font-outfit text-3xl font-black tracking-[-0.04em] text-[#0f1629] md:text-5xl">
+              Get started in four steps.
+            </h2>
+          </div>
+          <div className="grid gap-4 md:grid-cols-4">
+            {[
+              {
+                title: "Create or connect a wallet",
+                desc: "MetaMask and other EVM wallets are supported.",
+              },
+              {
+                title: "Onboard with funded gas",
+                desc: "Sect8 will fund a small gas allowance to your wallet when needed so you can create and activate agents without paying upfront.",
+              },
+              {
+                title: "Create your Sect8 investment agent",
+                desc: "Agent creation uses the funded gas allowance so users are not required to pay at creation time.",
+              },
+              {
+                title: "Analyze deals with institutional-grade insights",
+                desc: "Cash flow, ROI, HUD FMR alignment, ownership records, risk flags, underwriting signals, and more.",
+              },
+            ].map((step, i) => (
+              <div key={step.title} className="fintech-card p-5 hover-lift group border-b-4 border-b-transparent hover:border-b-[#b8942f]">
+                <div className="font-outfit text-lg font-black tracking-tight text-[#0f1629] mb-3">{step.title}</div>
+                <p className="text-sm leading-6 text-[#64748b] font-medium">{step.desc}</p>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        
+
+        {/* Analysis & Persistence section removed per request */}
 
         {/* ─── WHY SECT8 (FEATURE GRID) ─── */}
         <section className="reveal-on-scroll text-center space-y-8">
@@ -318,34 +295,7 @@ export default function Home() {
           </div>
         </section>
 
-        {/* ─── PLATFORM SIGNALS ─── */}
-        <section className="reveal-on-scroll">
-          <div className="fintech-card p-4 sm:p-6 md:p-10 lg:p-14 grid grid-cols-1 lg:grid-cols-12 gap-4 lg:gap-10 items-center">
-            <div className="lg:col-span-6 space-y-8">
-              <div className="platform-eyebrow">Platform Signals</div>
-              <h2 className="font-outfit text-2xl sm:text-3xl font-black text-[#0f1629] leading-[1.0] tracking-tighter">
-                Built for serious <br />
-                <span className="text-[#b8942f]">Section 8 acquisition work.</span>
-              </h2>
-              <p className="text-sm sm:text-base md:text-lg text-[#64748b] font-medium leading-snug">
-                The product is centered on real inventory, disciplined analysis, verification context, and a stateful workflow that does not lose the deal history.
-              </p>
-            </div>
-            <div className="lg:col-span-6 grid gap-2">
-              {[
-                "Real for-sale inventory first",
-                "Section 8-specific analysis",
-                "PHA and ATTOM verification context",
-                "Stateful 0G-backed workflow"
-              ].map((signal) => (
-                <div key={signal} className="flex items-center gap-2 p-3 sm:p-4 rounded-2xl bg-gray-50 border border-gray-100 hover-lift transition-all">
-                  <CheckCircle2 className="text-[#0d9668]" size={16} />
-                  <span className="text-xs sm:text-sm font-bold text-[#0f1629]">{signal}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
+        {/* Platform Signals section removed per request */}
 
         {/* ─── FAQ ─── */}
         <section className="reveal-on-scroll max-w-4xl mx-auto space-y-8">

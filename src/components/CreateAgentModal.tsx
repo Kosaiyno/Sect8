@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { ethers } from "ethers";
 
 import { initializeAgentOnChain } from "@/lib/agentActivation";
 import { UserPreferences } from "@/lib/ogAgent";
@@ -25,6 +26,17 @@ export function CreateAgentModal({
   });
   const [loading, setLoading] = useState(false);
   const [activationPhase, setActivationPhase] = useState<string | null>(null);
+
+  // Helper to check balance
+  async function getUserBalance(address: string): Promise<bigint> {
+    try {
+      // Use window.ethereum provider
+      const provider = new ethers.BrowserProvider((window as any).ethereum);
+      return await provider.getBalance(address);
+    } catch {
+      return 0n;
+    }
+  }
 
   return (
     <div className="fixed inset-0 z-100 flex items-center justify-center bg-black/60 backdrop-blur-sm p-2">
@@ -89,15 +101,108 @@ export function CreateAgentModal({
           </div>
         </div>
 
-        <button 
+        <button
           disabled={loading}
           onClick={async () => {
             setLoading(true);
-            setActivationPhase('Preparing the first 0G memory root...');
+            setActivationPhase('Preparing wallet...');
+            console.log('CreateAgent: starting onboarding flow');
             try {
-              const owner = ((window as unknown as { ethereum?: EthereumWithSelectedAddress }).ethereum?.selectedAddress || '').trim();
+              let owner = ((window as unknown as { ethereum?: EthereumWithSelectedAddress }).ethereum?.selectedAddress || '').trim();
+              // If no selectedAddress, request accounts (wallet may be connected via connector UI)
+              if (!owner && (window as any).ethereum?.request) {
+                try {
+                  const accounts: string[] = await (window as any).ethereum.request({ method: 'eth_requestAccounts' });
+                  owner = (accounts && accounts[0]) || owner;
+                } catch (reqErr) {
+                  console.warn('eth_requestAccounts failed', reqErr);
+                }
+              }
+
               if (!owner) throw new Error('Connect your wallet first');
 
+              // 1. Always check balance and fund if needed
+              const balance = await getUserBalance(owner);
+              const minGas = ethers.parseEther('0.008'); // Require at least 0.008 native token
+              console.log('Current balance for', owner, 'is', balance.toString());
+
+              if (balance < minGas) {
+                setActivationPhase('Funding your wallet with gas for agent creation...');
+                console.log('Calling /api/fund-gas for', owner);
+                let fundJson: any = { success: false };
+                try {
+                  const fundRes = await fetch('/api/fund-gas', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ address: owner })
+                  });
+                  try {
+                    fundJson = await fundRes.json();
+                  } catch (jErr) {
+                    console.error('Failed to parse /api/fund-gas response as json', jErr);
+                    throw new Error('Invalid response from fund-gas');
+                  }
+                } catch (netErr) {
+                  console.error('Network error calling /api/fund-gas', netErr);
+                  alert('Network error while requesting gas funding: ' + String(netErr));
+                  throw netErr;
+                }
+
+                console.log('/api/fund-gas returned', fundJson);
+                if (!fundJson.success) {
+                  alert('Gas funding error: ' + (fundJson.error || 'Failed to fund wallet'));
+                  throw new Error(fundJson.error || 'Failed to fund wallet');
+                }
+
+                // If backend returned a txHash, wait for confirmation via the user's provider
+                if (fundJson.txHash) {
+                  try {
+                    setActivationPhase('Waiting for funding transaction confirmation...');
+                    console.log('Waiting for funding tx', fundJson.txHash);
+                    const browserProvider = new ethers.BrowserProvider((window as any).ethereum);
+                    let receipt: any = null;
+                    let waitTries = 0;
+                    while (waitTries < 40) {
+                      try {
+                        receipt = await browserProvider.getTransactionReceipt(fundJson.txHash);
+                      } catch (rErr) {
+                        console.warn('getTransactionReceipt error', rErr);
+                      }
+                      if (receipt && receipt.blockNumber) {
+                        console.log('Funding tx receipt', receipt);
+                        break;
+                      }
+                      await new Promise(res => setTimeout(res, 3000));
+                      waitTries++;
+                    }
+                    if (!receipt || !receipt.blockNumber) {
+                      throw new Error('Funding transaction not confirmed in time');
+                    }
+                  } catch (waitErr) {
+                    console.error('Error waiting for funding tx confirmation', waitErr);
+                    throw waitErr;
+                  }
+                }
+
+                // Wait for funding to arrive (poll balance)
+                let tries = 0;
+                let funded = false;
+                while (tries < 20) {
+                  await new Promise(res => setTimeout(res, 3000));
+                  const newBalance = await getUserBalance(owner);
+                  console.log('Polled balance attempt', tries + 1, '->', newBalance.toString());
+                  if (newBalance >= minGas) {
+                    funded = true;
+                    break;
+                  }
+                  tries++;
+                }
+                if (!funded) throw new Error('Wallet funding timed out. Try again in a few moments.');
+              } else {
+                console.log('Balance sufficient, skipping fund-gas call');
+              }
+
+              setActivationPhase('Preparing the first 0G memory root...');
               const prepareResponse = await fetch('/api/agents/create', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -131,6 +236,7 @@ export function CreateAgentModal({
               onCreate(prefs);
             } catch (error) {
               alert('Failed to initialize agent: ' + String(error));
+              console.error('CreateAgentModal error', error);
             } finally {
               setLoading(false);
               setActivationPhase(null);
