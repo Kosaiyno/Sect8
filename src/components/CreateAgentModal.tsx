@@ -34,7 +34,7 @@ export function CreateAgentModal({
       const provider = new ethers.BrowserProvider((window as any).ethereum);
       return await provider.getBalance(address);
     } catch {
-      return 0n;
+      return BigInt(0);
     }
   }
 
