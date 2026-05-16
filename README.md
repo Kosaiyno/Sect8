@@ -23,21 +23,23 @@ Early outreach to real estate investors and operators generated positive feedbac
 
 ### Investor validation
 
-![Screenshot of Thom Sieloff's feedback on X](public/community-feedback/feedback%20from%20thom.jpeg)
+[![Screenshot of Thom Sieloff's feedback on X](public/community-feedback/feedback%20from%20thom.jpeg)](https://x.com/i/status/2054863572816060686)
 
 > "What you built here is excellent. If I were a Section 8 investor, I would absolutely use it."
 
 -- Thom Sieloff, Multifamily Investor
 
+Source: [Thom Sieloff feedback on X](https://x.com/i/status/2054863572816060686)
+
 ### Demo demand
 
-[![Screenshot of slumlordmillionaire requesting a Sect8 demo on X](public/community-feedback/feedback%20from%20slum.jpeg)](https://x.com/i/status/2054863572816060686)
+[![Screenshot of slumlordmillionaire requesting a Sect8 demo on X](public/community-feedback/feedback%20from%20slum.jpeg)](https://x.com/i/status/2055269303692284306)
 
 > "Let me get a demo"
 
 -- slumlordmillionaire
 
-Source: [slumlordmillionaire feedback on X](https://x.com/i/status/2054863572816060686)
+Source: [slumlordmillionaire feedback on X](https://x.com/i/status/2055269303692284306)
 
 The feedback particularly validated:
 
