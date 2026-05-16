@@ -17,6 +17,35 @@ The core workflow is:
 
 Sect8 is intentionally narrow. It is not a generic chat bot or a general market browser. It is a Section 8 deal-finding and underwriting workflow anchored on 0G Compute, 0G Storage, and 0G Chain.
 
+## Early Community Feedback
+
+Early outreach to real estate investors and operators generated positive feedback around the usability and market relevance of Sect8.
+
+### Investor validation
+
+![Screenshot of Thom Sieloff's feedback on X](public/community-feedback/feedback%20from%20thom.jpeg)
+
+> "What you built here is excellent. If I were a Section 8 investor, I would absolutely use it."
+
+-- Thom Sieloff, Multifamily Investor
+
+### Demo demand
+
+[![Screenshot of slumlordmillionaire requesting a Sect8 demo on X](public/community-feedback/feedback%20from%20slum.jpeg)](https://x.com/i/status/2054863572816060686)
+
+> "Let me get a demo"
+
+-- slumlordmillionaire
+
+Source: [slumlordmillionaire feedback on X](https://x.com/i/status/2054863572816060686)
+
+The feedback particularly validated:
+
+- the Market discovery workflow
+- underwriting UX
+- investor-focused positioning
+- demand from Section 8-focused markets
+
 ## Hackathon Progress
 
 During the hackathon, Sect8 moved from a prototype into a product workflow backed by real external data and real 0G infrastructure.
