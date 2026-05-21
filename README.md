@@ -41,6 +41,27 @@ Source: [Thom Sieloff feedback on X](https://x.com/i/status/2054863572816060686)
 
 Source: [slumlordmillionaire feedback on X](https://x.com/i/status/2055269303692284306)
 
+### Facebook outreach testing
+
+We began testing Sect8 directly with Section 8 investor communities through Facebook outreach and targeted ads.
+
+Within early testing, we started receiving inbound investor questions about pricing, onboarding, and deal analysis workflows.
+
+This validated two things:
+
+1. Investors are actively searching for better underwriting workflows.
+2. AI-assisted Section 8 analysis reduces friction compared to spreadsheets and manual research.
+
+Example investor inquiry during testing:
+
+![Screenshot of Tonaya feedback from Facebook outreach testing](public/community-feedback/tonaya%20feedback.jpeg)
+
+### Infrastructure provider engagement
+
+We also received positive engagement from RentCast, one of the infrastructure providers powering our real estate data layer.
+
+![Screenshot of RentCast validation from community engagement](public/community-feedback/rentcast%20validation.jpeg)
+
 The feedback particularly validated:
 
 - the Market discovery workflow
