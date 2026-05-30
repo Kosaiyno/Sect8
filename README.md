@@ -467,11 +467,29 @@ HUD_USER_API_TOKEN=your_hud_token_optional
 HUD_ENABLE_LIVE_FETCH=0
 ```
 
+x402 / Agentic Market variables:
+
+```bash
+# Testnet default
+X402_NETWORK=eip155:84532
+X402_FACILITATOR_URL=https://x402.org/facilitator
+
+# Mainnet / Agentic Market production
+# X402_NETWORK=eip155:8453
+# CDP_API_KEY_ID=your_cdp_api_key_id
+# CDP_API_KEY_SECRET=your_cdp_api_key_secret
+
+X402_PAY_TO=0xYourReceivingWallet
+X402_SECTION8_ANALYSIS_PRICE=$0.05
+```
+
 Notes:
 
 - If `HUD_ENABLE_LIVE_FETCH` is disabled, Sect8 reads the committed HUD cache from `data/hud-fmr-cache.json`.
 - If ATTOM is unavailable, the property dossier still renders, but ATTOM-backed verification sections will be limited.
 - If RentCast is unavailable, live sale listings are unavailable and the app relies on cached listing data where present.
+- The paid Agentic Market endpoint is `POST /api/x402/section8-analysis`. It accepts either `{ "listingId": "...", "listingsRoot": "..." }` for an existing Sect8 listing, or direct property input such as `{ "address": "...", "zipCode": "48204", "purchasePrice": 85000, "bedrooms": 3 }`.
+- For Agentic Market discovery, deploy the app publicly over HTTPS and validate the paid endpoint at `https://agentic.market/validate`.
 
 ### Install
 
