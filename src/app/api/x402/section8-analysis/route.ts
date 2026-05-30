@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { withX402 } from '@x402/next';
+import { withX402FromHTTPServer } from '@x402/next';
 
 import { read0gJson, write0gJson, type ListingsSnapshot } from '@/lib/0gPersistence';
 import { getOrCreatePropertyAnalysis } from '@/lib/propertyAnalysis';
@@ -7,7 +7,7 @@ import { getPropertyDetailBundle, type PropertyDetailBundle } from '@/lib/proper
 import { getFairMarketRent, normalizePropertyType } from '@/lib/realDataService';
 import { resolveHousingAuthorityContact } from '@/lib/phaDirectory';
 import { calculateUnderwriting } from '@/lib/underwriting';
-import { section8AnalysisRouteConfig, x402Server } from '@/lib/x402Server';
+import { section8AnalysisHttpServer } from '@/lib/x402Server';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -215,14 +215,12 @@ async function discoveryHandler(): Promise<NextResponse<unknown>> {
   });
 }
 
-export const GET = withX402(
+export const GET = withX402FromHTTPServer(
   discoveryHandler,
-  section8AnalysisRouteConfig,
-  x402Server,
+  section8AnalysisHttpServer,
 );
 
-export const POST = withX402(
+export const POST = withX402FromHTTPServer(
   analysisHandler,
-  section8AnalysisRouteConfig,
-  x402Server,
+  section8AnalysisHttpServer,
 );

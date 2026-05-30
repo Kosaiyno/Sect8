@@ -4,7 +4,7 @@ import { facilitator as cdpFacilitator } from '@coinbase/x402';
 import { HTTPFacilitatorClient } from '@x402/core/server';
 import { ExactEvmScheme } from '@x402/evm/exact/server';
 import { declareDiscoveryExtension } from '@x402/extensions/bazaar';
-import { type Network, type RouteConfig, x402ResourceServer } from '@x402/next';
+import { type Network, type RouteConfig, x402HTTPResourceServer, x402ResourceServer } from '@x402/next';
 
 const DEFAULT_TESTNET_FACILITATOR = 'https://x402.org/facilitator';
 export const X402_SECTION8_ANALYSIS_PATH = '/api/x402/section8-analysis';
@@ -161,3 +161,10 @@ export const section8AnalysisRouteConfig: RouteConfig = {
     }),
   },
 };
+
+export const section8AnalysisHttpServer = new x402HTTPResourceServer(
+  x402Server,
+  {
+    [X402_SECTION8_ANALYSIS_PATH]: section8AnalysisRouteConfig,
+  },
+);
