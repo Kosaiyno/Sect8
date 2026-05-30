@@ -9,6 +9,25 @@ import { type Network, type RouteConfig, x402ResourceServer } from '@x402/next';
 const DEFAULT_TESTNET_FACILITATOR = 'https://x402.org/facilitator';
 export const X402_SECTION8_ANALYSIS_PATH = '/api/x402/section8-analysis';
 
+function getAppOrigin() {
+  const configuredUrl = process.env.NEXT_PUBLIC_APP_URL
+    || process.env.NEXT_PUBLIC_SITE_URL
+    || process.env.VERCEL_PROJECT_PRODUCTION_URL
+    || process.env.VERCEL_URL
+    || 'sect8.xyz';
+
+  return configuredUrl.startsWith('http') ? configuredUrl : `https://${configuredUrl}`;
+}
+
+function getX402ResourceUrl() {
+  const explicitUrl = process.env.X402_RESOURCE_URL?.trim();
+  if (explicitUrl) {
+    return explicitUrl;
+  }
+
+  return new URL(X402_SECTION8_ANALYSIS_PATH, getAppOrigin()).toString();
+}
+
 const analysisInputExample = {
   address: '8773 Petoskey Ave, Detroit, MI 48204',
   zipCode: '48204',
@@ -80,7 +99,7 @@ export const section8AnalysisRouteConfig: RouteConfig = {
     network: getX402Network(),
     payTo: () => getPayToAddress(),
   },
-  resource: X402_SECTION8_ANALYSIS_PATH,
+  resource: getX402ResourceUrl(),
   serviceName: 'Sect8',
   description: 'Generate a Section 8 property underwriting memo with rent support, cash flow, ROI, risk context, housing-authority contact details, and 0G Compute/Storage proof metadata.',
   mimeType: 'application/json',

@@ -479,6 +479,7 @@ X402_FACILITATOR_URL=https://x402.org/facilitator
 # CDP_API_KEY_ID=your_cdp_api_key_id
 # CDP_API_KEY_SECRET=your_cdp_api_key_secret
 
+X402_RESOURCE_URL=https://sect8.xyz/api/x402/section8-analysis
 X402_PAY_TO=0xYourReceivingWallet
 X402_SECTION8_ANALYSIS_PRICE=$0.05
 ```
