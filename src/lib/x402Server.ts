@@ -38,26 +38,66 @@ const analysisInputExample = {
 
 const analysisOutputExample = {
   success: true,
+  endpoint: 'POST /api/x402/section8-analysis',
+  paid: true,
   service: 'Sect8 Section 8 underwriting analysis',
   listing: {
+    id: 'x402-48204-example',
     address: '8773 Petoskey Ave, Detroit, MI 48204',
-    price: 85000,
-    beds: 3,
-    baths: 1,
+    zipCode: '48204',
+    purchasePrice: 85000,
+    bedrooms: 3,
+    bathrooms: 1,
+    propertyType: 'Single Family',
   },
   underwriting: {
-    monthlyCashflow: 1260,
-    capRate: 12.8,
-    roi: 12.8,
+    fmr: 1724,
+    fmrSource: 'hud',
+    estimatedRent: 1724,
+    annualRent: 20688,
+    estimatedExpenses: 7241,
+    netOperatingIncome: 13447,
+    monthlyCashflow: 1121,
+    annualCashflow: 13447,
+    capRate: 15.82,
+    roi: 15.82,
+  },
+  housingAuthority: {
+    name: 'Detroit Housing Commission',
+    phone: '(313)877-8805',
+    email: 'tuckeri@dhcmi.org',
+    matchedBy: 'city',
   },
   analysis: {
-    score: 78,
+    score: 72,
     verdict: 'Good Section 8 candidate.',
-    headline: 'Property has verified rent support and attractive cash-flow potential.',
+    headline: '3-bedroom Detroit single-family home shows high cash flow potential under HUD FMR.',
+    summary: 'Sect8 compares the property against HUD FMR, projected cash flow, ROI, local housing authority context, ownership/risk signals, and 0G proof metadata.',
+    strengths: [
+      'Rent support aligns with HUD FMR',
+      'Strong projected monthly cash flow',
+      'Housing authority contact identified',
+    ],
+    risks: [
+      'Ownership and title details need independent verification',
+      'Property condition should be checked before purchase',
+    ],
+    nextSteps: [
+      'Verify local voucher payment standards',
+      'Order title search and inspection',
+    ],
+    confidence: 65,
   },
   proof: {
     provider: '0g-compute',
-    storageRoot: '0x...',
+    compute: {
+      providerAddress: '0x1B3AAef3ae5050EEE04ea38cD4B087472BD85EB0',
+      model: 'deepseek/deepseek-chat-v3-0324',
+      status: 200,
+    },
+    storageRoot: '0x09e20012c61b40f3334fe1421389c1c0f04f6dce61254d731fe83c5f9e91ed8e',
+    storageType: 'property-analysis',
+    fromCache: false,
   },
 };
 
@@ -114,6 +154,7 @@ export const section8AnalysisRouteConfig: RouteConfig = {
       input: {
         ...analysisInputExample,
       },
+      outputExample: analysisOutputExample,
     },
   }),
   extensions: {
