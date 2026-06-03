@@ -73,6 +73,36 @@ const analysisOutputExample = {
     verdict: 'Good Section 8 candidate.',
     headline: '3-bedroom Detroit single-family home shows high cash flow potential under HUD FMR.',
     summary: 'Sect8 compares the property against HUD FMR, projected cash flow, ROI, local housing authority context, ownership/risk signals, and 0G proof metadata.',
+    strategyFit: [
+      {
+        strategy: 'section8',
+        label: 'Section 8',
+        score: 82,
+        verdict: 'Strong',
+        rationale: 'HUD rent support is available and the property has positive projected cash flow.',
+      },
+      {
+        strategy: 'longTermRental',
+        label: 'Long-term rental',
+        score: 74,
+        verdict: 'Moderate',
+        rationale: 'The property can work as a cash-flow rental if market rent and vacancy assumptions hold.',
+      },
+      {
+        strategy: 'brrrr',
+        label: 'BRRRR',
+        score: 61,
+        verdict: 'Possible',
+        rationale: 'The deal needs rehab, ARV, and refinance assumptions before it can be treated as a BRRRR candidate.',
+      },
+      {
+        strategy: 'fixAndFlip',
+        label: 'Fix and flip',
+        score: 42,
+        verdict: 'Weak',
+        rationale: 'Flip fit is weak until ARV, rehab scope, days-on-market, and resale margin are verified.',
+      },
+    ],
     strengths: [
       'Rent support aligns with HUD FMR',
       'Strong projected monthly cash flow',
@@ -141,7 +171,7 @@ export const section8AnalysisRouteConfig: RouteConfig = {
   },
   resource: getX402ResourceUrl(),
   serviceName: 'Sect8',
-  description: 'Generate a Section 8 property underwriting memo with rent support, cash flow, ROI, risk context, housing-authority contact details, and 0G Compute/Storage proof metadata.',
+  description: 'Generate a real estate underwriting memo with strategy fit across Section 8, long-term rental, BRRRR, fix-and-flip, small multifamily, and wholesale, plus rent support, cash flow, ROI, risk context, housing-authority contact details, and 0G Compute/Storage proof metadata.',
   mimeType: 'application/json',
   tags: ['real-estate', 'section-8', 'underwriting', '0g-compute', 'property-analysis'],
   unpaidResponseBody: async () => ({

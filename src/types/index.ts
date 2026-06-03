@@ -47,6 +47,12 @@ export interface AgentMemory {
   preferences: {
     minRoi: number;
     preferredLocations: string[];
+    primaryStrategy?: string;
+    minCashflow?: number;
+    minCapRate?: number;
+    riskTolerance?: string;
+    rehabTolerance?: string;
+    propertyTypes?: string[];
   };
   history: string[];
   lastStorageCid?: string;

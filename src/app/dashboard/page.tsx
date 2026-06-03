@@ -5,7 +5,7 @@ import { filterExcludedListings } from '@/lib/listingExclusionClient';
 
 import { useEffect, useRef, useState } from "react";
 import { Recommendation } from "@/types";
-import { Wallet, Brain, Database, TrendingUp, ShieldCheck, CheckCircle2 } from "lucide-react";
+import { Wallet, Brain, Database, TrendingUp, ShieldCheck, CheckCircle2, SlidersHorizontal, Save } from "lucide-react";
 import { useAccount } from "wagmi";
 import AgentHeader from '@/components/AgentHeader';
 import HeroSection from '@/components/HeroSection';
@@ -60,6 +60,39 @@ type DashboardViewState = {
   usingFallback: boolean;
 };
 
+type InvestorBuyBox = {
+  primaryStrategy: string;
+  zipCode: string;
+  minBedrooms: number;
+  maxPrice: number;
+  minRoi: number;
+  minCashflow: number;
+  minCapRate: number;
+  riskTolerance: string;
+  rehabTolerance: string;
+};
+
+const DEFAULT_BUY_BOX: InvestorBuyBox = {
+  primaryStrategy: 'section8',
+  zipCode: '48201',
+  minBedrooms: 3,
+  maxPrice: 150000,
+  minRoi: 0.1,
+  minCashflow: 500,
+  minCapRate: 8,
+  riskTolerance: 'medium',
+  rehabTolerance: 'light',
+};
+
+const STRATEGY_OPTIONS = [
+  { value: 'section8', label: 'Section 8' },
+  { value: 'longTermRental', label: 'Long-term rental' },
+  { value: 'brrrr', label: 'BRRRR' },
+  { value: 'fixAndFlip', label: 'Fix and flip' },
+  { value: 'smallMultifamily', label: 'Small multifamily' },
+  { value: 'cashflowBuyHold', label: 'Cash-flow buy and hold' },
+];
+
 function getAgentStorageKey(address: string) {
   return `agent-${address.toLowerCase()}`;
 }
@@ -86,6 +119,21 @@ function isExcludedListingLike(item: { address?: string | null; id?: string | nu
     || value.includes('vacant land'));
 }
 
+function normalizeBuyBox(preferences: Record<string, unknown> | null | undefined): InvestorBuyBox {
+  const prefs = preferences || {};
+  return {
+    primaryStrategy: String(prefs.primaryStrategy || DEFAULT_BUY_BOX.primaryStrategy),
+    zipCode: String(prefs.zipCode || DEFAULT_BUY_BOX.zipCode),
+    minBedrooms: Number(prefs.minBedrooms || DEFAULT_BUY_BOX.minBedrooms),
+    maxPrice: Number(prefs.maxPrice || DEFAULT_BUY_BOX.maxPrice),
+    minRoi: Number(prefs.minRoi || DEFAULT_BUY_BOX.minRoi),
+    minCashflow: Number(prefs.minCashflow || DEFAULT_BUY_BOX.minCashflow),
+    minCapRate: Number(prefs.minCapRate || DEFAULT_BUY_BOX.minCapRate),
+    riskTolerance: String(prefs.riskTolerance || DEFAULT_BUY_BOX.riskTolerance),
+    rehabTolerance: String(prefs.rehabTolerance || DEFAULT_BUY_BOX.rehabTolerance),
+  };
+}
+
 export default function Dashboard() {
   const { address, isConnected } = useAccount();
   const [zipOptions, setZipOptions] = useState<Array<{ zipCode: string; city: string; state: string; label: string }>>([]);
@@ -106,9 +154,17 @@ export default function Dashboard() {
   const [scanNotice, setScanNotice] = useState<string | null>(null);
   const [isScanning, setIsScanning] = useState(false);
   const [hasScanError, setHasScanError] = useState(false);
+  const [buyBoxDraft, setBuyBoxDraft] = useState<InvestorBuyBox>(DEFAULT_BUY_BOX);
+  const [buyBoxStatus, setBuyBoxStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
   const hydratedRef = useRef(false);
   const initialBoardLoadTriggeredRef = useRef(false);
   const visibleRecommendations = recommendations.filter((recommendation) => !isExcludedListingLike(recommendation));
+
+  useEffect(() => {
+    if (agent?.preferences) {
+      setBuyBoxDraft(normalizeBuyBox(agent.preferences));
+    }
+  }, [agent?.preferences]);
 
   const handleActivated = (nextAgent: DashboardAgent) => {
     const activeAgent = { ...nextAgent, status: 'active' };
@@ -116,6 +172,70 @@ export default function Dashboard() {
     setChecked(true);
     if (address) {
       localStorage.setItem(getAgentStorageKey(address), JSON.stringify(activeAgent));
+    }
+  };
+
+  const saveBuyBox = async () => {
+    if (!agent || !address) {
+      return;
+    }
+
+    const nextPreferences = {
+      ...agent.preferences,
+      ...buyBoxDraft,
+    };
+    const nextAgent = {
+      ...agent,
+      preferences: nextPreferences,
+      memory: {
+        ...agent.memory,
+        preferences: nextPreferences,
+        history: [
+          ...(agent.memory?.history || []),
+          `Investor buy box updated at ${new Date().toISOString()}`,
+        ],
+      },
+    } as DashboardAgent;
+
+    setBuyBoxStatus('saving');
+    setAgent(nextAgent);
+    setSelectedZip(String(nextPreferences.zipCode || selectedZip));
+    localStorage.setItem(getAgentStorageKey(address), JSON.stringify(nextAgent));
+
+    try {
+      const response = await fetch('/api/agents/manage', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          owner: address,
+          recordRoot: nextAgent.recordRoot || null,
+          memory: {
+            ...nextAgent.memory,
+            owner: address,
+            preferences: nextPreferences,
+          },
+        }),
+      });
+      const json = await response.json();
+      if (!json.success) {
+        throw new Error(json.error || 'Failed to save buy box');
+      }
+
+      const syncedAgent = {
+        ...nextAgent,
+        recordRoot: json.recordRoot || nextAgent.recordRoot || null,
+        memory: {
+          ...nextAgent.memory,
+          memoryRoot: json.memoryRoot || nextAgent.memory.memoryRoot || null,
+        },
+      } as DashboardAgent;
+      setAgent(syncedAgent);
+      localStorage.setItem(getAgentStorageKey(address), JSON.stringify(syncedAgent));
+      setBuyBoxStatus('saved');
+      window.setTimeout(() => setBuyBoxStatus('idle'), 2200);
+    } catch (error) {
+      console.error('Failed to save buy box', error);
+      setBuyBoxStatus('error');
     }
   };
 
@@ -294,7 +414,12 @@ export default function Dashboard() {
       const res = await fetch('/api/agents/search', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ zipCode: normalizedZip, owner: address, recordRoot: agent ? agent.recordRoot || null : null })
+        body: JSON.stringify({
+          zipCode: normalizedZip,
+          owner: address,
+          recordRoot: agent ? agent.recordRoot || null : null,
+          preferences: nextAgent.preferences,
+        })
       });
       const json = await res.json();
       if (!json.success) throw new Error(json.error || 'Scan failed');
@@ -330,7 +455,12 @@ export default function Dashboard() {
       const res = await fetch('/api/agents/search', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ filters: filterSearch, owner: address, recordRoot: agent ? agent.recordRoot || null : null }),
+        body: JSON.stringify({
+          filters: filterSearch,
+          owner: address,
+          recordRoot: agent ? agent.recordRoot || null : null,
+          preferences: agent?.preferences || buyBoxDraft,
+        }),
       });
       const json = await res.json();
       if (!json.success) {
@@ -437,6 +567,143 @@ export default function Dashboard() {
         isWorking={isScanning}
         hasError={hasScanError}
       />
+
+      <section className="fintech-card p-4 sm:p-6 md:p-8">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+          <div>
+            <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.24em] text-[#b8942f]">
+              <SlidersHorizontal size={14} />
+              Investor Buy Box
+            </div>
+            <h2 className="mt-3 font-outfit text-2xl font-black tracking-[-0.04em] text-[#0f1629]">Edit how your agent evaluates deals</h2>
+            <p className="mt-2 max-w-3xl text-sm leading-7 text-[#64748b]">
+              These criteria live with your agent memory and can be changed anytime. Property pages still evaluate every home across multiple strategies, but scans and agent memory use this buy box as your operating focus.
+            </p>
+          </div>
+          <button
+            onClick={saveBuyBox}
+            disabled={buyBoxStatus === 'saving'}
+            className="btn-primary inline-flex items-center justify-center gap-2 px-5 py-3 text-sm disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            <Save size={15} />
+            {buyBoxStatus === 'saving' ? 'Saving' : buyBoxStatus === 'saved' ? 'Saved' : 'Save Buy Box'}
+          </button>
+        </div>
+
+        <div className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+          <div>
+            <label className="mb-2 block text-[10px] font-black uppercase tracking-[0.24em] text-[#64748b]/60">Primary Strategy</label>
+            <select
+              value={buyBoxDraft.primaryStrategy}
+              onChange={(event) => setBuyBoxDraft((current) => ({ ...current, primaryStrategy: event.target.value }))}
+              className="dashboard-field w-full rounded-2xl px-5 py-3.5 text-sm font-bold outline-hidden color-scheme-light text-[#0f1629]"
+            >
+              {STRATEGY_OPTIONS.map((option) => (
+                <option key={option.value} value={option.value}>{option.label}</option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="mb-2 block text-[10px] font-black uppercase tracking-[0.24em] text-[#64748b]/60">Target ZIP</label>
+            <input
+              value={buyBoxDraft.zipCode}
+              onChange={(event) => setBuyBoxDraft((current) => ({ ...current, zipCode: event.target.value.replace(/\D/g, '').slice(0, 5) }))}
+              className="dashboard-field w-full rounded-2xl px-5 py-3.5 text-sm font-bold outline-hidden"
+            />
+          </div>
+
+          <div>
+            <label className="mb-2 block text-[10px] font-black uppercase tracking-[0.24em] text-[#64748b]/60">Min Bedrooms</label>
+            <input
+              type="number"
+              min="0"
+              value={buyBoxDraft.minBedrooms}
+              onChange={(event) => setBuyBoxDraft((current) => ({ ...current, minBedrooms: Number(event.target.value || 0) }))}
+              className="dashboard-field w-full rounded-2xl px-5 py-3.5 text-sm font-bold outline-hidden"
+            />
+          </div>
+
+          <div>
+            <label className="mb-2 block text-[10px] font-black uppercase tracking-[0.24em] text-[#64748b]/60">Max Price</label>
+            <input
+              type="number"
+              min="0"
+              value={buyBoxDraft.maxPrice}
+              onChange={(event) => setBuyBoxDraft((current) => ({ ...current, maxPrice: Number(event.target.value || 0) }))}
+              className="dashboard-field w-full rounded-2xl px-5 py-3.5 text-sm font-bold outline-hidden"
+            />
+          </div>
+
+          <div>
+            <label className="mb-2 block text-[10px] font-black uppercase tracking-[0.24em] text-[#64748b]/60">Minimum ROI (%)</label>
+            <input
+              type="number"
+              min="0"
+              step="0.1"
+              value={Number(buyBoxDraft.minRoi * 100).toFixed(1)}
+              onChange={(event) => setBuyBoxDraft((current) => ({ ...current, minRoi: Number(event.target.value || 0) / 100 }))}
+              className="dashboard-field w-full rounded-2xl px-5 py-3.5 text-sm font-bold outline-hidden"
+            />
+          </div>
+
+          <div>
+            <label className="mb-2 block text-[10px] font-black uppercase tracking-[0.24em] text-[#64748b]/60">Min Cashflow</label>
+            <input
+              type="number"
+              value={buyBoxDraft.minCashflow}
+              onChange={(event) => setBuyBoxDraft((current) => ({ ...current, minCashflow: Number(event.target.value || 0) }))}
+              className="dashboard-field w-full rounded-2xl px-5 py-3.5 text-sm font-bold outline-hidden"
+            />
+          </div>
+
+          <div>
+            <label className="mb-2 block text-[10px] font-black uppercase tracking-[0.24em] text-[#64748b]/60">Min Cap Rate (%)</label>
+            <input
+              type="number"
+              min="0"
+              step="0.1"
+              value={buyBoxDraft.minCapRate}
+              onChange={(event) => setBuyBoxDraft((current) => ({ ...current, minCapRate: Number(event.target.value || 0) }))}
+              className="dashboard-field w-full rounded-2xl px-5 py-3.5 text-sm font-bold outline-hidden"
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="mb-2 block text-[10px] font-black uppercase tracking-[0.24em] text-[#64748b]/60">Risk</label>
+              <select
+                value={buyBoxDraft.riskTolerance}
+                onChange={(event) => setBuyBoxDraft((current) => ({ ...current, riskTolerance: event.target.value }))}
+                className="dashboard-field w-full rounded-2xl px-4 py-3.5 text-sm font-bold outline-hidden color-scheme-light text-[#0f1629]"
+              >
+                <option value="low">Low</option>
+                <option value="medium">Medium</option>
+                <option value="high">High</option>
+              </select>
+            </div>
+            <div>
+              <label className="mb-2 block text-[10px] font-black uppercase tracking-[0.24em] text-[#64748b]/60">Rehab</label>
+              <select
+                value={buyBoxDraft.rehabTolerance}
+                onChange={(event) => setBuyBoxDraft((current) => ({ ...current, rehabTolerance: event.target.value }))}
+                className="dashboard-field w-full rounded-2xl px-4 py-3.5 text-sm font-bold outline-hidden color-scheme-light text-[#0f1629]"
+              >
+                <option value="none">None</option>
+                <option value="light">Light</option>
+                <option value="medium">Medium</option>
+                <option value="heavy">Heavy</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        {buyBoxStatus === 'error' ? (
+          <div className="mt-4 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">
+            Buy box saved locally, but syncing to 0G memory failed. Try saving again.
+          </div>
+        ) : null}
+      </section>
 
       {usingFallback && (
         <div className="rounded-[28px] border border-amber-300/20 bg-amber-400/05 p-4 text-sm text-amber-900 shadow-sm backdrop-blur-md sm:rounded-[32px] sm:p-6">

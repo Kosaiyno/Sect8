@@ -8,6 +8,12 @@ export interface UserPreferences {
   minBedrooms: number;
   maxPrice: number;
   minRoi: number;
+  primaryStrategy?: 'section8' | 'longTermRental' | 'brrrr' | 'fixAndFlip' | 'smallMultifamily' | 'cashflowBuyHold';
+  minCashflow?: number;
+  minCapRate?: number;
+  riskTolerance?: 'low' | 'medium' | 'high';
+  rehabTolerance?: 'none' | 'light' | 'medium' | 'heavy';
+  propertyTypes?: string[];
 }
 
 export class OGAgent {
@@ -27,6 +33,12 @@ export class OGAgent {
       preferences: {
         minRoi: preferences.minRoi,
         preferredLocations: [preferences.zipCode],
+        primaryStrategy: preferences.primaryStrategy || 'section8',
+        minCashflow: preferences.minCashflow || 0,
+        minCapRate: preferences.minCapRate || 0,
+        riskTolerance: preferences.riskTolerance || 'medium',
+        rehabTolerance: preferences.rehabTolerance || 'light',
+        propertyTypes: preferences.propertyTypes || ['Single Family'],
       },
       history: [`Agent initialization started by ${owner}`],
     };
@@ -75,11 +87,11 @@ export class OGAgent {
     // 2. Compute Logic (Use 0G Compute service)
     let recommendations: Recommendation[] = [];
     try {
-      const prompt = `You are a Section 8 investment analyst. Score and rank these properties for this agent. Return JSON array only.\n\nAgent: ${JSON.stringify(this.memory)}\nPreferences: ${JSON.stringify(this.preferences)}\nProperties: ${JSON.stringify(properties)}`;
+      const prompt = `You are a real estate acquisition agent. Score and rank these properties for this investor's buy box and primary strategy. Section 8 is one strategy, but also consider long-term rental, BRRRR, fix-and-flip, small multifamily, and cash-flow buy-and-hold fit. Return JSON array only.\n\nAgent: ${JSON.stringify(this.memory)}\nPreferences: ${JSON.stringify(this.preferences)}\nProperties: ${JSON.stringify(properties)}`;
       const computeResp = await zgCompute.runAnalysis({
         model: process.env.OG_COMPUTE_MODEL,
         messages: [
-          { role: 'system' as const, content: 'You rank Section 8 investment properties and return structured JSON only.' },
+          { role: 'system' as const, content: 'You rank real estate investment properties across investor strategies and return structured JSON only.' },
           { role: 'user' as const, content: prompt },
         ],
       });

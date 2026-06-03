@@ -119,6 +119,7 @@ export default function PropertyDetailsView({ bundle, analysisResult }: Property
   const strengths = cleanPresentationList(analysis.strengths);
   const risks = cleanPresentationList(analysis.risks);
   const nextSteps = cleanPresentationList(analysis.nextSteps);
+  const strategyFit = Array.isArray(analysis.strategyFit) ? analysis.strategyFit : [];
   const [copyState, setCopyState] = useState<'idle' | 'copied' | 'error'>('idle');
   const address = String(listing.address || '').trim();
   const searchLinks = address ? [
@@ -231,7 +232,7 @@ export default function PropertyDetailsView({ bundle, analysisResult }: Property
 
       {/* ANALYSIS BENTO */}
       <div className="bento-grid">
-        <section className="fintech-card bento-item-8 p-6 sm:p-8 md:p-10 hover-lift">
+        <section className="fintech-card col-span-12 p-6 sm:p-8 md:p-10 hover-lift">
           <div className="space-y-8">
             <div>
               <div className="platform-chip mb-6">
@@ -241,6 +242,37 @@ export default function PropertyDetailsView({ bundle, analysisResult }: Property
               <h2 className="font-outfit text-2xl sm:text-3xl md:text-5xl font-black tracking-[-0.05em] text-[#0f1629]">{cleanPresentationText(analysis.headline)}</h2>
               <p className="mt-5 sm:mt-6 text-sm sm:text-base leading-7 sm:leading-8 text-[#64748b]">{cleanPresentationText(analysis.summary)}</p>
             </div>
+
+            {strategyFit.length ? (
+              <div className="space-y-4">
+                <div className="flex flex-wrap items-end justify-between gap-3">
+                  <div>
+                    <div className="text-[10px] font-black uppercase tracking-[0.24em] text-[#b8942f]">Strategy Fit</div>
+                    <p className="mt-2 text-sm leading-6 text-[#64748b]">General underwriting across major real estate strategies. User buy-box criteria can narrow this later.</p>
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+                  {strategyFit.map((item) => (
+                    <div key={item.strategy} className="dashboard-subpanel rounded-[24px] bg-white p-5 hover-lift">
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="min-w-0">
+                          <div className="text-sm font-black text-[#0f1629]">{item.label}</div>
+                          <div className="mt-1 text-[10px] font-black uppercase tracking-[0.2em] text-[#b8942f]">{item.verdict}</div>
+                        </div>
+                        <div className="shrink-0 rounded-full border border-[#b8942f]/15 bg-[#b8942f]/05 px-3 py-1.5 text-sm font-black text-[#b8942f]">{item.score}</div>
+                      </div>
+                      <p className="mt-4 text-sm font-medium leading-6 text-[#475569]">{cleanPresentationText(item.rationale)}</p>
+                      <div className="mt-4 flex flex-wrap gap-2">
+                        {item.keyMetrics.slice(0, 3).map((metric) => (
+                          <span key={metric} className="rounded-full bg-[#f8f9fb] px-3 py-1 text-[10px] font-bold text-[#64748b]">{metric}</span>
+                        ))}
+                      </div>
+                      <p className="mt-4 border-t border-[#eef0f3] pt-4 text-xs font-bold leading-5 text-[#0f1629]">{cleanPresentationText(item.nextStep)}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : null}
 
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div className="dashboard-subpanel rounded-[28px] p-6 hover-lift bg-white">
@@ -263,22 +295,6 @@ export default function PropertyDetailsView({ bundle, analysisResult }: Property
           </div>
         </section>
 
-        <section className="fintech-card bento-item-4 p-6 sm:p-8 flex flex-col items-center justify-center text-center hover-lift">
-          <div className="w-full space-y-8">
-            <div className="platform-eyebrow-muted text-xs tracking-widest uppercase">Section 8 Score</div>
-            <div className="relative inline-flex items-center justify-center">
-              <div className="absolute inset-0 rounded-full bg-[#b8942f]/10 animate-ping" />
-              <div className="relative h-36 w-36 sm:h-44 sm:w-44 rounded-full border-[10px] border-[#f8f9fb] bg-white flex flex-col items-center justify-center shadow-2xl">
-                <div className="font-outfit text-5xl sm:text-6xl font-black text-[#b8942f]">{analysis.score}</div>
-                <div className="text-[10px] font-black uppercase tracking-widest text-[#64748b]/60 mt-1">Section 8 Rating</div>
-              </div>
-            </div>
-            <div className="space-y-4">
-              <div className="text-xl sm:text-2xl font-black text-[#0f1629]">{cleanPresentationText(analysis.verdict)}</div>
-              <div className="platform-chip mx-auto">Confidence {analysis.confidence}%</div>
-            </div>
-          </div>
-        </section>
       </div>
 
       {/* POSITIVE / WATCHOUTS / ACTIONS */}

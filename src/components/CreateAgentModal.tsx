@@ -5,7 +5,7 @@ import { ethers } from "ethers";
 
 import { initializeAgentOnChain } from "@/lib/agentActivation";
 import { UserPreferences } from "@/lib/ogAgent";
-import { X, Target, DollarSign, Home, Percent } from "lucide-react";
+import { X } from "lucide-react";
 
 type EthereumWithSelectedAddress = {
   selectedAddress?: string;
@@ -47,58 +47,11 @@ export function CreateAgentModal({
 
         <div className="space-y-1">
           <h2 className="text-lg font-outfit font-black">Configure My Acquisition Agent</h2>
-          <p className="text-muted text-xs">Set the first scan parameters I should use across 0G compute, storage, and agent state.</p>
+          <p className="text-muted text-xs">Activate the on-chain agent first. You can edit strategy, risk, rehab, and underwriting criteria from the dashboard after the agent is created.</p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-          <div className="space-y-1">
-            <label className="text-[11px] font-bold uppercase text-muted flex items-center gap-1">
-              <Target size={12} /> Target ZIP Code
-            </label>
-            <input 
-              type="text" 
-              className="w-full bg-secondary border border-border rounded-xl px-3 py-2 focus:ring-2 focus:ring-primary outline-hidden text-sm"
-              value={prefs.zipCode}
-              onChange={(e) => setPrefs({...prefs, zipCode: e.target.value})}
-            />
-          </div>
-
-          <div className="space-y-1">
-            <label className="text-[11px] font-bold uppercase text-muted flex items-center gap-1">
-              <Home size={12} /> Min Bedrooms
-            </label>
-            <input 
-              type="number" 
-              className="w-full bg-secondary border border-border rounded-xl px-3 py-2 focus:ring-2 focus:ring-primary outline-hidden text-sm"
-              value={prefs.minBedrooms}
-              onChange={(e) => setPrefs({...prefs, minBedrooms: parseInt(e.target.value)})}
-            />
-          </div>
-
-          <div className="space-y-1">
-            <label className="text-[11px] font-bold uppercase text-muted flex items-center gap-1">
-              <DollarSign size={12} /> Max Budget
-            </label>
-            <input 
-              type="number" 
-              className="w-full bg-secondary border border-border rounded-xl px-3 py-2 focus:ring-2 focus:ring-primary outline-hidden text-sm"
-              value={prefs.maxPrice}
-              onChange={(e) => setPrefs({...prefs, maxPrice: parseInt(e.target.value)})}
-            />
-          </div>
-
-          <div className="space-y-1">
-            <label className="text-[11px] font-bold uppercase text-muted flex items-center gap-1">
-              <Percent size={12} /> Target ROI (%)
-            </label>
-            <input 
-              type="number" 
-              step="0.01"
-              className="w-full bg-secondary border border-border rounded-xl px-3 py-2 focus:ring-2 focus:ring-primary outline-hidden text-sm"
-              value={prefs.minRoi * 100}
-              onChange={(e) => setPrefs({...prefs, minRoi: parseFloat(e.target.value) / 100})}
-            />
-          </div>
+        <div className="rounded-2xl border border-border bg-secondary/60 p-4 text-sm leading-6 text-muted">
+          The dashboard will open with a default Detroit buy box. From there, users can adjust strategy, markets, cash-flow targets, cap-rate targets, risk tolerance, and rehab tolerance whenever they want.
         </div>
 
         <button

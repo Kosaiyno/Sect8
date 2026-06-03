@@ -21,7 +21,12 @@ type MemoryAgent = {
   preferences?: {
     zipCode?: string;
     strategy?: string;
+    primaryStrategy?: string;
     minRoi?: number;
+    minCashflow?: number;
+    minCapRate?: number;
+    riskTolerance?: string;
+    rehabTolerance?: string;
   };
   memory?: {
     learned?: string[];
@@ -69,7 +74,10 @@ export default function MemoryPanel({ agent }: MemoryPanelProps) {
   const learned = agent.memory?.learned || ['High cashflow (> $300/mo)', 'Section 8 stable zones'];
   const updates = agent.memory?.history?.slice(-5).reverse() || [];
   const memoryRoot = agent.memory?.memoryRoot || 'No memory root yet';
-  const riskProfile = Number(prefs.minRoi || 0) > 0 ? 'Conservative' : 'Balanced';
+  const riskProfile = prefs.riskTolerance ? `${prefs.riskTolerance}` : Number(prefs.minRoi || 0) > 0 ? 'Conservative' : 'Balanced';
+  const primaryStrategy = String(prefs.primaryStrategy || prefs.strategy || 'section8')
+    .replace(/([A-Z])/g, ' $1')
+    .replace(/^./, (char) => char.toUpperCase());
   const recentActions = agent.memory?.recentAnalyses || [];
 
   return (
@@ -101,11 +109,19 @@ export default function MemoryPanel({ agent }: MemoryPanelProps) {
             </div>
             <div>
               <div className="text-white/45">I am running strategy</div>
-              <div className="mt-1 font-semibold text-white">{prefs.strategy || 'Cashflow-first Section 8 acquisitions'}</div>
+              <div className="mt-1 font-semibold text-white">{primaryStrategy}</div>
             </div>
             <div>
               <div className="text-white/45">I am holding risk profile</div>
               <div className="mt-1 font-semibold text-white">{riskProfile}</div>
+            </div>
+            <div>
+              <div className="text-white/45">My minimum deal targets</div>
+              <div className="mt-1 font-semibold text-white">{formatCurrency(prefs.minCashflow, '/mo')} cash flow · {formatPercent(prefs.minCapRate)} cap</div>
+            </div>
+            <div>
+              <div className="text-white/45">Rehab tolerance</div>
+              <div className="mt-1 font-semibold text-white">{prefs.rehabTolerance || 'Light'}</div>
             </div>
           </div>
         </div>

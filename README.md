@@ -1,21 +1,66 @@
 # Sect8
 
-Sect8 is an AI acquisition agent for Section 8 rental investing. It creates a wallet-linked agent on 0G Mainnet, scans live or cached for-sale inventory, enriches each property with housing and ownership data, runs a 0G Compute-backed investment memo, and persists agent state plus analysis artifacts through 0G Storage.
+Sect8 is an AI real estate acquisition agent with a Section 8 underwriting specialty. It creates a wallet-linked agent on 0G Mainnet, scans live or cached for-sale inventory, enriches each property with housing and ownership data, evaluates multiple investment strategies, runs a 0G Compute-backed investment memo, and persists agent state plus analysis artifacts through 0G Storage.
 
 ## Project Overview
 
-Sect8 is built for investors who want a faster way to find and underwrite Section 8 opportunities before making an offer.
+Sect8 is built for investors who want a faster way to find, compare, and underwrite real estate opportunities before making an offer.
 
 The core workflow is:
 
 1. Create or restore a wallet-linked Sect8 agent.
 2. Pull property inventory and supporting housing data.
-3. Build underwriting inputs such as rent support, cash flow, cap rate, and ROI.
-4. Run a property memo through 0G Compute.
-5. Persist the resulting analysis and agent state through 0G Storage.
-6. Present a decision-ready property dossier with verification context for ownership, parcel records, deed history, hazard signals, and housing-authority contacts.
+3. Edit the investor buy box in the dashboard when strategy or criteria change.
+4. Build underwriting inputs such as rent support, cash flow, cap rate, ROI, value spread, and risk context.
+5. Evaluate each property across Section 8 rental, long-term rental, BRRRR, fix-and-flip, small multifamily, and wholesale strategies.
+6. Run a property memo through 0G Compute.
+7. Persist the resulting analysis and agent state through 0G Storage.
+8. Present a decision-ready property dossier with verification context for ownership, parcel records, deed history, hazard signals, and housing-authority contacts.
 
-Sect8 is intentionally narrow. It is not a generic chat bot or a general market browser. It is a Section 8 deal-finding and underwriting workflow anchored on 0G Compute, 0G Storage, and 0G Chain.
+Sect8 is not a generic chat bot or a general market browser. It is a real estate acquisition workflow anchored on 0G Compute, 0G Storage, and 0G Chain, with Section 8 as the first deep underwriting lane and broader investor strategies layered into the agent analysis.
+
+## New Agent Capabilities
+
+Sect8 now supports a broader acquisition workflow for real estate investors, not only Section 8 specialists.
+
+### Multi-strategy underwriting
+
+When a user opens a property without setting custom criteria, Sect8 evaluates the house across major investor strategies by default:
+
+- Section 8 rental
+- long-term rental
+- BRRRR
+- fix and flip
+- small multifamily
+- wholesale
+
+Each strategy receives its own fit score, verdict, rationale, key metrics, and recommended next step. This lets a user quickly see whether a house is best suited for voucher rental cash flow, conventional buy-and-hold, a rehab/refinance path, a flip, a small multifamily lens, or a wholesale spread.
+
+### Editable investor buy box
+
+Investor criteria are no longer set during agent creation. The agent is created first, then the user can edit the buy box directly from the dashboard.
+
+The dashboard buy box currently supports:
+
+- primary strategy
+- target ZIP
+- minimum bedrooms
+- maximum price
+- minimum ROI
+- minimum monthly cash flow
+- minimum cap rate
+- risk tolerance
+- rehab tolerance
+
+These preferences are saved into the agent state and synced through the 0G-backed memory flow. ZIP scans and filter-based searches both send the current buy box to the agent, so the agent can rank and interpret opportunities around the investor's active strategy.
+
+### Cleaner property analysis UX
+
+The property dossier now focuses on the full-width Agent Insights view instead of a separate oversized Section 8 score panel. The strategy grid carries the relevant deal-fit scores, while the memo explains the financial thesis, Section 8 fit, ownership profile, hazard context, watchouts, and next actions.
+
+### More reliable 0G Compute parsing
+
+The 0G Compute-backed analysis path now has stricter JSON instructions and a guarded parser for imperfect model responses. If 0G Compute returns usable output with minor formatting issues, Sect8 can still normalize the result and preserve the 0G provider proof instead of immediately falling back.
 
 ## Early Community Feedback
 
@@ -81,13 +126,17 @@ During the hackathon, Sect8 moved from a prototype into a product workflow backe
 - Integrated ATTOM for parcel, ownership, tax, sale-history, and area-risk context.
 - Integrated ZIP and county resolution services so listings can be connected to local housing-authority and voucher context.
 - Added underwriting calculations for projected cash flow, cap rate, and ROI so the product evaluates deals instead of only browsing listings.
+- Added multi-strategy underwriting so each property is evaluated across Section 8 rental, long-term rental, BRRRR, fix-and-flip, small multifamily, and wholesale use cases.
+- Added an editable dashboard investor buy box so users can update strategy, ZIP, price, ROI, cash-flow, cap-rate, risk, and rehab criteria after the agent is created.
 - Integrated 0G Compute for structured property analysis generation.
+- Hardened 0G Compute response parsing so minor model formatting issues do not automatically erase the compute-backed analysis path.
 - Integrated 0G Storage for agent memory, listing snapshots, ATTOM snapshots, and persisted analysis roots.
 - Deployed the Sect8AgentManager contract on 0G Mainnet and wired the create-agent flow to the deployed contract.
 - Made onchain agent initialization part of the real user journey instead of leaving chain usage as a side deployment.
 - Required verified onchain activation before restoring an agent, including persisted token ID and activation transaction hash.
 - Improved memory recovery so verified analyses shown in the dashboard are backed by persisted storage roots.
 - Reworked property analysis into a staged agent-analysis session with clearer loading states and runtime proof output.
+- Removed the oversized duplicate Section 8 score panel from the property page and made the Agent Insights analysis the primary full-width review surface.
 - Tightened slow external-fetch behavior so the app fails fast instead of hanging on delayed providers.
 - Added stricter listing exclusion so land and vacant-lot inventory are filtered out of the dashboard and market instead of being scored as Section 8 opportunities.
 
@@ -98,7 +147,7 @@ During the hackathon, Sect8 moved from a prototype into a product workflow backe
 The product was also rebranded during the hackathon.
 
 - Replaced the earlier prototype presentation with a more institutional product identity across the landing page, dashboard, market feed, and analysis surfaces.
-- Updated the website copy to position Sect8 as a Section 8 acquisition and underwriting platform instead of a generic AI demo.
+- Updated the website copy to position Sect8 as a real estate acquisition and underwriting platform with Section 8 as the first deep specialty instead of a generic AI demo.
 - Reworked the property-analysis experience so the UI now emphasizes decision-ready underwriting, proof of infrastructure usage, and verifiable data context.
 - Removed misleading or empty interface sections and aligned the product presentation with the real workflow that now exists behind it.
 
@@ -116,8 +165,9 @@ The result is not just a nicer interface. Sect8 now uses real listing data, real
 - Rent support layer: HUD Fair Market Rent data, with a modeled fallback when HUD support cannot be verified.
 - Property intelligence layer: ATTOM parcel, owner, tax, sale-history, and community risk context.
 - Voucher operations layer: local housing-authority directory matching by ZIP, city, county, and state.
-- Analysis layer: 0G Compute generates the structured investment memo.
-- Persistence layer: 0G Storage stores agent state, listings snapshots, ATTOM snapshots, and property-analysis payloads.
+- Investor criteria layer: dashboard buy-box preferences stored with the wallet-linked agent and sent into scans.
+- Analysis layer: 0G Compute generates the structured investment memo and strategy-fit analysis.
+- Persistence layer: 0G Storage stores agent state, buy-box preferences, listings snapshots, ATTOM snapshots, and property-analysis payloads.
 
 ### Architecture Diagram
 
@@ -125,14 +175,17 @@ The result is not just a nicer interface. Sect8 now uses real listing data, real
 flowchart LR
 	U[User Wallet] --> D[Dashboard]
 	D --> C[0G Chain Agent Creation]
+	D --> B[Dashboard Investor Buy Box]
 	D --> L[RentCast Listings + Cached Snapshots]
 	L --> H[HUD FMR + Modeled Rent]
 	L --> A[ATTOM Parcel + Ownership Data]
 	L --> P[PHA Directory Match]
+	B --> X[Property Underwriting]
 	H --> X[Property Underwriting]
 	A --> X
 	P --> X
-	X --> G[0G Compute Investment Memo]
+	X --> M[Multi-Strategy Fit]
+	M --> G[0G Compute Investment Memo]
 	G --> S[0G Storage Persistence]
 	S --> V[Agent Analysis View + Proof Panel]
 ```
@@ -230,7 +283,8 @@ What it does in Sect8:
 What it does in Sect8:
 
 - Generates the structured property investment memo.
-- Produces the summary, verdict, strengths, risks, next steps, and confidence.
+- Produces the summary, verdict, strategy-fit grid, strengths, risks, next steps, and confidence.
+- Evaluates each property across Section 8 rental, long-term rental, BRRRR, fix-and-flip, small multifamily, and wholesale strategies.
 - Returns the provider metadata used in the new Agent analysis proof panel.
 
 ### 3. 0G Storage
@@ -244,7 +298,7 @@ What it does in Sect8:
 What it does in Sect8:
 
 - Stores the initial agent memory root before on-chain activation.
-- Stores updated memory and agent record snapshots.
+- Stores updated memory, investor buy-box preferences, and agent record snapshots.
 - Stores listings snapshots and normalized listing payloads.
 - Stores ATTOM-backed property snapshots.
 - Stores property-analysis payloads and their retrievable storage roots.
@@ -254,11 +308,12 @@ What it does in Sect8:
 1. A user connects a wallet and creates or restores a Sect8 agent.
 2. The app prepares an initial memory object and uploads it to 0G Storage.
 3. The wallet signs a 0G Mainnet transaction that calls `initializeAgent` on the Sect8 agent manager contract.
-4. The dashboard runs a ZIP-based scan and loads listing inventory.
-5. When a property is opened, Sect8 assembles listing, rent, ATTOM, and housing-authority context.
-6. Sect8 computes underwriting inputs and sends the full property bundle to 0G Compute.
-7. The returned memo is normalized, stored to 0G Storage, and attached back to the property flow through a storage root.
-8. The Agent analysis UI shows both the final memo and the runtime proof artifacts for the compute and storage steps.
+4. The user can update the investor buy box in the dashboard at any time.
+5. The dashboard runs a ZIP-based or filter-based scan and sends the active buy box to the agent.
+6. When a property is opened, Sect8 assembles listing, rent, ATTOM, and housing-authority context.
+7. Sect8 computes underwriting inputs, evaluates multi-strategy fit, and sends the full property bundle to 0G Compute.
+8. The returned memo is normalized, stored to 0G Storage, and attached back to the property flow through a storage root.
+9. The Agent analysis UI shows both the final memo and the runtime proof artifacts for the compute and storage steps.
 
 ## Listing images & external listing links
 
@@ -275,6 +330,7 @@ Users now create a wallet-linked Sect8 agent as a clear, guided flow in the app.
 - The server funding route sends a small native transfer and returns the funding transaction hash; the frontend waits for the funding transaction confirmation and polls the user's wallet balance before proceeding.
 - Once the wallet has enough native gas, the app prepares the initial agent memory object and uploads it to 0G Storage, then asks the user to sign the on-chain `initializeAgent` call to mint the wallet-linked Sect8 NFT and anchor the memory root on 0G Chain.
 - After on-chain confirmation, the app finalizes the agent record (persisting record roots and linking the on-chain tokenId and activation transaction hash) and resumes normal scanning and analysis flows.
+- Investor criteria are edited after activation from the dashboard buy box, so users can change strategy and underwriting preferences without recreating the agent.
 
 This flow guarantees that users always have sufficient gas to complete on-chain activation and that activations are backed by persisted 0G Storage roots and an on-chain proof.
 
@@ -288,8 +344,8 @@ This flow guarantees that users always have sufficient gas to complete on-chain 
 ### What is actually using 0G
 
 - 0G Chain is used to mint the wallet-linked Sect8 agent NFT and anchor the initial memory root.
-- 0G Compute is used to generate the property investment memo shown on the property analysis page.
-- 0G Storage is used to persist agent memory, listings snapshots, ATTOM-backed property snapshots, and property-analysis records.
+- 0G Compute is used to generate the property investment memo and strategy-fit analysis shown on the property analysis page.
+- 0G Storage is used to persist agent memory, investor buy-box preferences, listings snapshots, ATTOM-backed property snapshots, and property-analysis records.
 
 ### New proof surface: Agent analysis proof panel
 
@@ -490,6 +546,7 @@ Notes:
 - If ATTOM is unavailable, the property dossier still renders, but ATTOM-backed verification sections will be limited.
 - If RentCast is unavailable, live sale listings are unavailable and the app relies on cached listing data where present.
 - The paid Agentic Market endpoint is `POST /api/x402/section8-analysis`. It accepts either `{ "listingId": "...", "listingsRoot": "..." }` for an existing Sect8 listing, or direct property input such as `{ "address": "...", "zipCode": "48204", "purchasePrice": 85000, "bedrooms": 3 }`.
+- The paid endpoint returns a Section 8-oriented real estate underwriting memo with 0G compute/storage metadata and multi-strategy deal-fit context when available.
 - For Agentic Market discovery, deploy the app publicly over HTTPS and validate the paid endpoint at `https://agentic.market/validate`.
 
 ### Install
@@ -540,6 +597,7 @@ After deployment, record the deployed contract address in `NEXT_PUBLIC_AGENT_MAN
 ## Repository Notes
 
 - Main dashboard route: `src/app/dashboard/page.tsx`
+- Dashboard buy-box editor: `src/app/dashboard/page.tsx`
 - Property details and ATTOM integration: `src/lib/propertyDetails.ts`
 - Property analysis pipeline: `src/lib/propertyAnalysis.ts`
 - Live analysis session pipeline: `src/lib/propertyDetailsSession.ts`
@@ -549,4 +607,4 @@ After deployment, record the deployed contract address in `NEXT_PUBLIC_AGENT_MAN
 
 ## Submission Summary
 
-Sect8 is a Section 8 acquisition agent built on top of 0G Chain, 0G Compute, and 0G Storage. It scans property listings, enriches them with HUD rent support, ATTOM verification data, and housing-authority contacts, then produces a decision-ready investment memo and exposes the live 0G proof artifacts directly in the Agent analysis view.
+Sect8 is a real estate acquisition agent built on top of 0G Chain, 0G Compute, and 0G Storage. It scans property listings, stores a wallet-linked investor buy box, enriches homes with HUD rent support, ATTOM verification data, and housing-authority contacts, then produces a decision-ready multi-strategy investment memo with live 0G proof artifacts directly in the Agent analysis view.

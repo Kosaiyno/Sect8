@@ -6,7 +6,19 @@ import { zgCompute } from '@/og-integration/compute';
 import type { PropertyDetailBundle } from '@/lib/propertyDetails';
 import type { ComputeProof } from '@/types';
 
-const ANALYSIS_PROMPT_VERSION = 4;
+const ANALYSIS_PROMPT_VERSION = 6;
+
+export type InvestmentStrategyKey = 'section8' | 'longTermRental' | 'brrrr' | 'fixAndFlip' | 'smallMultifamily' | 'wholesale';
+
+export type StrategyFit = {
+  strategy: InvestmentStrategyKey;
+  label: string;
+  score: number;
+  verdict: 'Strong' | 'Moderate' | 'Possible' | 'Weak' | 'Not applicable';
+  rationale: string;
+  keyMetrics: string[];
+  nextStep: string;
+};
 
 export type AnalysisRecord = {
   listingId: string;
@@ -23,6 +35,7 @@ export type PropertyInvestmentAnalysis = {
   verdict: string;
   headline: string;
   summary: string;
+  strategyFit: StrategyFit[];
   section8Fit: string;
   financialView: string;
   ownershipAndTitleView: string;
@@ -193,6 +206,193 @@ function buildFinancialMetricsSentence(bundle: PropertyDetailBundle) {
   return `Projected monthly cash flow is ${formatMoney(monthlyCashflow)}, annual cash flow is ${formatMoney(annualCashflow)}, cap rate is ${capRate !== null && capRate !== undefined ? `${Number(capRate).toFixed(1)}%` : 'Unavailable'}, and all-cash ROI is ${roi !== null && roi !== undefined ? `${Number(roi).toFixed(1)}%` : 'Unavailable'} before financing, rehab, vacancy, and inspection adjustments.`;
 }
 
+function clampScore(value: number) {
+  return Math.max(0, Math.min(100, Math.round(value)));
+}
+
+function getStrategyVerdict(score: number, notApplicable = false): StrategyFit['verdict'] {
+  if (notApplicable) {
+    return 'Not applicable';
+  }
+  if (score >= 78) {
+    return 'Strong';
+  }
+  if (score >= 62) {
+    return 'Moderate';
+  }
+  if (score >= 48) {
+    return 'Possible';
+  }
+  return 'Weak';
+}
+
+function getPropertyTypeText(bundle: PropertyDetailBundle) {
+  return String(bundle.listing.propertyType || bundle.attom.parcel.propertyUse || '').toLowerCase();
+}
+
+function buildDefaultStrategyFit(bundle: PropertyDetailBundle): StrategyFit[] {
+  const { listing, housingAuthority, attom } = bundle;
+  const purchasePrice = Number(listing.purchasePrice || listing.price || 0);
+  const monthlyCashflow = getMonthlyCashflow(bundle);
+  const annualCashflow = getAnnualCashflow(bundle);
+  const capRate = Number(listing.capRate || 0);
+  const roi = Number(listing.roi || 0);
+  const fmr = Number(listing.fmr || listing.estRent || listing.estimatedRent || 0);
+  const marketValue = Number(attom.assessedValue.marketTotal || 0);
+  const assessedValue = Number(attom.assessedValue.assessedTotal || 0);
+  const valueAnchor = marketValue || assessedValue;
+  const propertyType = getPropertyTypeText(bundle);
+  const isMultifamily = /multi|duplex|triplex|fourplex|apartment|2-4|2 unit|3 unit|4 unit/.test(propertyType);
+  const bedrooms = Number(listing.bedrooms || 0);
+  const valueSpread = purchasePrice > 0 && valueAnchor > 0 ? ((valueAnchor - purchasePrice) / purchasePrice) * 100 : null;
+  const rentToPrice = purchasePrice > 0 && fmr > 0 ? (fmr * 12 / purchasePrice) * 100 : null;
+  const hasVerifiedRent = String(listing.fmrSource || '') === 'hud';
+  const hasOwnerGap = !attom.ownership.verified;
+
+  const section8Score = clampScore(
+    42
+    + (hasVerifiedRent ? 18 : 4)
+    + (housingAuthority ? 12 : 0)
+    + (capRate >= 12 ? 18 : capRate >= 8 ? 10 : capRate >= 5 ? 4 : -6)
+    + (monthlyCashflow >= 800 ? 12 : monthlyCashflow >= 300 ? 6 : monthlyCashflow > 0 ? 2 : -10)
+    + (bedrooms >= 3 ? 6 : 0)
+  );
+
+  const longTermScore = clampScore(
+    38
+    + (monthlyCashflow >= 700 ? 20 : monthlyCashflow >= 300 ? 12 : monthlyCashflow > 0 ? 5 : -12)
+    + (capRate >= 10 ? 18 : capRate >= 7 ? 11 : capRate >= 5 ? 5 : -8)
+    + (roi >= 10 ? 10 : roi >= 6 ? 5 : 0)
+    + (hasOwnerGap ? -4 : 2)
+  );
+
+  const brrrrScore = clampScore(
+    34
+    + (monthlyCashflow >= 600 ? 12 : monthlyCashflow > 0 ? 5 : -8)
+    + (capRate >= 10 ? 10 : capRate >= 7 ? 5 : 0)
+    + (valueSpread !== null && valueSpread >= 25 ? 18 : valueSpread !== null && valueSpread >= 10 ? 8 : 0)
+    + (purchasePrice > 0 && purchasePrice <= 150000 ? 8 : 0)
+    - (attom.parcel.yearBuilt ? 0 : 4)
+  );
+
+  const flipScore = clampScore(
+    28
+    + (valueSpread !== null && valueSpread >= 35 ? 24 : valueSpread !== null && valueSpread >= 18 ? 12 : valueSpread !== null && valueSpread > 0 ? 4 : -6)
+    + (purchasePrice > 0 && purchasePrice <= 175000 ? 8 : 0)
+    + (attom.deedHistory.length ? 4 : 0)
+    - (attom.parcel.yearBuilt ? 0 : 6)
+  );
+
+  const smallMultifamilyNotApplicable = !isMultifamily && bedrooms < 4;
+  const smallMultifamilyScore = smallMultifamilyNotApplicable ? 0 : clampScore(
+    44
+    + (isMultifamily ? 18 : 6)
+    + (monthlyCashflow >= 900 ? 16 : monthlyCashflow >= 400 ? 8 : monthlyCashflow > 0 ? 3 : -8)
+    + (capRate >= 9 ? 12 : capRate >= 6 ? 5 : 0)
+  );
+
+  const wholesaleScore = clampScore(
+    32
+    + (valueSpread !== null && valueSpread >= 25 ? 22 : valueSpread !== null && valueSpread >= 10 ? 10 : 0)
+    + (rentToPrice !== null && rentToPrice >= 18 ? 12 : rentToPrice !== null && rentToPrice >= 12 ? 6 : 0)
+    + (purchasePrice > 0 && purchasePrice <= 125000 ? 8 : 0)
+    - (hasOwnerGap ? 3 : 0)
+  );
+
+  return [
+    {
+      strategy: 'section8',
+      label: 'Section 8',
+      score: section8Score,
+      verdict: getStrategyVerdict(section8Score),
+      rationale: hasVerifiedRent
+        ? `HUD rent support is available and the property has ${formatMoney(monthlyCashflow)}/mo projected cash flow before financing and rehab.`
+        : 'Voucher fit is possible, but HUD-backed rent support is not verified yet for this exact underwriting run.',
+      keyMetrics: [
+        `HUD/FMR rent: ${formatMoney(fmr, '/mo')}`,
+        `Monthly cash flow: ${formatMoney(monthlyCashflow)}`,
+        `Cap rate: ${capRate ? `${capRate.toFixed(1)}%` : 'Unavailable'}`,
+      ],
+      nextStep: housingAuthority ? `Verify payment standards and leasing requirements with ${housingAuthority.entry.name}.` : 'Confirm the local housing authority, voucher demand, and payment standard.',
+    },
+    {
+      strategy: 'longTermRental',
+      label: 'Long-term rental',
+      score: longTermScore,
+      verdict: getStrategyVerdict(longTermScore),
+      rationale: monthlyCashflow > 0
+        ? `The property is modeled as a positive-cash-flow rental with ${formatMoney(annualCashflow)} in projected annual cash flow.`
+        : 'The current rent and expense model does not create enough cash-flow support for a plain buy-and-hold rental.',
+      keyMetrics: [
+        `Estimated rent: ${formatMoney(fmr, '/mo')}`,
+        `Annual cash flow: ${formatMoney(annualCashflow)}`,
+        `ROI: ${roi ? `${roi.toFixed(1)}%` : 'Unavailable'}`,
+      ],
+      nextStep: 'Compare the rent assumption against nearby non-voucher rental comps and vacancy expectations.',
+    },
+    {
+      strategy: 'brrrr',
+      label: 'BRRRR',
+      score: brrrrScore,
+      verdict: getStrategyVerdict(brrrrScore),
+      rationale: valueSpread !== null && valueSpread > 10
+        ? `There may be refinance upside if the post-rehab value can defend the current value spread of about ${valueSpread.toFixed(0)}%.`
+        : 'BRRRR fit is possible only if rehab scope, appraisal value, and refinance proceeds improve the current basis.',
+      keyMetrics: [
+        `Purchase price: ${formatMoney(purchasePrice)}`,
+        `Value spread: ${valueSpread !== null ? `${valueSpread.toFixed(0)}%` : 'Unverified'}`,
+        `Cash flow after hold: ${formatMoney(monthlyCashflow, '/mo')}`,
+      ],
+      nextStep: 'Estimate rehab budget, after-repair value, refinance proceeds, and cash left in the deal.',
+    },
+    {
+      strategy: 'fixAndFlip',
+      label: 'Fix and flip',
+      score: flipScore,
+      verdict: getStrategyVerdict(flipScore),
+      rationale: valueSpread !== null && valueSpread >= 18
+        ? 'The price-to-value spread may support a flip if rehab and resale assumptions are verified.'
+        : 'Flip fit is weak until ARV, rehab scope, days-on-market, and resale margin are proven.',
+      keyMetrics: [
+        `Known value anchor: ${formatMoney(valueAnchor || null)}`,
+        `Price/value spread: ${valueSpread !== null ? `${valueSpread.toFixed(0)}%` : 'Unverified'}`,
+        `Year built: ${attom.parcel.yearBuilt || 'Unavailable'}`,
+      ],
+      nextStep: 'Pull sold comps, estimate repair cost, and calculate ARV minus rehab, fees, and target profit.',
+    },
+    {
+      strategy: 'smallMultifamily',
+      label: 'Small multifamily',
+      score: smallMultifamilyScore,
+      verdict: getStrategyVerdict(smallMultifamilyScore, smallMultifamilyNotApplicable),
+      rationale: smallMultifamilyNotApplicable
+        ? 'The listing does not read as a small multifamily asset from the available property type and bedroom data.'
+        : 'The property may support a small multifamily lens if unit count, rent roll, and operating expenses can be verified.',
+      keyMetrics: [
+        `Property type: ${listing.propertyType || attom.parcel.propertyUse || 'Unavailable'}`,
+        `Bedrooms: ${bedrooms || 'Unavailable'}`,
+        `NOI: ${formatMoney(Number(listing.netOperating || 0))}`,
+      ],
+      nextStep: 'Verify legal unit count, current rent roll, utilities, and occupancy before treating it as multifamily.',
+    },
+    {
+      strategy: 'wholesale',
+      label: 'Wholesale',
+      score: wholesaleScore,
+      verdict: getStrategyVerdict(wholesaleScore),
+      rationale: valueSpread !== null && valueSpread > 10
+        ? 'There may be assignment potential if buyers accept the current price/value and rent-to-price story.'
+        : 'Wholesale fit needs a clearer discount, seller motivation, or verified investor spread.',
+      keyMetrics: [
+        `Purchase price: ${formatMoney(purchasePrice)}`,
+        `Rent-to-price: ${rentToPrice !== null ? `${rentToPrice.toFixed(1)}%` : 'Unavailable'}`,
+        `Value spread: ${valueSpread !== null ? `${valueSpread.toFixed(0)}%` : 'Unverified'}`,
+      ],
+      nextStep: 'Validate buyer demand, repair estimate, title status, and assignment spread before marketing the deal.',
+    },
+  ];
+}
+
 function buildListingSearchStep(bundle: PropertyDetailBundle) {
   const address = String(bundle.listing.address || '').trim();
   if (!address) {
@@ -264,6 +464,12 @@ function postProcessAnalysis(analysis: PropertyInvestmentAnalysis, fallback: Pro
     financialView: stripPresentationLead(financialView),
     ownershipAndTitleView: buildOwnershipNarrative(bundle, fallback),
     riskView: buildRiskNarrative(bundle),
+    strategyFit: sanitizeStrategyFit(analysis.strategyFit, fallback.strategyFit).map((item) => ({
+      ...item,
+      rationale: stripPresentationLead(item.rationale),
+      keyMetrics: stripPresentationList(item.keyMetrics),
+      nextStep: stripPresentationLead(item.nextStep),
+    })),
     strengths: stripPresentationList(analysis.strengths),
     risks: stripPresentationList(analysis.risks),
     nextSteps: stripPresentationList(nextSteps),
@@ -322,10 +528,22 @@ function applyScoreGuardrails(analysis: PropertyInvestmentAnalysis, bundle: Prop
     : score >= 60
       ? 'Moderate Section 8 candidate with underwriting caveats.'
       : 'Weak Section 8 candidate unless pricing or assumptions improve.';
+  const strategyFit = analysis.strategyFit.map((item) => {
+    if (item.strategy !== 'section8') {
+      return item;
+    }
+
+    return {
+      ...item,
+      score,
+      verdict: getStrategyVerdict(score),
+    };
+  });
 
   return {
     ...analysis,
     score,
+    strategyFit,
     confidence,
     verdict,
   };
@@ -340,6 +558,7 @@ function normalizeAnalysis(raw: Partial<PropertyInvestmentAnalysis>, fallback: P
     verdict: String(raw.verdict || fallback.verdict),
     headline: String(raw.headline || fallback.headline),
     summary: String(raw.summary || fallback.summary),
+    strategyFit: sanitizeStrategyFit(raw.strategyFit, fallback.strategyFit),
     section8Fit: String(raw.section8Fit || fallback.section8Fit),
     financialView: String(raw.financialView || fallback.financialView),
     ownershipAndTitleView: String(raw.ownershipAndTitleView || fallback.ownershipAndTitleView),
@@ -366,6 +585,28 @@ function extractJsonObject(text: string) {
   }
 
   return stripped.slice(firstBrace, lastBrace + 1);
+}
+
+function parseAnalysisJson(jsonText: string): Partial<PropertyInvestmentAnalysis> {
+  try {
+    return JSON.parse(jsonText) as Partial<PropertyInvestmentAnalysis>;
+  } catch (firstError) {
+    const repaired = repairAnalysisJson(jsonText);
+    try {
+      return JSON.parse(repaired) as Partial<PropertyInvestmentAnalysis>;
+    } catch {
+      throw firstError;
+    }
+  }
+}
+
+function repairAnalysisJson(jsonText: string) {
+  return jsonText
+    .replace(/("(?:score|confidence)"\s*:\s*)([^,\}\]\n]+)/g, (_match, prefix: string, rawValue: string) => {
+      const numeric = String(rawValue).match(/-?\d+(?:\.\d+)?/);
+      return `${prefix}${numeric ? numeric[0] : 'null'}`;
+    })
+    .replace(/,\s*([}\]])/g, '$1');
 }
 
 function extractText(result: unknown): string {
@@ -439,6 +680,7 @@ function buildFallbackAnalysis(bundle: PropertyDetailBundle): PropertyInvestment
   else if (valuationRatio >= 4) score -= 4;
 
   const verdict = score >= 75 ? 'Good Section 8 candidate.' : score >= 60 ? 'Moderate Section 8 candidate with underwriting caveats.' : 'Weak Section 8 candidate unless pricing or assumptions improve.';
+  const strategyFit = buildDefaultStrategyFit(bundle);
   const contactCallout = housingAuthority
     ? ` Contact ${housingAuthority.entry.name} at ${housingAuthority.entry.phone || 'their listed HUD number'}${housingAuthority.entry.email ? ` or ${housingAuthority.entry.email}` : ''} to ask about voucher demand, payment standards, and leasing process.`
     : '';
@@ -448,6 +690,7 @@ function buildFallbackAnalysis(bundle: PropertyDetailBundle): PropertyInvestment
     verdict,
     headline: `${listing.address} shows ${listing.fmrSource === 'hud' ? 'verified rent support' : 'unverified rent support'} but thin yield at the current asking price.`,
     summary: `The property has a real list price with ${listing.fmrSource === 'hud' ? 'HUD-backed rent support' : 'unverified rent support'}, plus ATTOM parcel, tax, and deed data. Current underwriting points to ${monthlyCashflow > 0 ? `${formatMoney(monthlyCashflow)}/mo` : 'an unavailable monthly cash flow'}, annual cash flow near ${annualCashflow ? formatMoney(annualCashflow) : 'Unavailable'}, a cap rate near ${capRate ? `${capRate.toFixed(1)}%` : 'N/A'}, and an all-cash ROI near ${roi ? `${roi.toFixed(1)}%` : 'N/A'}.`,
+    strategyFit,
     section8Fit: listing.fmrSource === 'hud'
       ? `HUD support is available for this unit size, which makes the deal usable for Section 8 underwriting. The unresolved question is whether physical condition and the operating plan justify the current acquisition basis.${contactCallout}`
       : 'HUD-backed rent support is not available for this listing yet, so it should not be treated as fully underwritten for Section 8 at this stage.',
@@ -478,11 +721,11 @@ function buildFallbackAnalysis(bundle: PropertyDetailBundle): PropertyInvestment
   };
 }
 
-function formatMoney(value: number | null | undefined) {
+function formatMoney(value: number | null | undefined, suffix = '') {
   if (value === null || value === undefined) {
     return 'Unavailable';
   }
-  return `$${Math.round(value).toLocaleString()}`;
+  return `$${Math.round(value).toLocaleString()}${suffix}`;
 }
 
 function buildPrompt(bundle: PropertyDetailBundle) {
@@ -496,16 +739,21 @@ function buildPrompt(bundle: PropertyDetailBundle) {
     'Treat ATTOM environmental and natural-disaster scores as broad area-level context only. Mention them briefly and do not let them dominate the verdict unless the dataset shows a specific parcel-level risk.',
     'Explicitly discuss ownership verification status and hazard context as separate considerations.',
     'Explicitly discuss projected monthly cash flow, annual cash flow, cap rate, and ROI using the provided underwriting numbers.',
+    'Evaluate the property across real estate strategies, not only Section 8. Include Section 8, long-term rental, BRRRR, fix and flip, small multifamily, and wholesale strategy fit.',
+    'If the strategy is not applicable based on the property type or available data, mark it Not applicable and explain why.',
     'Include a practical next step telling the investor to copy the property address into Zillow, Realtor.com, or Redfin to review photos, confirm the live listing, and contact the listing agent.',
     'If cap rate or ROI is below 4%, the score should stay below 60 unless there is an exceptional offset in the supplied data.',
     'If the ATTOM market value is dramatically below the purchase price, call out the mismatch and reduce both score and confidence.',
     'If a local housing authority contact is provided, include a practical next step telling the investor to contact that authority by name to verify voucher demand, payment standards, and leasing questions.',
+    'Return one valid JSON object only. Do not use markdown, comments, placeholders, symbolic values, XXX, em dashes, or non-numeric text inside numeric fields.',
+    'If you are uncertain about a numeric score, choose your best integer from 0 to 100 instead of writing a placeholder.',
     'Return JSON only with this exact schema:',
-    '{"score": number, "verdict": string, "headline": string, "summary": string, "section8Fit": string, "financialView": string, "ownershipAndTitleView": string, "riskView": string, "strengths": string[], "risks": string[], "nextSteps": string[], "confidence": number}',
+    '{"score": number, "verdict": string, "headline": string, "summary": string, "strategyFit": [{"strategy": "section8" | "longTermRental" | "brrrr" | "fixAndFlip" | "smallMultifamily" | "wholesale", "label": string, "score": number, "verdict": "Strong" | "Moderate" | "Possible" | "Weak" | "Not applicable", "rationale": string, "keyMetrics": string[], "nextStep": string}], "section8Fit": string, "financialView": string, "ownershipAndTitleView": string, "riskView": string, "strengths": string[], "risks": string[], "nextSteps": string[], "confidence": number}',
     'Scoring rules:',
     '- score must be an integer from 0 to 100',
     '- confidence must be an integer from 0 to 100',
     '- verdict must be a single concise sentence',
+    '- strategyFit must include exactly one entry for each of: section8, longTermRental, brrrr, fixAndFlip, smallMultifamily, wholesale',
     '- strengths, risks, and nextSteps should each have exactly 3 punchy bullet strings',
     '- summary should be a concise 2-3 sentence overview that synthesizes the property',
     'Property dataset:',
@@ -518,7 +766,7 @@ async function generateAnalysis(bundle: PropertyDetailBundle) {
   const messages = [
     {
       role: 'system' as const,
-      content: 'You are Sect8, a rigorous Section 8 acquisition agent. Use only supplied data, never fabricate missing facts, write in concise presentation language, and always return valid JSON.',
+      content: 'You are Sect8, a rigorous real estate underwriting agent. Section 8 is one specialty, but you also evaluate long-term rental, BRRRR, fix-and-flip, small multifamily, and wholesale fit. Use only supplied data, never fabricate missing facts, write in concise presentation language, and always return valid JSON.',
     },
     {
       role: 'user' as const,
@@ -534,7 +782,7 @@ async function generateAnalysis(bundle: PropertyDetailBundle) {
       return { provider: 'fallback' as const, analysis: fallback, computeProof: null };
     }
 
-    const parsed = JSON.parse(jsonText) as Partial<PropertyInvestmentAnalysis>;
+    const parsed = parseAnalysisJson(jsonText);
     return {
       provider: '0g-compute' as const,
       computeProof: response?.meta?.proof || null,
@@ -701,4 +949,51 @@ export async function getOrCreatePropertyAnalysis(
   }
 
   return { record, fromCache: false };
+}
+
+function sanitizeStrategyFit(value: unknown, fallback: StrategyFit[]) {
+  if (!Array.isArray(value)) {
+    return fallback;
+  }
+
+  const fallbackByStrategy = new Map(fallback.map((item) => [item.strategy, item]));
+  const seen = new Set<string>();
+  const items = value
+    .map((item) => {
+      if (!item || typeof item !== 'object') {
+        return null;
+      }
+
+      const raw = item as Partial<StrategyFit>;
+      const strategy = String(raw.strategy || '').trim() as InvestmentStrategyKey;
+      const base = fallbackByStrategy.get(strategy);
+      if (!base || seen.has(strategy)) {
+        return null;
+      }
+      seen.add(strategy);
+
+      const score = Number(raw.score);
+      const verdict = String(raw.verdict || base.verdict);
+      const allowedVerdict = ['Strong', 'Moderate', 'Possible', 'Weak', 'Not applicable'].includes(verdict)
+        ? verdict as StrategyFit['verdict']
+        : base.verdict;
+
+      return {
+        strategy,
+        label: String(raw.label || base.label),
+        score: Number.isFinite(score) ? Math.max(0, Math.min(100, Math.round(score))) : base.score,
+        verdict: allowedVerdict,
+        rationale: String(raw.rationale || base.rationale),
+        keyMetrics: sanitizeArray(raw.keyMetrics, base.keyMetrics).slice(0, 4),
+        nextStep: String(raw.nextStep || base.nextStep),
+      } satisfies StrategyFit;
+    })
+    .filter(Boolean) as StrategyFit[];
+
+  const merged = [
+    ...items,
+    ...fallback.filter((item) => !seen.has(item.strategy)),
+  ];
+
+  return merged.slice(0, fallback.length);
 }

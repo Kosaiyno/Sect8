@@ -8,6 +8,12 @@ type UserPreferences = {
   minBedrooms: number;
   maxPrice: number;
   minRoi: number;
+  primaryStrategy?: string;
+  minCashflow?: number;
+  minCapRate?: number;
+  riskTolerance?: string;
+  rehabTolerance?: string;
+  propertyTypes?: string[];
 };
 
 type ActivatedAgent = {
@@ -48,6 +54,12 @@ const DEFAULT_PREFERENCES: UserPreferences = {
   minBedrooms: 3,
   maxPrice: 150000,
   minRoi: 0.1,
+  primaryStrategy: 'section8',
+  minCashflow: 500,
+  minCapRate: 8,
+  riskTolerance: 'medium',
+  rehabTolerance: 'light',
+  propertyTypes: ['Single Family'],
 };
 
 export default function AgentDashboard({
@@ -206,12 +218,11 @@ export default function AgentDashboard({
       <div className="agent-marquee mt-6 rounded-[26px] border border-gray-100 bg-[#f8f9fb] p-5">
         <div className="grid gap-4 md:grid-cols-2">
           <div className="dashboard-subpanel rounded-[22px] p-4">
-            <div className="text-[10px] font-black uppercase tracking-[0.22em] text-[#8c6e1a]">Defaults I start with</div>
+            <div className="text-[10px] font-black uppercase tracking-[0.22em] text-[#8c6e1a]">Activation only</div>
             <div className="mt-3 space-y-2 text-sm text-[#475569]">
-              <div>ZIP: {DEFAULT_PREFERENCES.zipCode}</div>
-              <div>Bedrooms: {DEFAULT_PREFERENCES.minBedrooms}+</div>
-              <div>Max price: ${DEFAULT_PREFERENCES.maxPrice.toLocaleString()}</div>
-              <div>Minimum ROI: {(DEFAULT_PREFERENCES.minRoi * 100).toFixed(0)}%</div>
+              <div>I create the wallet-linked agent first.</div>
+              <div>I attach the initial 0G memory root.</div>
+              <div>You can edit your investor buy box after activation.</div>
             </div>
           </div>
           <div className="dashboard-subpanel rounded-[22px] p-4">
