@@ -6,6 +6,17 @@ import { readRentcastCache } from '@/lib/rentcastCache';
 
 type ListingRecord = Record<string, unknown>;
 type CachedRecommendation = Exclude<Awaited<ReturnType<typeof toRecommendation>>, null>;
+type SearchCriteria = {
+  city?: string;
+  state?: string;
+  minBedrooms?: number | string;
+  minBathrooms?: number | string;
+  maxPrice?: number | string;
+  minRoi?: number | string;
+  minCashflow?: number | string;
+  minCapRate?: number | string;
+  propertyTypes?: string[];
+};
 
 function getLocationParts(address: string) {
   const [street = '', city = '', stateZip = ''] = address.split(',').map((part) => part.trim());
@@ -66,7 +77,69 @@ async function toRecommendation(listing: ListingRecord, defaultZip: string) {
   };
 }
 
-async function getCachedRecommendations(requestedZip?: string, filters: any = {}) {
+function toFiniteNumber(value: unknown) {
+  const numeric = Number(value);
+  return Number.isFinite(numeric) ? numeric : null;
+}
+
+function getMinRoiPercent(value: unknown) {
+  const numeric = toFiniteNumber(value);
+  if (numeric === null || numeric <= 0) {
+    return null;
+  }
+
+  return numeric <= 1 ? numeric * 100 : numeric;
+}
+
+function buildSearchCriteria(filters: SearchCriteria = {}, preferences: SearchCriteria = {}): SearchCriteria {
+  const filterMaxPrice = toFiniteNumber(filters.maxPrice);
+  const preferenceMaxPrice = toFiniteNumber(preferences.maxPrice);
+  const maxPrice = filterMaxPrice !== null && preferenceMaxPrice !== null
+    ? Math.min(filterMaxPrice, preferenceMaxPrice)
+    : filterMaxPrice ?? preferenceMaxPrice ?? undefined;
+
+  return {
+    ...preferences,
+    ...filters,
+    minBedrooms: filters.minBedrooms || preferences.minBedrooms,
+    maxPrice,
+    minRoi: filters.minRoi || preferences.minRoi,
+    minCashflow: filters.minCashflow || preferences.minCashflow,
+    minCapRate: filters.minCapRate || preferences.minCapRate,
+    propertyTypes: Array.isArray(filters.propertyTypes) && filters.propertyTypes.length
+      ? filters.propertyTypes
+      : Array.isArray(preferences.propertyTypes)
+        ? preferences.propertyTypes
+        : [],
+  };
+}
+
+function matchesCriteria(recommendation: ListingRecord, filters: SearchCriteria, requestedZip = '') {
+  const matchesZip = !requestedZip || String(recommendation?.zip || '') === requestedZip;
+  const address = String(recommendation?.address || '');
+  const location = getLocationParts(address);
+  const matchesCity = !filters.city || filters.city === 'all' || location.city === filters.city;
+  const matchesState = !filters.state || filters.state === 'all' || location.state === filters.state;
+  const matchesBedrooms = !filters.minBedrooms || filters.minBedrooms === 'any' || Number(recommendation?.bedrooms || 0) >= Number(filters.minBedrooms);
+  const matchesBathrooms = !filters.minBathrooms || filters.minBathrooms === 'any' || Number(recommendation?.bathrooms || 0) >= Number(filters.minBathrooms);
+  const maxPrice = toFiniteNumber(filters.maxPrice);
+  const matchesPrice = maxPrice === null || maxPrice <= 0 || Number(recommendation?.purchasePrice || 0) <= maxPrice;
+  const minRoi = getMinRoiPercent(filters.minRoi);
+  const matchesRoi = minRoi === null || Number(recommendation?.roi || 0) >= minRoi;
+  const minCashflow = toFiniteNumber(filters.minCashflow);
+  const monthlyCashflow = recommendation?.cashflow !== null && recommendation?.cashflow !== undefined
+    ? Number(recommendation.cashflow || 0)
+    : Math.round(Number(recommendation?.netOperating || 0) / 12);
+  const matchesCashflow = minCashflow === null || minCashflow <= 0 || monthlyCashflow >= minCashflow;
+  const minCapRate = toFiniteNumber(filters.minCapRate);
+  const matchesCapRate = minCapRate === null || minCapRate <= 0 || Number(recommendation?.capRate || 0) >= minCapRate;
+  const types = Array.isArray(filters.propertyTypes) ? filters.propertyTypes : [];
+  const matchesTypes = types.length === 0 || types.includes(String(recommendation?.propertyType || 'Single Family'));
+
+  return matchesZip && matchesCity && matchesState && matchesBedrooms && matchesBathrooms && matchesPrice && matchesRoi && matchesCashflow && matchesCapRate && matchesTypes;
+}
+
+async function getCachedRecommendations(requestedZip?: string, filters: SearchCriteria = {}) {
   const cache = readRentcastCache();
   const deduped = new Map<string, CachedRecommendation>();
 
@@ -80,7 +153,8 @@ async function getCachedRecommendations(requestedZip?: string, filters: any = {}
       const bedrooms = Number(listing.bedrooms || 0);
       const matchesBedrooms = !filters.minBedrooms || filters.minBedrooms === 'any' || bedrooms >= Number(filters.minBedrooms);
       const price = Number(listing.purchasePrice || listing.price || listing.listPrice || 0);
-      const matchesPrice = !filters.maxPrice || price <= Number(filters.maxPrice);
+      const maxPrice = toFiniteNumber(filters.maxPrice);
+      const matchesPrice = maxPrice === null || maxPrice <= 0 || price <= maxPrice;
       const propertyType = normalizePropertyType(listing.propertyType);
       const types = Array.isArray(filters.propertyTypes) ? filters.propertyTypes : [];
       const matchesTypes = types.length === 0 || types.includes(propertyType);
@@ -165,23 +239,10 @@ export async function POST(req: Request) {
   const requestedZip = typeof body.zipCode === 'string' ? body.zipCode.trim() : '';
   const owner = typeof body.owner === 'string' ? body.owner.trim().toLowerCase() : '';
   const recordRoot = typeof body.recordRoot === 'string' ? body.recordRoot.trim() : '';
-  const filters = body.filters || {};
+  const filters = buildSearchCriteria(body.filters || {}, body.preferences || {});
   const rooted = await getLatestSnapshotRecommendations(req, owner, recordRoot || null);
   const baseRecommendations = rooted.recommendations.length ? rooted.recommendations : await getCachedRecommendations(requestedZip, filters);
-  const recommendations = baseRecommendations.filter((recommendation) => {
-    const matchesZip = !requestedZip || String(recommendation?.zip || '') === requestedZip;
-    const address = String(recommendation?.address || '');
-    const location = getLocationParts(address);
-    const matchesCity = !filters.city || filters.city === 'all' || location.city === filters.city;
-    const matchesState = !filters.state || filters.state === 'all' || location.state === filters.state;
-    const matchesBedrooms = !filters.minBedrooms || filters.minBedrooms === 'any' || Number(recommendation?.bedrooms || 0) >= Number(filters.minBedrooms);
-    const matchesBathrooms = !filters.minBathrooms || filters.minBathrooms === 'any' || Number(recommendation?.bathrooms || 0) >= Number(filters.minBathrooms);
-    const matchesPrice = !filters.maxPrice || Number(recommendation?.purchasePrice || 0) <= Number(filters.maxPrice);
-    const types = Array.isArray(filters.propertyTypes) ? filters.propertyTypes : [];
-    const matchesTypes = types.length === 0 || types.includes(String(recommendation?.propertyType || 'Single Family'));
-
-    return matchesZip && matchesCity && matchesState && matchesBedrooms && matchesBathrooms && matchesPrice && matchesTypes;
-  });
+  const recommendations = baseRecommendations.filter((recommendation) => matchesCriteria(recommendation, filters, requestedZip));
 
   return NextResponse.json({ success: true, recommendations });
 }

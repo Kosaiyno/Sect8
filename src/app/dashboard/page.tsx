@@ -1,8 +1,6 @@
 
 "use client";
 
-import { filterExcludedListings } from '@/lib/listingExclusionClient';
-
 import { useEffect, useRef, useState } from "react";
 import { Recommendation } from "@/types";
 import { Wallet, Brain, Database, TrendingUp, ShieldCheck, CheckCircle2, SlidersHorizontal, Save } from "lucide-react";
@@ -47,15 +45,6 @@ type DashboardAgent = {
 type DashboardViewState = {
   recommendations: Recommendation[];
   selectedZip: string;
-  searchMode: 'zip' | 'filter';
-  filterSearch: {
-    city: string;
-    state: string;
-    minBedrooms: string;
-    minBathrooms: string;
-    maxPrice: string;
-    propertyTypes: string[];
-  };
   scanNotice: string | null;
   usingFallback: boolean;
 };
@@ -134,6 +123,36 @@ function normalizeBuyBox(preferences: Record<string, unknown> | null | undefined
   };
 }
 
+function toFiniteNumber(value: unknown) {
+  const numeric = Number(value);
+  return Number.isFinite(numeric) ? numeric : null;
+}
+
+function getMinRoiPercent(value: unknown) {
+  const numeric = toFiniteNumber(value);
+  if (numeric === null || numeric <= 0) {
+    return null;
+  }
+
+  return numeric <= 1 ? numeric * 100 : numeric;
+}
+
+function matchesBuyBox(recommendation: Recommendation, buyBox: InvestorBuyBox) {
+  const maxPrice = toFiniteNumber(buyBox.maxPrice);
+  const minCashflow = toFiniteNumber(buyBox.minCashflow);
+  const minCapRate = toFiniteNumber(buyBox.minCapRate);
+  const minRoi = getMinRoiPercent(buyBox.minRoi);
+  const monthlyCashflow = recommendation.cashflow !== null && recommendation.cashflow !== undefined
+    ? Number(recommendation.cashflow || 0)
+    : Math.round(Number(recommendation.netOperating || 0) / 12);
+
+  return Number(recommendation.bedrooms || 0) >= Number(buyBox.minBedrooms || 0)
+    && (maxPrice === null || maxPrice <= 0 || Number(recommendation.purchasePrice || 0) <= maxPrice)
+    && (minCashflow === null || minCashflow <= 0 || monthlyCashflow >= minCashflow)
+    && (minCapRate === null || minCapRate <= 0 || Number(recommendation.capRate || 0) >= minCapRate)
+    && (minRoi === null || Number(recommendation.roi || 0) >= minRoi);
+}
+
 export default function Dashboard() {
   const { address, isConnected } = useAccount();
   const [zipOptions, setZipOptions] = useState<Array<{ zipCode: string; city: string; state: string; label: string }>>([]);
@@ -141,16 +160,7 @@ export default function Dashboard() {
   const [checked, setChecked] = useState(false);
   const [usingFallback, setUsingFallback] = useState<boolean>(false);
   const [recommendations, setRecommendations] = useState<Recommendation[]>([]);
-  const [searchMode, setSearchMode] = useState<'zip' | 'filter'>('zip');
   const [selectedZip, setSelectedZip] = useState('');
-  const [filterSearch, setFilterSearch] = useState({
-    city: '',
-    state: '',
-    minBedrooms: 'any',
-    minBathrooms: 'any',
-    maxPrice: '',
-    propertyTypes: [] as string[],
-  });
   const [scanNotice, setScanNotice] = useState<string | null>(null);
   const [isScanning, setIsScanning] = useState(false);
   const [hasScanError, setHasScanError] = useState(false);
@@ -158,7 +168,9 @@ export default function Dashboard() {
   const [buyBoxStatus, setBuyBoxStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
   const hydratedRef = useRef(false);
   const initialBoardLoadTriggeredRef = useRef(false);
-  const visibleRecommendations = recommendations.filter((recommendation) => !isExcludedListingLike(recommendation));
+  const visibleRecommendations = recommendations
+    .filter((recommendation) => !isExcludedListingLike(recommendation))
+    .filter((recommendation) => matchesBuyBox(recommendation, buyBoxDraft));
 
   useEffect(() => {
     if (agent?.preferences) {
@@ -273,15 +285,6 @@ export default function Dashboard() {
         const parsed = JSON.parse(persistedState) as DashboardViewState;
         setRecommendations(Array.isArray(parsed.recommendations) ? parsed.recommendations : []);
         setSelectedZip(parsed.selectedZip || '');
-        setSearchMode(parsed.searchMode || 'zip');
-        setFilterSearch(parsed.filterSearch || {
-          city: '',
-          state: '',
-          minBedrooms: 'any',
-          minBathrooms: 'any',
-          maxPrice: '',
-          propertyTypes: [],
-        });
         setScanNotice(parsed.scanNotice || null);
         setUsingFallback(Boolean(parsed.usingFallback));
       } catch {
@@ -298,14 +301,12 @@ export default function Dashboard() {
     const nextState: DashboardViewState = {
       recommendations,
       selectedZip,
-      searchMode,
-      filterSearch,
       scanNotice,
       usingFallback,
     };
 
     sessionStorage.setItem(getDashboardStateKey(address), JSON.stringify(nextState));
-  }, [address, filterSearch, recommendations, scanNotice, searchMode, selectedZip, usingFallback]);
+  }, [address, recommendations, scanNotice, selectedZip, usingFallback]);
 
   useEffect(() => {
     async function loadZipOptions() {
@@ -397,6 +398,7 @@ export default function Dashboard() {
       status: 'scanning',
       preferences: {
         ...agent.preferences,
+        ...buyBoxDraft,
         zipCode: normalizedZip,
       },
     } as DashboardAgent;
@@ -431,7 +433,7 @@ export default function Dashboard() {
       setAgent(activeAgent);
       localStorage.setItem(getAgentStorageKey(address), JSON.stringify(activeAgent));
       if (!json.recommendations?.length) {
-        setScanNotice(`No saved for-sale homes are cached for ZIP ${normalizedZip}. Seed that market once, then future ZIP searches will stay local.`);
+        setScanNotice(`No homes matched your current buy box in ZIP ${normalizedZip}. Try raising max price, lowering cash-flow/cap-rate targets, or changing strategy.`);
       } else {
         setScanNotice(null);
       }
@@ -444,50 +446,6 @@ export default function Dashboard() {
       setIsScanning(false);
     }
   };
-
-  const runFilterSearch = async () => {
-    try {
-      setIsScanning(true);
-      setHasScanError(false);
-      setAgent((current) => current ? { ...current, status: 'scanning' } : current);
-      setUsingFallback(false);
-      setScanNotice(null);
-      const res = await fetch('/api/agents/search', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          filters: filterSearch,
-          owner: address,
-          recordRoot: agent ? agent.recordRoot || null : null,
-          preferences: agent?.preferences || buyBoxDraft,
-        }),
-      });
-      const json = await res.json();
-      if (!json.success) {
-        throw new Error(json.error || 'Filter search failed');
-      }
-
-      // Filter out land/lot/vacant listings from recommendations
-      setRecommendations(Array.isArray(json.recommendations) ? filterExcludedListings(json.recommendations) : []);
-      if (!json.recommendations?.length) {
-        setScanNotice('No cached sale listings match the selected filters. Change a filter or run a ZIP search to expand the available markets.');
-      } else {
-        setScanNotice(null);
-      }
-    } catch (error) {
-      console.error('Filter search failed', error);
-      setScanNotice(`Failed`);
-      setHasScanError(true);
-    } finally {
-      setIsScanning(false);
-      setAgent((current) => current ? { ...current, status: 'active' } : current);
-    }
-  };
-
-  const updateFilterSearch = (field: keyof typeof filterSearch, value: string | string[]) => {
-    setFilterSearch((current) => ({ ...current, [field]: value }));
-  };
-
 
   useEffect(() => {
     if (!checked || !agent || isScanning || recommendations.length > 0 || !selectedZip || initialBoardLoadTriggeredRef.current) {
@@ -541,29 +499,14 @@ export default function Dashboard() {
     );
   }
 
-  const togglePropertyType = (propertyType: string) => {
-    setFilterSearch((current) => ({
-      ...current,
-      propertyTypes: current.propertyTypes.includes(propertyType)
-        ? current.propertyTypes.filter((value) => value !== propertyType)
-        : [...current.propertyTypes, propertyType],
-    }));
-  };
-
   return (
     <div className="space-y-5 animate-fade-in">
       <AgentHeader
         agent={agent}
-        searchMode={searchMode}
-        onChangeSearchMode={setSearchMode}
         zipOptions={zipOptions}
         selectedZip={selectedZip}
         onChangeSelectedZip={setSelectedZip}
         onRunZipSearch={runScan}
-        filterSearch={filterSearch}
-        onChangeFilterSearch={updateFilterSearch}
-        onTogglePropertyType={togglePropertyType}
-        onRunFilterSearch={runFilterSearch}
         isWorking={isScanning}
         hasError={hasScanError}
       />
