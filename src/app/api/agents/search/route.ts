@@ -68,6 +68,8 @@ async function toRecommendation(listing: ListingRecord, defaultZip: string) {
     estExpenses,
     netOperating,
     capRate,
+    roi: capRate,
+    cashflow: netOperating !== null ? Math.round(netOperating / 12) : null,
     isBanger: hasVerifiedHud ? fmr > (0.015 * purchasePrice) : false,
     explanation: hasVerifiedHud
       ? `I surfaced this house because it is actively listed for sale, the HUD county rent benchmark for a ${bedrooms}-bedroom unit is about $${fmr}/mo, projected monthly NOI is about $${Math.round((netOperating || 0) / 12)}/mo, and my current underwriting points to a cap rate near ${capRate?.toFixed(1)}%.`
@@ -116,27 +118,7 @@ function buildSearchCriteria(filters: SearchCriteria = {}, preferences: SearchCr
 
 function matchesCriteria(recommendation: ListingRecord, filters: SearchCriteria, requestedZip = '') {
   const matchesZip = !requestedZip || String(recommendation?.zip || '') === requestedZip;
-  const address = String(recommendation?.address || '');
-  const location = getLocationParts(address);
-  const matchesCity = !filters.city || filters.city === 'all' || location.city === filters.city;
-  const matchesState = !filters.state || filters.state === 'all' || location.state === filters.state;
-  const matchesBedrooms = !filters.minBedrooms || filters.minBedrooms === 'any' || Number(recommendation?.bedrooms || 0) >= Number(filters.minBedrooms);
-  const matchesBathrooms = !filters.minBathrooms || filters.minBathrooms === 'any' || Number(recommendation?.bathrooms || 0) >= Number(filters.minBathrooms);
-  const maxPrice = toFiniteNumber(filters.maxPrice);
-  const matchesPrice = maxPrice === null || maxPrice <= 0 || Number(recommendation?.purchasePrice || 0) <= maxPrice;
-  const minRoi = getMinRoiPercent(filters.minRoi);
-  const matchesRoi = minRoi === null || Number(recommendation?.roi || 0) >= minRoi;
-  const minCashflow = toFiniteNumber(filters.minCashflow);
-  const monthlyCashflow = recommendation?.cashflow !== null && recommendation?.cashflow !== undefined
-    ? Number(recommendation.cashflow || 0)
-    : Math.round(Number(recommendation?.netOperating || 0) / 12);
-  const matchesCashflow = minCashflow === null || minCashflow <= 0 || monthlyCashflow >= minCashflow;
-  const minCapRate = toFiniteNumber(filters.minCapRate);
-  const matchesCapRate = minCapRate === null || minCapRate <= 0 || Number(recommendation?.capRate || 0) >= minCapRate;
-  const types = Array.isArray(filters.propertyTypes) ? filters.propertyTypes : [];
-  const matchesTypes = types.length === 0 || types.includes(String(recommendation?.propertyType || 'Single Family'));
-
-  return matchesZip && matchesCity && matchesState && matchesBedrooms && matchesBathrooms && matchesPrice && matchesRoi && matchesCashflow && matchesCapRate && matchesTypes;
+  return matchesZip;
 }
 
 async function getCachedRecommendations(requestedZip?: string, filters: SearchCriteria = {}) {
@@ -148,21 +130,7 @@ async function getCachedRecommendations(requestedZip?: string, filters: SearchCr
     : Object.values(cache);
 
   for (const entry of targetEntries) {
-    // Filter raw listings BEFORE expensive toRecommendation call
-    const filteredRaw = (entry.listings || []).filter(listing => {
-      const bedrooms = Number(listing.bedrooms || 0);
-      const matchesBedrooms = !filters.minBedrooms || filters.minBedrooms === 'any' || bedrooms >= Number(filters.minBedrooms);
-      const price = Number(listing.purchasePrice || listing.price || listing.listPrice || 0);
-      const maxPrice = toFiniteNumber(filters.maxPrice);
-      const matchesPrice = maxPrice === null || maxPrice <= 0 || price <= maxPrice;
-      const propertyType = normalizePropertyType(listing.propertyType);
-      const types = Array.isArray(filters.propertyTypes) ? filters.propertyTypes : [];
-      const matchesTypes = types.length === 0 || types.includes(propertyType);
-      
-      return matchesBedrooms && matchesPrice && matchesTypes;
-    });
-
-    const recommendations = await Promise.all(filteredRaw.map((listing) => toRecommendation(listing, entry.zipCode)));
+    const recommendations = await Promise.all((entry.listings || []).map((listing) => toRecommendation(listing, entry.zipCode)));
 
     for (const recommendation of recommendations) {
       if (!recommendation) {
@@ -190,7 +158,20 @@ async function getLatestSnapshotRecommendations(request: Request, owner: string,
 
   const snapshot = await read0gJson<ListingsSnapshot>(stored.latestListingsRoot);
   const recommendations: ListingRecord[] = Array.isArray(snapshot?.listings)
-    ? snapshot.listings.map((listing) => ({ ...listing, listingsRoot: stored.latestListingsRoot || null }))
+    ? snapshot.listings.map((listing) => {
+        const capRate = listing.capRate !== null && listing.capRate !== undefined ? Number(listing.capRate) : null;
+        const roi = listing.roi !== null && listing.roi !== undefined ? Number(listing.roi) : capRate;
+        const netOperating = listing.netOperating !== null && listing.netOperating !== undefined ? Number(listing.netOperating) : null;
+        const cashflow = listing.cashflow !== null && listing.cashflow !== undefined
+          ? Number(listing.cashflow)
+          : (netOperating !== null ? Math.round(netOperating / 12) : null);
+        return {
+          ...listing,
+          roi: roi ?? undefined,
+          cashflow: cashflow ?? undefined,
+          listingsRoot: stored.latestListingsRoot || null,
+        };
+      })
     : [];
 
   return { listingsRoot: stored.latestListingsRoot || null, recommendations };

@@ -154,9 +154,13 @@ function normalizeCachedListing(listing: Record<string, unknown>, zipCode: strin
     annualCashflow: listing.annualCashflow === null || listing.annualCashflow === undefined ? undefined : Number(listing.annualCashflow),
     estExpenses: listing.estExpenses === null || listing.estExpenses === undefined ? undefined : Number(listing.estExpenses),
     netOperating: listing.netOperating === null || listing.netOperating === undefined ? undefined : Number(listing.netOperating),
-    cashflow: listing.cashflow === null || listing.cashflow === undefined ? undefined : Number(listing.cashflow),
+    cashflow: listing.cashflow !== null && listing.cashflow !== undefined
+      ? Number(listing.cashflow)
+      : (listing.netOperating !== null && listing.netOperating !== undefined ? Math.round(Number(listing.netOperating) / 12) : undefined),
     capRate: listing.capRate === null || listing.capRate === undefined ? undefined : Number(listing.capRate),
-    roi: listing.roi === null || listing.roi === undefined ? undefined : Number(listing.roi),
+    roi: listing.roi !== null && listing.roi !== undefined
+      ? Number(listing.roi)
+      : (listing.capRate !== null && listing.capRate !== undefined ? Number(listing.capRate) : undefined),
     source: String(listing.source || 'rentcast-cache'),
     propertyType: listing.propertyType ? String(listing.propertyType) : null,
     squareFootage: listing.squareFootage === null || listing.squareFootage === undefined ? null : Number(listing.squareFootage),
