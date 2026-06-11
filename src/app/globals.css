@@ -825,3 +825,72 @@ w3m-footer {
   transform: translateY(0);
 }
 
+/* Print Media Styles for Professional PDF Export */
+@media print {
+  body {
+    background: #ffffff !important;
+    color: #0f1629 !important;
+    font-size: 11pt !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+  
+  body::before,
+  .platform-bg {
+    display: none !important;
+  }
+  
+  .print\:hidden,
+  header,
+  footer,
+  nav,
+  button,
+  a[href*="dashboard"],
+  .btn-primary,
+  .btn-secondary {
+    display: none !important;
+  }
+
+  .fintech-card {
+    border: 1px solid #e2e8f0 !important;
+    background: #ffffff !important;
+    box-shadow: none !important;
+    border-radius: 16px !important;
+    page-break-inside: avoid;
+    margin-bottom: 20px !important;
+  }
+
+  .dashboard-subpanel {
+    border: 1px solid #f1f5f9 !important;
+    background: #f8fafc !important;
+    box-shadow: none !important;
+    border-radius: 12px !important;
+    page-break-inside: avoid;
+  }
+
+  .stat-block {
+    border: 1px solid #cbd5e1 !important;
+    background: #f8fafc !important;
+    box-shadow: none !important;
+    border-radius: 12px !important;
+    page-break-inside: avoid;
+  }
+  
+  .bento-grid {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 1.5rem !important;
+  }
+  
+  .bento-grid > section {
+    width: 100% !important;
+    page-break-inside: avoid;
+  }
+  
+  @page {
+    margin: 1.5cm;
+    size: letter;
+  }
+}
+
+

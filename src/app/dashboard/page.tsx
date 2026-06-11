@@ -168,6 +168,59 @@ export default function Dashboard() {
   const [buyBoxStatus, setBuyBoxStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
   const hydratedRef = useRef(false);
   const initialBoardLoadTriggeredRef = useRef(false);
+
+  // Custom property analysis state
+  const [customAddress, setCustomAddress] = useState("");
+  const [customPrice, setCustomPrice] = useState("");
+  const [customBedrooms, setCustomBedrooms] = useState("3");
+  const [customBathrooms, setCustomBathrooms] = useState("1");
+  const [customPropertyType, setCustomPropertyType] = useState("Single Family");
+  const [isAnalyzingCustom, setIsAnalyzingCustom] = useState(false);
+  const [customError, setCustomError] = useState<string | null>(null);
+
+  const handleAnalyzeCustom = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const cleanAddress = customAddress.trim();
+    const cleanPrice = Number(customPrice);
+
+    if (!cleanAddress) {
+      setCustomError("Please enter a property address.");
+      return;
+    }
+    if (Number.isNaN(cleanPrice) || cleanPrice <= 0) {
+      setCustomError("Please enter a valid purchase price.");
+      return;
+    }
+
+    setIsAnalyzingCustom(true);
+    setCustomError(null);
+
+    try {
+      const response = await fetch('/api/properties/custom-initialize', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          address: cleanAddress,
+          purchasePrice: cleanPrice,
+          bedrooms: Number(customBedrooms),
+          bathrooms: Number(customBathrooms),
+          propertyType: customPropertyType,
+        }),
+      });
+
+      const json = await response.json();
+      if (!response.ok || !json.success) {
+        throw new Error(json.error || 'Failed to initialize analysis.');
+      }
+
+      // Redirect to the property loading page
+      window.location.href = `/dashboard/properties/${encodeURIComponent(json.listingId)}?listingsRoot=${encodeURIComponent(json.listingsRoot)}`;
+    } catch (err: any) {
+      console.error(err);
+      setCustomError(err.message || "An error occurred while starting the analysis.");
+      setIsAnalyzingCustom(false);
+    }
+  };
   const visibleRecommendations = recommendations
     .filter((recommendation) => !isExcludedListingLike(recommendation));
 
@@ -554,6 +607,100 @@ export default function Dashboard() {
           </div>
         ))}
       </div>
+
+      {/* CUSTOM PROPERTY UNDERWRITING FORM */}
+      <section className="fintech-card p-6 sm:p-8">
+        <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.24em] text-[#b8942f] mb-4">
+          <Brain size={16} />
+          Analyze Custom Property
+        </div>
+        <form onSubmit={handleAnalyzeCustom} className="space-y-4">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-12">
+            <div className="md:col-span-4">
+              <label className="block text-xs font-black uppercase tracking-wider text-[#64748b] mb-2">Street Address</label>
+              <input
+                type="text"
+                placeholder="e.g. 15301 Parkgrove Ave, Cleveland, OH 44110"
+                value={customAddress}
+                onChange={(e) => setCustomAddress(e.target.value)}
+                className="w-full rounded-[14px] px-4 py-3 text-sm dashboard-field"
+                disabled={isAnalyzingCustom}
+              />
+            </div>
+            <div className="md:col-span-2">
+              <label className="block text-xs font-black uppercase tracking-wider text-[#64748b] mb-2">Purchase Price ($)</label>
+              <input
+                type="number"
+                placeholder="e.g. 99900"
+                value={customPrice}
+                onChange={(e) => setCustomPrice(e.target.value)}
+                className="w-full rounded-[14px] px-4 py-3 text-sm dashboard-field"
+                disabled={isAnalyzingCustom}
+              />
+            </div>
+            <div className="md:col-span-1 col-span-6">
+              <label className="block text-xs font-black uppercase tracking-wider text-[#64748b] mb-2">Beds</label>
+              <select
+                value={customBedrooms}
+                onChange={(e) => setCustomBedrooms(e.target.value)}
+                className="w-full rounded-[14px] px-4 py-3 text-sm dashboard-field"
+                disabled={isAnalyzingCustom}
+              >
+                {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(n => (
+                  <option key={n} value={n}>{n}</option>
+                ))}
+              </select>
+            </div>
+            <div className="md:col-span-1 col-span-6">
+              <label className="block text-xs font-black uppercase tracking-wider text-[#64748b] mb-2">Baths</label>
+              <select
+                value={customBathrooms}
+                onChange={(e) => setCustomBathrooms(e.target.value)}
+                className="w-full rounded-[14px] px-4 py-3 text-sm dashboard-field"
+                disabled={isAnalyzingCustom}
+              >
+                {[1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5].map(n => (
+                  <option key={n} value={n}>{n}</option>
+                ))}
+              </select>
+            </div>
+            <div className="md:col-span-2 col-span-12">
+              <label className="block text-xs font-black uppercase tracking-wider text-[#64748b] mb-2">Property Type</label>
+              <select
+                value={customPropertyType}
+                onChange={(e) => setCustomPropertyType(e.target.value)}
+                className="w-full rounded-[14px] px-4 py-3 text-sm dashboard-field"
+                disabled={isAnalyzingCustom}
+              >
+                {["Single Family", "Multifamily", "Condo", "Townhouse"].map(type => (
+                  <option key={type} value={type}>{type}</option>
+                ))}
+              </select>
+            </div>
+            <div className="md:col-span-2 col-span-12 flex items-end">
+              <button
+                type="submit"
+                disabled={isAnalyzingCustom}
+                className="w-full btn-primary text-sm py-3 px-4 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isAnalyzingCustom ? (
+                  <>
+                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                    Analyzing...
+                  </>
+                ) : (
+                  "Analyze"
+                )}
+              </button>
+            </div>
+          </div>
+          {customError && (
+            <div className="text-xs font-semibold text-rose-600 mt-2 bg-rose-50 border border-rose-100 rounded-[12px] px-3 py-2">
+              {customError}
+            </div>
+          )}
+        </form>
+      </section>
 
       <div className="flex flex-col gap-3">
         <HeroSection recommendations={visibleRecommendations} isScanning={isScanning} targetZip={selectedZip || String(agent.preferences?.zipCode || '')} />

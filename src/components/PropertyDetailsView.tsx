@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useState } from 'react';
-import { ArrowLeft, BadgeDollarSign, Brain, Check, Copy, FileBadge2, Home, Mail, MapPin, Phone, ShieldCheck, Waves, Wind } from 'lucide-react';
+import { ArrowLeft, BadgeDollarSign, Brain, Check, Copy, FileBadge2, Home, Mail, MapPin, Phone, ShieldCheck, Waves, Wind, Printer } from 'lucide-react';
 import type { PropertyAnalysisBundle } from '@/lib/propertyAnalysis';
 import type { PropertyDetailBundle } from '@/lib/propertyDetails';
 import WatchlistButton from '@/components/WatchlistButton';
@@ -165,17 +165,24 @@ export default function PropertyDetailsView({ bundle, analysisResult }: Property
 
   return (
     <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-6 px-4 py-6 text-[#0f1629] sm:px-6 sm:py-8 lg:gap-8 lg:py-10">
-      <div className="flex flex-wrap items-center justify-between gap-6">
+      <div className="flex flex-wrap items-center justify-between gap-6 print:hidden">
         <Link href="/dashboard" className="inline-flex items-center gap-2.5 rounded-full border border-[#eef0f3] bg-white px-5 py-2.5 text-sm font-bold text-[#0f1629] transition-all hover:bg-gray-50 hover:border-[#b8942f]/20 shadow-sm">
           <ArrowLeft size={18} />
           Dashboard
         </Link>
         <div className="flex flex-wrap items-center gap-4">
+          <button
+            onClick={() => window.print()}
+            className="inline-flex items-center gap-2.5 rounded-full border border-[#eef0f3] bg-white px-5 py-2.5 text-sm font-bold text-[#0f1629] transition-all hover:bg-gray-50 hover:border-[#b8942f]/20 shadow-sm cursor-pointer"
+          >
+            <Printer size={18} />
+            Export as PDF
+          </button>
           <WatchlistButton
             item={watchlistItem}
             showLabel
             label="Watchlist"
-            className="inline-flex items-center gap-2.5 rounded-full border-2 border-[#b8942f] bg-white px-5 py-2.5 text-sm font-bold text-[#b8942f] shadow-md focus:ring-2 focus:ring-[#b8942f]"
+            className="inline-flex items-center gap-2.5 rounded-full border-2 border-[#b8942f] bg-white px-5 py-2.5 text-sm font-bold text-[#b8942f] shadow-md focus:ring-2 focus:ring-[#b8942f] cursor-pointer"
           />
         </div>
       </div>
@@ -333,7 +340,7 @@ export default function PropertyDetailsView({ bundle, analysisResult }: Property
             ))}
           </ul>
           {address && (
-            <div className="mt-auto dashboard-subpanel rounded-2xl p-5">
+            <div className="mt-auto dashboard-subpanel rounded-2xl p-5 print:hidden">
               <div className="text-[10px] font-black uppercase tracking-[0.2em] text-[#64748b]/60 mb-3">Address Reference</div>
               <div className="text-sm font-bold text-[#0f1629] mb-4">{address}</div>
               <div className="flex flex-wrap gap-2">
