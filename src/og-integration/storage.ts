@@ -100,7 +100,22 @@ export class ZgStorageService {
     const useLocal = process.env.USE_LOCAL_STORAGE === "true";
 
     if (useLocal) {
-      throw new Error('USE_LOCAL_STORAGE is enabled, but local fallback is disabled for this deployment. Turn it off to use 0G storage.');
+      const crypto = await import('node:crypto');
+      const fs = await import('node:fs');
+      const path = await import('node:path');
+
+      const hash = crypto.createHash('sha256').update(content).digest('hex');
+      const rootHash = `0x${hash}`;
+
+      const localDir = path.resolve(process.cwd(), 'data', 'local-storage');
+      if (!fs.existsSync(localDir)) {
+        fs.mkdirSync(localDir, { recursive: true });
+      }
+
+      const filePath = path.join(localDir, `${rootHash}.json`);
+      fs.writeFileSync(filePath, content);
+      console.log(`[Local Storage] Saved ${rootHash} locally`);
+      return rootHash;
     }
 
     const rpcArg = process.env.OG_RPC_URL || process.env.NEXT_PUBLIC_0G_RPC_URL || this.rpcUrl;
@@ -138,6 +153,21 @@ export class ZgStorageService {
   }
 
   async downloadData(dataRoot: string): Promise<Buffer | string> {
+    const useLocal = process.env.USE_LOCAL_STORAGE === "true";
+
+    if (useLocal) {
+      const fs = await import('node:fs');
+      const path = await import('node:path');
+
+      const localDir = path.resolve(process.cwd(), 'data', 'local-storage');
+      const filePath = path.join(localDir, `${dataRoot}.json`);
+      if (fs.existsSync(filePath)) {
+        console.log(`[Local Storage] Loaded ${dataRoot} locally`);
+        return fs.readFileSync(filePath);
+      }
+      throw new Error(`[Local Storage] File not found: ${dataRoot}`);
+    }
+
     const indexer = new Indexer(this.storageUrl);
     const [blob, err] = await indexer.downloadToBlob(dataRoot, { proof: true });
     if (err) {

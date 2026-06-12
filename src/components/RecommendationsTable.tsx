@@ -241,7 +241,7 @@ export default function RecommendationsTable({ recommendations }: Recommendation
 
                 <div className="mt-5 grid grid-cols-1 gap-4 text-sm text-[#0f1629] sm:grid-cols-2">
                   <div className="dashboard-subpanel rounded-2xl p-4">
-                    <div className="text-[9px] font-black uppercase tracking-[0.24em] text-[#64748b]/50">Monthly NOI</div>
+                    <div className="text-[9px] font-black uppercase tracking-[0.24em] text-[#64748b]/50">Monthly Cash Flow</div>
                     <div className="mt-1.5 font-black text-[#0d9668] text-base">{hasVerifiedHud ? formatNumber(monthlyNoi, '/mo') : 'Hidden'}</div>
                   </div>
                   <div className="dashboard-subpanel rounded-2xl p-4 sm:text-right">
@@ -252,7 +252,7 @@ export default function RecommendationsTable({ recommendations }: Recommendation
 
                 {!hasVerifiedHud && (
                   <div className="mt-3 rounded-xl border border-amber-400/25 bg-amber-400/[0.08] p-3 text-xs leading-5 text-amber-800">
-                    HUD verification failed for this ZIP, so rent benchmark, monthly NOI, and cap rate are hidden.
+                    HUD verification failed for this ZIP, so rent benchmark, monthly cash flow, and cap rate are hidden.
                   </div>
                 )}
 

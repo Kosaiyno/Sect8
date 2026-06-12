@@ -132,7 +132,7 @@ export default function HeroSection({ recommendations, isScanning = false, targe
               {[
                 { label: 'Purchase Price', value: formatCurrency(Number(topPick.purchasePrice || 0)), icon: <BadgeDollarSign size={14} /> },
                 { label: 'Rent Benchmark', value: formatCurrency(Number(topPick.fmr || 0), '/mo'), icon: <Building2 size={14} /> },
-                { label: 'Monthly NOI', value: formatCurrency(monthlyNoi, '/mo'), icon: <TrendingUp size={14} /> },
+                { label: 'Monthly Cash Flow', value: formatCurrency(monthlyNoi, '/mo'), icon: <TrendingUp size={14} /> },
                 { label: 'Cap Rate', value: formatPercent(topPick.capRate), icon: <ShieldCheck size={14} /> },
               ].map((metric) => (
                 <div key={metric.label} className="stat-block flex min-h-[110px] flex-col justify-between rounded-2xl px-4 py-4 hover-lift cursor-default transition-all duration-500 sm:px-5 sm:py-4.5">

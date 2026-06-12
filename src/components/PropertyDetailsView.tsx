@@ -42,12 +42,23 @@ function cleanPresentationList(items: string[]) {
   return items.map((item) => cleanPresentationText(item));
 }
 
+function getRiskLevel(value: number | null | undefined): string {
+  if (value === null || value === undefined) {
+    return 'Unknown';
+  }
+  const num = Number(value);
+  if (num < 90) return 'Low';
+  if (num <= 120) return 'Moderate';
+  if (num <= 200) return 'High';
+  return 'Very High';
+}
+
 function getHazardSnapshot(bundle: PropertyDetailBundle) {
   const riskSeries = [...bundle.attom.risk.environmental, ...bundle.attom.risk.naturalDisasters]
     .filter((item) => item.value !== null && item.value !== undefined)
     .sort((left, right) => Number(right.value || 0) - Number(left.value || 0))
-    .slice(0, 2)
-    .map((item) => `${item.label} ${Number(item.value).toFixed(0)}`);
+    .slice(0, 3)
+    .map((item) => `${item.label} ${Number(item.value).toFixed(0)} (${getRiskLevel(item.value)})`);
 
   if (!riskSeries.length) {
     return 'Limited area-level hazard data returned from ATTOM.';
@@ -216,8 +227,8 @@ export default function PropertyDetailsView({ bundle, analysisResult }: Property
             {[
               { label: 'Purchase Price', value: formatCurrency(listing.purchasePrice), icon: <BadgeDollarSign size={16} /> },
               { label: rentMetricLabel, value: formatCurrency(listing.fmr, '/mo'), icon: <Home size={16} /> },
-              { label: 'Monthly NOI', value: formatCurrency(listing.cashflow, '/mo'), icon: <FileBadge2 size={16} /> },
-              { label: 'Annual NOI', value: formatCurrency(listing.annualCashflow), icon: <FileBadge2 size={16} /> },
+              { label: 'Monthly Cash Flow', value: formatCurrency(listing.cashflow, '/mo'), icon: <FileBadge2 size={16} /> },
+              { label: 'NOI (Annual)', value: formatCurrency(listing.annualCashflow), icon: <FileBadge2 size={16} /> },
               { label: 'Cap Rate', value: formatPercent(listing.capRate), icon: <ShieldCheck size={16} /> },
               { label: 'ROI', value: formatPercent(listing.roi), icon: <ShieldCheck size={16} /> },
             ].map((metric) => (
@@ -236,6 +247,81 @@ export default function PropertyDetailsView({ bundle, analysisResult }: Property
           ) : null}
         </div>
       </section>
+
+      {/* LATEST COUNTY ASSESSMENT CARD */}
+      <section className="fintech-card p-6 sm:p-8 hover-lift relative overflow-hidden bg-gradient-to-br from-white via-white to-[#b8942f]/02">
+        <div className="absolute right-0 top-0 h-24 w-24 translate-x-8 -translate-y-8 rounded-full bg-[#b8942f]/05 blur-xl pointer-events-none" />
+        <div className="platform-chip mb-4">Latest County Assessment</div>
+        <div className="grid grid-cols-3 gap-6">
+          <div>
+            <div className="text-[10px] font-black uppercase tracking-[0.2em] text-[#64748b]/60 mb-1">Assessment Year</div>
+            <div className="font-outfit text-2xl font-black text-[#0f1629]">{attom.assessedValue.taxYear || attom.assessedValue.assessorYear || 'N/A'}</div>
+          </div>
+          <div>
+            <div className="text-[10px] font-black uppercase tracking-[0.2em] text-[#64748b]/60 mb-1">Assessed Value</div>
+            <div className="font-outfit text-2xl font-black text-[#0f1629]">{formatCurrency(attom.assessedValue.assessedTotal)}</div>
+          </div>
+          <div>
+            <div className="text-[10px] font-black uppercase tracking-[0.2em] text-[#64748b]/60 mb-1">Tax Amount</div>
+            <div className="font-outfit text-2xl font-black text-amber-700">{formatCurrency(attom.assessedValue.taxAmount)}</div>
+          </div>
+        </div>
+      </section>
+
+      {/* POSITIVE / WATCHOUTS / ACTIONS */}
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
+        <div className="fintech-card p-6 sm:p-8 border-l-4 border-l-[#0d9668] hover-lift">
+          <div className="text-[11px] font-black uppercase tracking-[0.24em] text-[#0d9668] mb-6">Positive signals</div>
+          <ul className="space-y-4">
+            {strengths.map((item) => (
+              <li key={item} className="flex items-start gap-3 text-sm leading-7 text-[#64748b] font-medium">
+                <div className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-[#0d9668]" />
+                {item}
+              </li>
+            ))}
+          </ul>
+        </div>
+        <div className="fintech-card p-6 sm:p-8 border-l-4 border-l-amber-500 hover-lift">
+          <div className="text-[11px] font-black uppercase tracking-[0.24em] text-amber-600 mb-6">Watchouts</div>
+          <ul className="space-y-4">
+            {risks.map((item) => (
+              <li key={item} className="flex items-start gap-3 text-sm leading-7 text-[#64748b] font-medium">
+                <div className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-amber-500" />
+                {item}
+              </li>
+            ))}
+          </ul>
+        </div>
+        <div className="fintech-card p-6 sm:p-8 border-l-4 border-l-[#b8942f] hover-lift">
+          <div className="text-[11px] font-black uppercase tracking-[0.24em] text-[#b8942f] mb-6">Next actions</div>
+          <div className="mb-4 text-[13px] text-[#b8942f] font-semibold">To see the listing, images, and more details, click the <span className='underline'>Zillow</span> button below.</div>
+          <ul className="space-y-4 mb-8">
+            {nextSteps.map((item) => (
+              <li key={item} className="flex items-start gap-3 text-sm leading-7 text-[#64748b] font-medium">
+                <div className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-[#b8942f]" />
+                {item}
+              </li>
+            ))}
+          </ul>
+          {address && (
+            <div className="mt-auto dashboard-subpanel rounded-2xl p-5 print:hidden">
+              <div className="text-[10px] font-black uppercase tracking-[0.2em] text-[#64748b]/60 mb-3">Address Reference</div>
+              <div className="text-sm font-bold text-[#0f1629] mb-4">{address}</div>
+              <div className="flex flex-wrap gap-2">
+                <button onClick={handleCopyAddress} className="inline-flex items-center gap-2 rounded-full border border-[#eef0f3] bg-white px-3 py-2 text-[10px] font-black uppercase tracking-wider text-[#0f1629] transition hover:bg-gray-50">
+                  {copyState === 'copied' ? <Check size={12} /> : <Copy size={12} />}
+                  {copyState === 'copied' ? 'Copied' : 'Copy'}
+                </button>
+                {searchLinks.slice(0, 2).map((link) => (
+                  <a key={link.label} href={link.href} target="_blank" rel="noreferrer" className={`inline-flex items-center gap-2 rounded-full border border-[#b8942f]/20 bg-[#b8942f]/05 px-3 py-2 text-[10px] font-black uppercase tracking-wider text-[#b8942f] transition hover:bg-[#b8942f]/10 ${link.label === 'Zillow' ? 'ring-2 ring-[#b8942f]/40' : ''}`}>
+                    {link.label}
+                  </a>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
 
       {/* ANALYSIS BENTO */}
       <div className="bento-grid">
@@ -301,62 +387,6 @@ export default function PropertyDetailsView({ bundle, analysisResult }: Property
             </div>
           </div>
         </section>
-
-      </div>
-
-      {/* POSITIVE / WATCHOUTS / ACTIONS */}
-      <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
-        <div className="fintech-card p-6 sm:p-8 border-l-4 border-l-[#0d9668] hover-lift">
-          <div className="text-[11px] font-black uppercase tracking-[0.24em] text-[#0d9668] mb-6">Positive signals</div>
-          <ul className="space-y-4">
-            {strengths.map((item) => (
-              <li key={item} className="flex items-start gap-3 text-sm leading-7 text-[#64748b] font-medium">
-                <div className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-[#0d9668]" />
-                {item}
-              </li>
-            ))}
-          </ul>
-        </div>
-        <div className="fintech-card p-6 sm:p-8 border-l-4 border-l-amber-500 hover-lift">
-          <div className="text-[11px] font-black uppercase tracking-[0.24em] text-amber-600 mb-6">Watchouts</div>
-          <ul className="space-y-4">
-            {risks.map((item) => (
-              <li key={item} className="flex items-start gap-3 text-sm leading-7 text-[#64748b] font-medium">
-                <div className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-amber-500" />
-                {item}
-              </li>
-            ))}
-          </ul>
-        </div>
-        <div className="fintech-card p-6 sm:p-8 border-l-4 border-l-[#b8942f] hover-lift">
-          <div className="text-[11px] font-black uppercase tracking-[0.24em] text-[#b8942f] mb-6">Next actions</div>
-          <div className="mb-4 text-[13px] text-[#b8942f] font-semibold">To see the listing, images, and more details, click the <span className='underline'>Zillow</span> button below.</div>
-          <ul className="space-y-4 mb-8">
-            {nextSteps.map((item) => (
-              <li key={item} className="flex items-start gap-3 text-sm leading-7 text-[#64748b] font-medium">
-                <div className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-[#b8942f]" />
-                {item}
-              </li>
-            ))}
-          </ul>
-          {address && (
-            <div className="mt-auto dashboard-subpanel rounded-2xl p-5 print:hidden">
-              <div className="text-[10px] font-black uppercase tracking-[0.2em] text-[#64748b]/60 mb-3">Address Reference</div>
-              <div className="text-sm font-bold text-[#0f1629] mb-4">{address}</div>
-              <div className="flex flex-wrap gap-2">
-                <button onClick={handleCopyAddress} className="inline-flex items-center gap-2 rounded-full border border-[#eef0f3] bg-white px-3 py-2 text-[10px] font-black uppercase tracking-wider text-[#0f1629] transition hover:bg-gray-50">
-                  {copyState === 'copied' ? <Check size={12} /> : <Copy size={12} />}
-                  {copyState === 'copied' ? 'Copied' : 'Copy'}
-                </button>
-                {searchLinks.slice(0, 2).map((link) => (
-                  <a key={link.label} href={link.href} target="_blank" rel="noreferrer" className={`inline-flex items-center gap-2 rounded-full border border-[#b8942f]/20 bg-[#b8942f]/05 px-3 py-2 text-[10px] font-black uppercase tracking-wider text-[#b8942f] transition hover:bg-[#b8942f]/10 ${link.label === 'Zillow' ? 'ring-2 ring-[#b8942f]/40' : ''}`}>
-                    {link.label}
-                  </a>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
       </div>
 
       {/* DATA DETAILS (ATTOM / HUD) */}
@@ -399,7 +429,24 @@ export default function PropertyDetailsView({ bundle, analysisResult }: Property
           <div className="space-y-4">
             <div className="dashboard-subpanel rounded-2xl p-6">
               <div className="text-[10px] font-black uppercase tracking-[0.24em] text-[#b8942f] mb-2">Current Owner</div>
-              <div className="text-lg font-black text-[#0f1629]">{attom.ownership.ownerName || 'Unavailable'}</div>
+              <div className="text-lg font-black text-[#0f1629]">
+                {attom.ownership.ownerName ? (
+                  attom.ownership.ownerName
+                ) : attom.deedHistory[0]?.buyerName ? (
+                  <span>
+                    <span className="text-[#64748b] font-medium text-xs block mb-1">Current mailing owner unavailable</span>
+                    Most recent recorded buyer: {attom.deedHistory[0].buyerName}
+                    {(() => {
+                      const dateStr = attom.deedHistory[0].transferDate || attom.deedHistory[0].recordedDate;
+                      if (!dateStr) return '';
+                      const year = new Date(dateStr).getFullYear();
+                      return Number.isNaN(year) ? '' : ` (${year})`;
+                    })()}
+                  </span>
+                ) : (
+                  'Unavailable'
+                )}
+              </div>
               <div className="mt-2 text-sm font-medium text-[#64748b]">{attom.ownership.mailingAddress || 'No mailing address on file'}</div>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

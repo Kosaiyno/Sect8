@@ -24,7 +24,7 @@ export function calculateUnderwriting(input: {
   const annualCashflow = netOperating;
   const grossYield = purchasePrice ? Number(((annualRent / purchasePrice) * 100).toFixed(2)) : null;
   const capRate = purchasePrice ? Number(((netOperating / purchasePrice) * 100).toFixed(2)) : null;
-  const roi = purchasePrice ? Number(((annualCashflow / purchasePrice) * 100).toFixed(2)) : null;
+  const roi = purchasePrice ? Number(((annualCashflow / (purchasePrice * 1.05)) * 100).toFixed(2)) : null;
 
   return {
     annualRent,

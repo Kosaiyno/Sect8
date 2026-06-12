@@ -13,8 +13,8 @@ const inter = Manrope({ subsets: ["latin"], variable: "--font-inter" });
 const outfit = Sora({ subsets: ["latin"], variable: "--font-outfit" });
 
 export const metadata: Metadata = {
-  title: "Sect8 | Institutional Section 8 Real Estate Intelligence",
-  description: "AI-powered Section 8 acquisition platform with institutional-grade underwriting, property dossiers, and 0G-backed market memory.",
+  title: "Sect8 | Institutional Real Estate Underwriting & Intelligence",
+  description: "AI-powered real estate underwriting platform with institutional-grade strategy fit, property dossiers, and 0G-backed market memory.",
   icons: {
     icon: "/sect8%20logo.png?v=3",
     shortcut: "/sect8%20logo.png?v=3",

@@ -159,16 +159,26 @@ function buildHousingAuthorityStep(bundle: PropertyDetailBundle) {
 
 function buildOwnershipNarrative(bundle: PropertyDetailBundle, fallback: PropertyInvestmentAnalysis) {
   const { ownership, deedHistory } = bundle.attom;
+  const ownerName = ownership.ownerName || deedHistory[0]?.buyerName;
+  const isFallback = !ownership.ownerName && deedHistory[0]?.buyerName;
 
-  if (!ownership.verified || !ownership.ownerName) {
+  if (!ownerName) {
     return fallback.ownershipAndTitleView;
   }
 
-  const publicOwner = /authority|commission|land bank|housing|county|city|state|department/i.test(ownership.ownerName);
+  const publicOwner = /authority|commission|land bank|housing|county|city|state|department/i.test(ownerName);
   const latestTransfer = deedHistory[0]?.transferDate || deedHistory[0]?.recordedDate;
-  const base = publicOwner
-    ? `ATTOM identifies ${ownership.ownerName} as the current recorded owner, which suggests the acquisition path may run through a public or institutional sale process rather than a standard private negotiation.`
-    : `ATTOM identifies ${ownership.ownerName} as the current recorded owner, which gives this underwriting a stronger ownership signal than a listing-only workflow.`;
+  const latestYear = latestTransfer ? new Date(latestTransfer).getFullYear() : null;
+
+  let base = '';
+  if (isFallback) {
+    base = `ATTOM mailing owner details are unavailable, but deed history shows the most recent recorded buyer is ${ownerName}${latestYear ? ` in ${latestYear}` : ''}.`;
+  } else {
+    base = publicOwner
+      ? `ATTOM identifies ${ownerName} as the current recorded owner, which suggests the acquisition path may run through a public or institutional sale process rather than a standard private negotiation.`
+      : `ATTOM identifies ${ownerName} as the current recorded owner, which gives this underwriting a stronger ownership signal than a listing-only workflow.`;
+  }
+
   const mailing = ownership.mailingAddress
     ? ` ATTOM also returned a mailing address for follow-up.`
     : ' Mailing-address detail is limited, so county and title records should still be checked before closing.';
@@ -179,11 +189,22 @@ function buildOwnershipNarrative(bundle: PropertyDetailBundle, fallback: Propert
   return `${base}${mailing}${deed}`;
 }
 
+function getRiskLevel(value: number | null | undefined): string {
+  if (value === null || value === undefined) {
+    return 'Unknown';
+  }
+  const num = Number(value);
+  if (num < 90) return 'Low';
+  if (num <= 120) return 'Moderate';
+  if (num <= 200) return 'High';
+  return 'Very High';
+}
+
 function buildRiskNarrative(bundle: PropertyDetailBundle) {
   const riskSeries = [...bundle.attom.risk.environmental, ...bundle.attom.risk.naturalDisasters]
     .filter((item) => item.value !== null && item.value !== undefined)
     .sort((left, right) => Number(right.value || 0) - Number(left.value || 0));
-  const highlighted = riskSeries.slice(0, 3).map((item) => `${item.label} (${Number(item.value).toFixed(0)})`);
+  const highlighted = riskSeries.slice(0, 3).map((item) => `${item.label} ${Number(item.value).toFixed(0)} (${getRiskLevel(item.value)})`);
   const flood = bundle.attom.risk.flood;
   const fire = bundle.attom.risk.fire;
 
@@ -191,7 +212,7 @@ function buildRiskNarrative(bundle: PropertyDetailBundle) {
     ? `ATTOM area-level screening flags elevated surrounding-market readings for ${highlighted.join(', ')}, but those are neighborhood indicators rather than parcel-specific defects.`
     : 'ATTOM returned only limited environmental and natural-disaster screening context for this property.';
   const parcelSignals = flood !== null || fire !== null
-    ? ` Flood index is ${flood ?? 'Unavailable'} and fire index is ${fire ?? 'Unavailable'}, which are still best used as insurance and inspection prompts rather than a stand-alone reject signal.`
+    ? ` Flood index is ${flood !== null ? `${flood} (${getRiskLevel(flood)})` : 'Unavailable'} and fire index is ${fire !== null ? `${fire} (${getRiskLevel(fire)})` : 'Unavailable'}, which are still best used as insurance and inspection prompts rather than a stand-alone reject signal.`
     : ' Parcel-level flood and fire signals are limited, so insurance quotes and inspections matter more than these broad screens.';
 
   return `${context}${parcelSignals}`;
@@ -554,7 +575,7 @@ function normalizeAnalysis(raw: Partial<PropertyInvestmentAnalysis>, fallback: P
   const confidence = Number(raw.confidence);
 
   const normalized = {
-    score: Number.isFinite(score) ? Math.max(0, Math.min(100, Math.round(score))) : fallback.score,
+    score: raw.score !== null && raw.score !== undefined && Number.isFinite(score) ? Math.max(0, Math.min(100, Math.round(score))) : fallback.score,
     verdict: String(raw.verdict || fallback.verdict),
     headline: String(raw.headline || fallback.headline),
     summary: String(raw.summary || fallback.summary),
@@ -566,7 +587,7 @@ function normalizeAnalysis(raw: Partial<PropertyInvestmentAnalysis>, fallback: P
     strengths: sanitizeArray(raw.strengths, fallback.strengths),
     risks: sanitizeArray(raw.risks, fallback.risks),
     nextSteps: sanitizeArray(raw.nextSteps, fallback.nextSteps),
-    confidence: Number.isFinite(confidence) ? Math.max(0, Math.min(100, Math.round(confidence))) : fallback.confidence,
+    confidence: raw.confidence !== null && raw.confidence !== undefined && Number.isFinite(confidence) ? Math.max(0, Math.min(100, Math.round(confidence))) : fallback.confidence,
   };
 
   return applyScoreGuardrails(postProcessAnalysis(normalized, fallback, bundle), bundle);
@@ -601,12 +622,25 @@ function parseAnalysisJson(jsonText: string): Partial<PropertyInvestmentAnalysis
 }
 
 function repairAnalysisJson(jsonText: string) {
-  return jsonText
-    .replace(/("(?:score|confidence)"\s*:\s*)([^,\}\]\n]+)/g, (_match, prefix: string, rawValue: string) => {
+  // 1. Normalize common Chinese / full-width punctuation
+  let normalized = jsonText
+    .replace(/，/g, ',')
+    .replace(/：/g, ':')
+    .replace(/“/g, '"')
+    .replace(/”/g, '"')
+    .replace(/‘/g, "'")
+    .replace(/’/g, "'")
+    .replace(/—+/g, '-');
+
+  // 2. Repair scores and confidence fields
+  normalized = normalized
+    .replace(/("?(?:score|confidence)"?\s*:\s*)([^,\}\]\n]+)/gi, (_match, prefix: string, rawValue: string) => {
       const numeric = String(rawValue).match(/-?\d+(?:\.\d+)?/);
       return `${prefix}${numeric ? numeric[0] : 'null'}`;
     })
     .replace(/,\s*([}\]])/g, '$1');
+
+  return normalized;
 }
 
 function extractText(result: unknown): string {
@@ -774,11 +808,13 @@ async function generateAnalysis(bundle: PropertyDetailBundle) {
     },
   ];
 
+  let rawResponseText = '';
   try {
     const response = await zgCompute.runAnalysis({ messages, model: process.env.OG_COMPUTE_MODEL });
-    const text = extractText(response);
-    const jsonText = extractJsonObject(text);
+    rawResponseText = extractText(response);
+    const jsonText = extractJsonObject(rawResponseText);
     if (!jsonText) {
+      console.warn('Property analysis: could not extract JSON object from response:', rawResponseText);
       return { provider: 'fallback' as const, analysis: fallback, computeProof: null };
     }
 
@@ -790,6 +826,7 @@ async function generateAnalysis(bundle: PropertyDetailBundle) {
     };
   } catch (error) {
     console.error('Property analysis compute error', error);
+    console.log('Raw model response that failed to parse:', rawResponseText);
     return { provider: 'fallback' as const, analysis: fallback, computeProof: null };
   }
 }

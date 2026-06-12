@@ -320,7 +320,32 @@ export async function getPropertyDetailBundle(id: string, listingsRoot?: string 
   const detail = detailJson?.property?.[0] || null;
   const owner = ownerJson?.property?.[0]?.owner?.[0] || null;
   const assessmentHistory = Array.isArray(assessmentJson?.property?.[0]?.assessmenthistory) ? assessmentJson?.property?.[0]?.assessmenthistory || [] : [];
-  const currentAssessment = assessmentHistory[0] || null;
+  
+  const currentAssessment = (() => {
+    if (!assessmentHistory.length) return null;
+    const eligible = assessmentHistory.filter(item => {
+      const year = item.tax?.taxYear ?? item.tax?.assessorYear ?? item.tax?.taxYearAssessed ?? 0;
+      return year > 0 && year <= 2026;
+    });
+    if (eligible.length > 0) {
+      eligible.sort((a, b) => {
+        const yearA = a.tax?.taxYear ?? a.tax?.assessorYear ?? a.tax?.taxYearAssessed ?? 0;
+        const yearB = b.tax?.taxYear ?? b.tax?.assessorYear ?? b.tax?.taxYearAssessed ?? 0;
+        return yearB - yearA;
+      });
+      return eligible[0];
+    }
+    const copy = [...assessmentHistory];
+    copy.sort((a, b) => {
+      const yearA = a.tax?.taxYear ?? a.tax?.assessorYear ?? a.tax?.taxYearAssessed ?? 0;
+      const yearB = b.tax?.taxYear ?? b.tax?.assessorYear ?? b.tax?.taxYearAssessed ?? 0;
+      return yearB - yearA;
+    });
+    return copy[0] || null;
+  })();
+
+  const authoritativeValuation = currentAssessment?.market?.mktTtlValue ?? currentAssessment?.assessed?.assdTtlValue ?? null;
+
   const saleHistory = Array.isArray(salesJson?.property?.[0]?.saleHistory) ? salesJson?.property?.[0]?.saleHistory || [] : [];
   const geoIdV4 = detail && typeof detail === 'object' && detail.location && typeof detail.location === 'object' && 'geoIdV4' in detail.location
     ? String((detail.location as { geoIdV4?: { ZI?: string } }).geoIdV4?.ZI || '')
@@ -353,8 +378,8 @@ export async function getPropertyDetailBundle(id: string, listingsRoot?: string 
         geoIdV4: geoIdV4 || null,
       },
       assessedValue: {
-        assessedTotal: currentAssessment?.assessed?.assdTtlValue ?? null,
-        marketTotal: currentAssessment?.market?.mktTtlValue ?? null,
+        assessedTotal: authoritativeValuation,
+        marketTotal: authoritativeValuation,
         taxAmount: currentAssessment?.tax?.taxAmt ?? null,
         assessorYear: currentAssessment?.tax?.assessorYear ?? null,
         taxYear: currentAssessment?.tax?.taxYear ?? null,
